@@ -31,12 +31,17 @@ export default function RootLayout({
       lang="ro"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body
+        className="min-h-full"
+        style={{
+          paddingBottom: "90px",
+        }}
+      >
         {children}
         <StickyAdBanner />
       </body>
 
-      {adsenseClient && (
+      {adsenseClient ? (
         <Script
           id="adsense-script"
           async
@@ -44,7 +49,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
           src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
         />
-      )}
+      ) : null}
     </html>
   );
 }
