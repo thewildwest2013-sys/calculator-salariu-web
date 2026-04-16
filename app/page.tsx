@@ -976,6 +976,7 @@ export default function Home() {
         ) : (
           <CalculationLockedSection
             t={t}
+            lang={lang}
             isPremium={!!profile?.isPremium}
             usageStatus={usageStatus}
             loading={usageLoading}
