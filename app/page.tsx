@@ -1022,7 +1022,6 @@ export default function Home() {
         return calculationUnlocked ? (
           <DetailsSection
             t={t}
-            lang={lang}
             isPremium={!!profile?.isPremium}
             grossEstimate={calculation.grossEstimate}
             hourlyBase={calculation.hourlyBase}
