@@ -1530,7 +1530,7 @@ function CalendarSection({
                     {weekdays[item.weekdayIndex]}
                   </div>
                   <div className="mt-2 text-[10px] font-semibold leading-3 break-words">
-                    {TYPE_LABELS[lang][daysData[item.day]?.type || "Liber"]}
+                    {TYPE_LABELS[lang as Lang][(daysData[item.day]?.type || "Liber") as keyof (typeof TYPE_LABELS)[Lang]]}
                   </div>
                   {item.holidayName && (
                     <div className="mt-1 rounded-full bg-white/10 px-1.5 py-1 text-[7px] leading-2 text-white/80 break-words">
