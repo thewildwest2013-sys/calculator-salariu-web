@@ -1,13 +1,14 @@
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "./firebase";
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 
 export type UsageStatus = {
   allowed: boolean;
   remaining: number;
   limit: number;
   used: number;
+  shouldShowAd: boolean;
   windowStart: number;
   resetAt: number;
   isPremium: boolean;
@@ -19,7 +20,7 @@ type UsageDoc = {
 };
 
 function getLimit(isPremium: boolean) {
-  return isPremium ? 10 : 2;
+  return isPremium ? 999999 : 30;
 }
 
 async function readUsage(uid: string): Promise<UsageDoc> {
@@ -50,7 +51,7 @@ async function writeUsage(uid: string, data: UsageDoc) {
 function normalizeWindow(data: UsageDoc): UsageDoc {
   const now = Date.now();
 
-  if (!data.windowStart || now - data.windowStart >= DAY_MS) {
+  if (!data.windowStart || now - data.windowStart >= MONTH_MS) {
     return {
       count: 0,
       windowStart: now,
@@ -68,16 +69,18 @@ export async function getUsageStatus(
   const data = normalizeWindow(raw);
   const limit = getLimit(isPremium);
   const used = data.count;
-  const remaining = Math.max(0, limit - used);
-  const allowed = used < limit;
+  const remaining = isPremium ? 999999 : Math.max(0, limit - used);
+  const allowed = isPremium ? true : used < limit;
+  const shouldShowAd = !isPremium && used > 0 && used % 3 === 0;
 
   return {
     allowed,
     remaining,
     limit,
     used,
+    shouldShowAd,
     windowStart: data.windowStart,
-    resetAt: data.windowStart + DAY_MS,
+    resetAt: data.windowStart + MONTH_MS,
     isPremium,
   };
 }
@@ -90,22 +93,35 @@ export async function consumeUsage(
   const data = normalizeWindow(raw);
   const limit = getLimit(isPremium);
 
-  if (data.count < limit) {
-    data.count += 1;
-    await writeUsage(uid, data);
+  if (!isPremium && data.count >= limit) {
+    return {
+      allowed: false,
+      remaining: 0,
+      limit,
+      used: data.count,
+      shouldShowAd: false,
+      windowStart: data.windowStart,
+      resetAt: data.windowStart + MONTH_MS,
+      isPremium,
+    };
   }
 
+  data.count += 1;
+  await writeUsage(uid, data);
+
   const used = data.count;
-  const remaining = Math.max(0, limit - used);
-  const allowed = used < limit;
+  const remaining = isPremium ? 999999 : Math.max(0, limit - used);
+  const allowed = true;
+  const shouldShowAd = !isPremium && used % 3 === 0;
 
   return {
     allowed,
     remaining,
     limit,
     used,
+    shouldShowAd,
     windowStart: data.windowStart,
-    resetAt: data.windowStart + DAY_MS,
+    resetAt: data.windowStart + MONTH_MS,
     isPremium,
   };
 }
