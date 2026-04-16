@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import StickyAdBanner from "@/components/StickyAdBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,8 +22,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const adsenseClient = process.env.NEXT_PUBLIC_ADSENSE_CLIENT;
-
   return (
     <html
       lang="ro"
@@ -38,18 +34,50 @@ export default function RootLayout({
         }}
       >
         {children}
-        <StickyAdBanner />
-      </body>
 
-      {adsenseClient ? (
-        <Script
-          id="adsense-script"
-          async
-          strategy="afterInteractive"
-          crossOrigin="anonymous"
-          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
-        />
-      ) : null}
+        <div
+          style={{
+            position: "fixed",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 999999,
+            display: "flex",
+            justifyContent: "center",
+            padding: "8px",
+            pointerEvents: "none",
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 1200,
+              minHeight: 70,
+              borderRadius: 14,
+              border: "1px solid rgba(255,255,255,0.10)",
+              background: "rgba(7,19,38,0.96)",
+              boxShadow: "0 0 30px rgba(0,0,0,0.25)",
+              padding: "8px 10px",
+              pointerEvents: "auto",
+            }}
+          >
+            <div
+              style={{
+                minHeight: 50,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "rgba(255,255,255,0.78)",
+                fontSize: 13,
+                textAlign: "center",
+                fontWeight: 600,
+              }}
+            >
+              Banner reclamă (placeholder)
+            </div>
+          </div>
+        </div>
+      </body>
     </html>
   );
 }
