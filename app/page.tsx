@@ -1195,7 +1195,7 @@ export default function Home() {
             {selectedDay && (
               <DayModal
                 t={t}
-                dayTypeLabels={TYPE_LABELS[lang]}
+                dayTypeLabels={TYPE_LABELS[lang as Lang]}
                 months={months}
                 day={selectedDay}
                 monthIndex={monthIndex}
@@ -1550,9 +1550,9 @@ function CalendarSection({
 
         <div className="grid gap-3">
           <MiniMetric title={t.shiftsSet} value={String(Object.keys(daysData).length || "0")} />
-          <MiniMetric title={TYPE_LABELS[lang].Morning} value={String(Object.values(daysData).filter((d: any) => d.type === "Morning").length || "0")} />
-          <MiniMetric title={TYPE_LABELS[lang].After} value={String(Object.values(daysData).filter((d: any) => d.type === "After").length || "0")} />
-          <MiniMetric title={TYPE_LABELS[lang].Night} value={String(Object.values(daysData).filter((d: any) => d.type === "Night").length || "0")} />
+          <MiniMetric title={TYPE_LABELS[lang as Lang].Morning} value={String(Object.values(daysData).filter((d: any) => d.type === "Morning").length || "0")} />
+          <MiniMetric title={TYPE_LABELS[lang as Lang].After} value={String(Object.values(daysData).filter((d: any) => d.type === "After").length || "0")} />
+          <MiniMetric title={TYPE_LABELS[lang as Lang].Night} value={String(Object.values(daysData).filter((d: any) => d.type === "Night").length || "0")} />
           <MiniMetric title="OT" value={`${Object.values(daysData).reduce((sum: number, d: any) => sum + (d.overtimeHours || 0), 0)}h`} />
           <MiniMetric title={t.monthHolidays} value={String(monthDays.filter((d: any) => d.day && d.isHoliday).length || "0")} />
         </div>
