@@ -1253,17 +1253,22 @@ function UsageCard({
   loading: boolean;
 }) {
   const remaining = usageStatus?.remaining ?? "—";
-  const limit = usageStatus?.limit ?? (isPremium ? 999999 : 30);
-  const displayLimit = isPremium ? t.unlimited : String(limit);
+  const limit = usageStatus?.limit ?? 30;
+
+  const isUnlimited = isPremium || limit === 999999;
 
   return (
     <div className="rounded-[22px] border border-white/10 bg-[#071326]/80 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
       <div className="text-[10px] uppercase tracking-[0.18em] text-white/45">{t.usage}</div>
       <div className="mt-2 break-words text-xl font-semibold md:text-2xl">
-        {loading ? t.usageChecking : `${remaining}/${displayLimit}`}
+        {loading
+  ? t.usageChecking
+  : isUnlimited
+    ? t.unlimited
+    : `${remaining}/${limit}`}
       </div>
       <div className="mt-1 text-xs text-white/60">
-        {isPremium ? t.unlimited : t.monthlyLeft}
+        {isUnlimited ? t.unlimited : t.monthlyLeft}
       </div>
     </div>
   );
