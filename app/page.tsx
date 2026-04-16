@@ -1031,7 +1031,7 @@ export default function Home() {
             taxableIncome={calculation.taxableIncome}
             incomeTax={calculation.incomeTax}
             netSalary={calculation.netSalary}
-            onSaveCalculation={handleSaveCalculation}
+            onSaveCalculation={saveCalculation}
           />
         ) : (
           <CalculationLockedSection
