@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, deleteDoc, doc, getDocs, orderBy, query } from "firebase/firestore";
@@ -18,6 +19,7 @@ type Calculation = {
 };
 
 export default function HistoryPage() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [calculations, setCalculations] = useState<Calculation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,7 +70,18 @@ export default function HistoryPage() {
     <main className="app-shell p-6 md:p-8">
       <div className="mx-auto max-w-4xl rounded-[32px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_0_60px_rgba(0,80,255,0.08)]">
         <h1 className="text-4xl font-bold">Istoric calcule</h1>
-        <div className="mt-4"><Link href="/" className="secondary-btn inline-block">Înapoi la Home</Link></div>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button
+            onClick={() => {
+              if (window.history.length > 1) router.back();
+              else router.push("/");
+            }}
+            className="secondary-btn"
+          >
+            Înapoi
+          </button>
+          <Link href="/" className="secondary-btn inline-block">Home</Link>
+        </div>
 
         {calculations.length === 0 ? (
           <p className="mt-6 text-white/75">Nu ai calcule salvate.</p>

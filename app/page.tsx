@@ -88,7 +88,112 @@ const TYPE_LABELS: Record<Lang, Record<DayType, string>> = {
   },
 };
 
-const T = {
+type Translation = {
+  appTitle: string;
+  secureAuth: string;
+  intro: string;
+  register: string;
+  login: string;
+  account: string;
+  plan: string;
+  premiumManage: string;
+  history: string;
+  logout: string;
+  freePlan: string;
+  activatePremium: string;
+  freeDescription: string;
+  calendar: string;
+  estimate: string;
+  rules: string;
+  details: string;
+  holidays: string;
+  logic: string;
+  usage: string;
+  monthlyLeft: string;
+  onlineRequired: string;
+  lockedTitle: string;
+  lockedKicker: string;
+  lockedFree: string;
+  lockedPremium: string;
+  unlockFree: string;
+  unlockPremium: string;
+  loading: string;
+  usageChecking: string;
+  monthlyProgram: string;
+  quickCalendar: string;
+  today: string;
+  reset: string;
+  shiftsSet: string;
+  monthHolidays: string;
+  selectedDay: string;
+  workedDay: string;
+  weekend: string;
+  holiday: string;
+  overtimeHours: string;
+  note: string;
+  notePlaceholder: string;
+  otNight: string;
+  otWeekend: string;
+  otHoliday: string;
+  save: string;
+  close: string;
+  summary: string;
+  monthlyEstimate: string;
+  estimatedNet: string;
+  mealTickets: string;
+  totalExtras: string;
+  totalEstimated: string;
+  workedDays: string;
+  overtimePlus: string;
+  nightBonus: string;
+  weekendBonus: string;
+  holidayBonus: string;
+  sickAdjust: string;
+  personalSettings: string;
+  salaryRules: string;
+  grossSalary: string;
+  ticketValue: string;
+  nightPercent: string;
+  overtimePercent: string;
+  weekendPercent: string;
+  holidayPercent: string;
+  casPercent: string;
+  cassPercent: string;
+  taxPercent: string;
+  hoursPerShift: string;
+  unpaidMedical: string;
+  calculate: string;
+  loadExample: string;
+  rulesHint1: string;
+  rulesHint2Free: string;
+  rulesHint2Premium: string;
+  quickCheck: string;
+  calcDetails: string;
+  preview: string;
+  premiumOnly: string;
+  saveCalc: string;
+  annualReference: string;
+  howItWorks: string;
+  logicImplemented: string;
+  adKicker: string;
+  adTitle: string;
+  adBody: string;
+  adContinue: string;
+  noInternet: string;
+  freeLimitReached: string;
+  loginNeeded: string;
+  savedSuccess: string;
+  savedError: string;
+  loadExampleDone: string;
+  logoutOk: string;
+  logoutErr: string;
+  adEveryThree: string;
+  unlimited: string;
+  online: string;
+  offline: string;
+};
+
+const T: Record<Lang, Translation> = {
   ro: {
     appTitle: "Calculator Salariu",
     secureAuth: "🔒 Autentificare securizată",
@@ -297,7 +402,7 @@ const T = {
     online: "Online",
     offline: "Offline",
   },
-} as const;
+};
 
 export default function Home() {
   const [lang, setLang] = useState<Lang>("ro");
@@ -853,6 +958,7 @@ export default function Home() {
         return calculationUnlocked ? (
           <EstimateSection
             t={t}
+            lang={lang}
             net={calculation.netSalary}
             mealTickets={calculation.mealTickets}
             total={calculation.totalEstimated}
@@ -915,6 +1021,7 @@ export default function Home() {
         return calculationUnlocked ? (
           <DetailsSection
             t={t}
+            lang={lang}
             isPremium={!!profile?.isPremium}
             grossEstimate={calculation.grossEstimate}
             hourlyBase={calculation.hourlyBase}
@@ -938,7 +1045,7 @@ export default function Home() {
       case "holidays":
         return <HolidaysSection t={t} lang={lang} />;
       case "logic":
-        return <LogicSection t={t} />;
+        return <LogicSection t={t} lang={lang} />;
       default:
         return null;
     }
@@ -1131,7 +1238,8 @@ function UsageCard({
   usageStatus,
   loading,
 }: {
-  t: typeof T["ro"];
+  t: Translation;
+  lang: Lang;
   isPremium: boolean;
   usageStatus: UsageStatus | null;
   loading: boolean;
@@ -1161,7 +1269,8 @@ function CalculationLockedSection({
   onUnlock,
   isOnline,
 }: {
-  t: typeof T["ro"];
+  t: Translation;
+  lang: Lang;
   isPremium: boolean;
   usageStatus: UsageStatus | null;
   loading: boolean;
@@ -1207,7 +1316,7 @@ function AdGateModal({
   loading,
   remaining,
 }: {
-  t: typeof T["ro"];
+  t: Translation;
   onClose: () => void;
   onContinue: () => void;
   loading: boolean;
@@ -1475,7 +1584,7 @@ function DayModal({
   onClose,
   onSave,
 }: {
-  t: typeof T["ro"];
+  t: Translation;
   dayTypeLabels: Record<DayType, string>;
   months: string[];
   day: number;
@@ -1631,6 +1740,7 @@ function CheckboxPill({
 
 function EstimateSection({
   t,
+  lang,
   net,
   mealTickets,
   total,
@@ -1645,7 +1755,8 @@ function EstimateSection({
   holidayExtra,
   medicalAdjustment,
 }: {
-  t: typeof T["ro"];
+  t: Translation;
+  lang: Lang;
   net: number;
   mealTickets: number;
   total: number;
@@ -1676,9 +1787,9 @@ function EstimateSection({
 
       <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <DetailCard label={t.workedDays} value={String(workedDays || "0")} />
-        <DetailCard label="Morning" value={String(morning || "0")} />
-        <DetailCard label="After" value={String(after || "0")} />
-        <DetailCard label="Night" value={String(night || "0")} />
+        <DetailCard label={TYPE_LABELS[lang].Morning} value={String(morning || "0")} />
+        <DetailCard label={TYPE_LABELS[lang].After} value={String(after || "0")} />
+        <DetailCard label={TYPE_LABELS[lang].Night} value={String(night || "0")} />
         <DetailCard label={t.overtimeHours} value={`${overtimeHours || 0}h`} />
         <DetailCard label={t.overtimePlus} value={overtimeExtra ? `${overtimeExtra.toFixed(2)} RON` : "—"} />
         <DetailCard label={t.nightBonus} value={nightExtra ? `${nightExtra.toFixed(2)} RON` : "—"} />
@@ -1711,7 +1822,7 @@ function EstimateCard({
 }
 
 function RulesSection(props: {
-  t: typeof T["ro"];
+  t: Translation;
   grossSalary: string;
   setGrossSalary: (v: string) => void;
   mealTicketPerDay: string;
@@ -1804,6 +1915,7 @@ function Field({
 
 function DetailsSection({
   t,
+  lang,
   isPremium,
   grossEstimate,
   hourlyBase,
@@ -1814,7 +1926,7 @@ function DetailsSection({
   netSalary,
   onSaveCalculation,
 }: {
-  t: typeof T["ro"];
+  t: Translation;
   isPremium: boolean;
   grossEstimate: number;
   hourlyBase: number;
@@ -1829,13 +1941,13 @@ function DetailsSection({
     <SectionShell kicker={t.quickCheck} title={t.calcDetails}>
       {isPremium ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <DetailCard label="Brut estimat" value={grossEstimate ? `${grossEstimate.toFixed(2)} RON` : "—"} />
-          <DetailCard label="Bază orară" value={hourlyBase ? `${hourlyBase.toFixed(2)} RON` : "—"} />
+          <DetailCard label={lang === "ro" ? "Brut estimat" : "Estimated gross"} value={grossEstimate ? `${grossEstimate.toFixed(2)} RON` : "—"} />
+          <DetailCard label={lang === "ro" ? "Bază orară" : "Hourly base"} value={hourlyBase ? `${hourlyBase.toFixed(2)} RON` : "—"} />
           <DetailCard label="CAS" value={cas ? `${cas.toFixed(2)} RON` : "—"} />
           <DetailCard label="CASS" value={cass ? `${cass.toFixed(2)} RON` : "—"} />
-          <DetailCard label="Bază impozabilă" value={taxableIncome ? `${taxableIncome.toFixed(2)} RON` : "—"} />
-          <DetailCard label="Impozit" value={incomeTax ? `${incomeTax.toFixed(2)} RON` : "—"} />
-          <DetailCard label="Net" value={netSalary ? `${netSalary.toFixed(2)} RON` : "—"} highlight />
+          <DetailCard label={lang === "ro" ? "Bază impozabilă" : "Taxable income"} value={taxableIncome ? `${taxableIncome.toFixed(2)} RON` : "—"} />
+          <DetailCard label={lang === "ro" ? "Impozit" : "Tax"} value={incomeTax ? `${incomeTax.toFixed(2)} RON` : "—"} />
+          <DetailCard label={lang === "ro" ? "Net" : "Net salary"} value={netSalary ? `${netSalary.toFixed(2)} RON` : "—"} highlight />
         </div>
       ) : (
         <div className="rounded-[24px] border border-white/10 bg-[#071326]/80 p-5">
@@ -1877,7 +1989,7 @@ function DetailCard({
   );
 }
 
-function HolidaysSection({ t, lang }: { t: typeof T["ro"]; lang: Lang }) {
+function HolidaysSection({ t, lang }: { t: Translation; lang: Lang }) {
   return (
     <SectionShell kicker={t.annualReference} title={`${t.holidays} 2026`}>
       <div className="space-y-3">
@@ -1895,8 +2007,8 @@ function HolidaysSection({ t, lang }: { t: typeof T["ro"]; lang: Lang }) {
   );
 }
 
-function LogicSection({ t }: { t: typeof T["ro"] }) {
-  const rows = [
+function LogicSection({ t, lang }: { t: Translation; lang: Lang }) {
+  const rows = lang === "ro" ? [
     ["Bază orară / Hourly base", "salariul brut de referință se împarte la aproximativ 160 ore lunare"],
     ["Morning / After / Night", "alegi tura direct din zi; Night primește sporul de noapte"],
     ["Weekend automat", "sâmbăta și duminica sunt detectate automat din calendar"],
@@ -1904,6 +2016,14 @@ function LogicSection({ t }: { t: typeof T["ro"] }) {
     ["Ore suplimentare", "+75% din baza orară pentru fiecare oră introdusă"],
     ["Monetizare", "free: 30 calcule/lună, banner permanent și poartă de reclamă la fiecare 3 calcule; premium: fără reclame și fără limită"],
     ["Online only", "calculele noi și salvarea sunt permise doar când browserul este online"],
+  ] : [
+    ["Hourly base", "the reference gross salary is divided by roughly 160 monthly hours"],
+    ["Morning / Afternoon / Night", "you choose the shift directly on the day; Night gets the night bonus"],
+    ["Automatic weekend", "Saturday and Sunday are detected automatically from the calendar"],
+    ["Automatic holidays", "legal holidays are marked and automatically receive the holiday bonus"],
+    ["Overtime", "+75% of hourly base for each entered overtime hour"],
+    ["Monetization", "free: 30 calculations/month, permanent banner and ad gate every 3 calculations; premium: no ads and no limit"],
+    ["Online only", "new calculations and saving are allowed only while the browser is online"],
   ];
 
   return (
