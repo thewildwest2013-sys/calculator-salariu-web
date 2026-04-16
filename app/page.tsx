@@ -1022,6 +1022,7 @@ export default function Home() {
         return calculationUnlocked ? (
           <DetailsSection
             t={t}
+            lang={lang}
             isPremium={!!profile?.isPremium}
             grossEstimate={calculation.grossEstimate}
             hourlyBase={calculation.hourlyBase}
@@ -1030,7 +1031,7 @@ export default function Home() {
             taxableIncome={calculation.taxableIncome}
             incomeTax={calculation.incomeTax}
             netSalary={calculation.netSalary}
-            onSaveCalculation={saveCalculation}
+            onSaveCalculation={handleSaveCalculation}
           />
         ) : (
           <CalculationLockedSection
