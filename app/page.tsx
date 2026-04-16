@@ -1140,7 +1140,13 @@ export default function Home() {
               <div className="grid gap-3 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
                 <InfoCard label={t.account} value={user.email || "-"} />
                 <InfoCard label={t.plan} value={statusLabel} />
-                <UsageCard t={t} isPremium={!!profile?.isPremium} usageStatus={usageStatus} loading={usageLoading} />
+                <UsageCard 
+                  t={t}
+                  lang={lang}
+                  isPremium={!!profile?.isPremium} 
+                  usageStatus={usageStatus} 
+                  loading={usageLoading} 
+                />
                 <InfoCard label="Status" value={isOnline ? t.online : t.offline} />
               </div>
 
