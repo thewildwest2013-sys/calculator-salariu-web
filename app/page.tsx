@@ -1540,7 +1540,7 @@ function CalendarSection({
   item.isWeekend,
   item.isHoliday
 )}${selectedDay === item.day
-  ? " ring-2 ring-blue-400/70 bg-blue-500/10 shadow-[0_0_1px_rgba(96,165,250,0.3),0_8px_20px_rgba(59,130,246,0.2)] scale-[1.02]'}
+  ? " ring-2 ring-blue-400/70 bg-blue-500/10 shadow-[0_0_1px_rgba(96,165,250,0.3),0_8px_20px_rgba(59,130,246,0.2)] scale-[1.02]"
   : ""}`}
 >
   <div className="text-2xl font-bold leading-none">{item.day}</div>
