@@ -1227,6 +1227,16 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      <div className="fixed bottom-0 left-0 z-50 w-full px-4 pb-3">
+        <div className="mx-auto max-w-6xl rounded-[16px] border border-white/10 bg-[#041224]/90 px-4 py-3 text-center text-sm text-white/70 shadow-lg backdrop-blur">
+          {!profile?.isPremium ? (
+            <div>Banner reclamă (placeholder)</div>
+          ) : (
+            <div>{lang === "ro" ? "Premium activ — fără reclame" : "Premium active — ad-free"}</div>
+          )}
+        </div>
+      </div>
     </main>
   );
 }
