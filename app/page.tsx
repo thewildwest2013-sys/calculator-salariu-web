@@ -1494,14 +1494,16 @@ function CalendarSection({
             </button>
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            <LegendPill color="bg-emerald-400" label={TYPE_LABELS[lang].Morning} />
-            <LegendPill color="bg-amber-400" label={TYPE_LABELS[lang].After} />
-            <LegendPill color="bg-blue-400" label={TYPE_LABELS[lang].Night} />
-            <LegendPill color="bg-slate-500" label={TYPE_LABELS[lang].Liber} />
-            <LegendPill color="bg-violet-400" label={TYPE_LABELS[lang].CO} />
-            <LegendPill color="bg-rose-400" label={`${TYPE_LABELS[lang].CM} / ${t.holiday}`} />
-          </div>
+         const labels = TYPE_LABELS[lang as Lang];
+
+         <div className="mt-3 flex flex-wrap gap-2">
+           <LegendPill color="bg-emerald-400" label={labels.Morning} />
+           <LegendPill color="bg-amber-400" label={labels.After} />
+           <LegendPill color="bg-blue-400" label={labels.Night} />
+           <LegendPill color="bg-slate-500" label={labels.Liber} />
+           <LegendPill color="bg-violet-400" label={labels.CO} />
+           <LegendPill color="bg-rose-400" label={`${labels.CM} / ${t.holiday}`} />
+         </div>
 
           <div className="mt-4 grid grid-cols-7 gap-2">
             {weekdays.map((day: string) => (
@@ -1793,17 +1795,57 @@ function EstimateSection({
       </div>
 
       <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <DetailCard label={t.workedDays} value={String(workedDays || "0")} />
-        <DetailCard label={TYPE_LABELS[lang].Morning} value={String(morning || "0")} />
-        <DetailCard label={TYPE_LABELS[lang].After} value={String(after || "0")} />
-        <DetailCard label={TYPE_LABELS[lang].Night} value={String(night || "0")} />
-        <DetailCard label={t.overtimeHours} value={`${overtimeHours || 0}h`} />
-        <DetailCard label={t.overtimePlus} value={overtimeExtra ? `${overtimeExtra.toFixed(2)} RON` : "—"} />
-        <DetailCard label={t.nightBonus} value={nightExtra ? `${nightExtra.toFixed(2)} RON` : "—"} />
-        <DetailCard label={t.weekendBonus} value={weekendExtra ? `${weekendExtra.toFixed(2)} RON` : "—"} />
-        <DetailCard label={t.holidayBonus} value={holidayExtra ? `${holidayExtra.toFixed(2)} RON` : "—"} />
-        <DetailCard label={t.sickAdjust} value={medicalAdjustment ? `-${medicalAdjustment.toFixed(2)} RON` : "—"} />
-      </div>
+  <DetailCard label={t.workedDays} value={String(workedDays || "0")} />
+
+  <DetailCard
+    label={TYPE_LABELS[lang as Lang].Morning}
+    value={String(morning || "0")}
+  />
+
+  <DetailCard
+    label={TYPE_LABELS[lang as Lang].After}
+    value={String(after || "0")}
+  />
+
+  <DetailCard
+    label={TYPE_LABELS[lang as Lang].Night}
+    value={String(night || "0")}
+  />
+
+  <DetailCard
+    label={t.overtimeHours}
+    value={`${overtimeHours || 0}h`}
+  />
+
+  <DetailCard
+    label={t.overtimePlus}
+    value={overtimeExtra ? `${overtimeExtra.toFixed(2)} RON` : "-"}
+  />
+
+  <DetailCard
+    label={t.nightBonus}
+    value={nightExtra ? `${nightExtra.toFixed(2)} RON` : "-"}
+  />
+
+  <DetailCard
+    label={t.weekendBonus}
+    value={weekendExtra ? `${weekendExtra.toFixed(2)} RON` : "-"}
+  />
+
+  <DetailCard
+    label={t.holidayBonus}
+    value={holidayExtra ? `${holidayExtra.toFixed(2)} RON` : "-"}
+  />
+
+  <DetailCard
+    label={t.sickAdjust}
+    value={
+      medicalAdjustment
+        ? `-${medicalAdjustment.toFixed(2)} RON`
+        : "-"
+    }
+  />
+</div>
     </SectionShell>
   );
 }
