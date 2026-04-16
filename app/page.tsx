@@ -579,6 +579,9 @@ export default function Home() {
     ? (lang === "ro" ? "Premium lunar" : "Premium monthly")
     : (lang === "ro" ? "Gratuit" : "Free");
 
+  const isPremium = !!profile?.isPremium;
+  const adMode = isPremium ? "banner_only" : "full_ads";
+
   const calculationSignature = useMemo(() => JSON.stringify({
     grossSalary,
     mealTicketPerDay,
@@ -977,7 +980,7 @@ export default function Home() {
           <CalculationLockedSection
             t={t}
             lang={lang}
-            isPremium={!!profile?.isPremium}
+            isPremium={isPremium}
             usageStatus={usageStatus}
             loading={usageLoading}
             onUnlock={handleCalculateRequest}
@@ -1011,7 +1014,7 @@ export default function Home() {
             medicalLeaveDays={medicalLeaveDays}
             setMedicalLeaveDays={setMedicalLeaveDays}
             onCalculate={handleCalculateRequest}
-            isPremium={!!profile?.isPremium}
+            isPremium={isPremium}
             usageStatus={usageStatus}
             usageLoading={usageLoading}
             onLoadExample={loadExample}
@@ -1023,7 +1026,7 @@ export default function Home() {
           <DetailsSection
             t={t}
             lang={lang}
-            isPremium={!!profile?.isPremium}
+            isPremium={isPremium}
             grossEstimate={calculation.grossEstimate}
             hourlyBase={calculation.hourlyBase}
             cas={calculation.cas}
@@ -1037,7 +1040,7 @@ export default function Home() {
           <CalculationLockedSection
             t={t}
             lang={lang}
-            isPremium={!!profile?.isPremium}
+            isPremium={isPremium}
             usageStatus={usageStatus}
             loading={usageLoading}
             onUnlock={handleCalculateRequest}
@@ -1144,7 +1147,7 @@ export default function Home() {
                 <UsageCard 
                   t={t}
                   lang={lang}
-                  isPremium={!!profile?.isPremium} 
+                  isPremium={isPremium} 
                   usageStatus={usageStatus} 
                   loading={usageLoading} 
                 />
@@ -1193,6 +1196,10 @@ export default function Home() {
 
             {renderTabContent()}
 
+            {adMode === "full_ads" && user && (
+              <InlineAdSurface lang={lang} activeTab={activeTab} />
+            )}
+
             {selectedDay && (
               <DayModal
                 t={t}
@@ -1238,6 +1245,38 @@ export default function Home() {
         </div>
       </div>
     </main>
+  );
+}
+
+function InlineAdSurface({
+  lang,
+  activeTab,
+}: {
+  lang: Lang;
+  activeTab: TabKey;
+}) {
+  const title =
+    activeTab === "estimate"
+      ? (lang === "ro" ? "Spațiu reclamă pentru utilizatori Free" : "Ad space for Free users")
+      : activeTab === "rules"
+        ? (lang === "ro" ? "Reclamă integrată în ecranul de reguli" : "Inline ad inside the rules screen")
+        : activeTab === "details"
+          ? (lang === "ro" ? "Reclamă discretă în conținut" : "Discreet inline content ad")
+          : (lang === "ro" ? "Suprafață reclamă în aplicație" : "In-app ad surface");
+
+  const body =
+    lang === "ro"
+      ? "Această zonă apare doar pe planul Free. La Premium dispare și rămâne doar bannerul fix din partea de jos, fără să blocheze acțiunile utilizatorului."
+      : "This area is shown only on the Free plan. On Premium it disappears and only the fixed bottom banner remains, without blocking user actions.";
+
+  return (
+    <section className="mt-5 rounded-[24px] border border-amber-400/20 bg-amber-400/10 p-4 text-amber-50 shadow-[0_0_30px_rgba(250,204,21,0.08)]">
+      <div className="text-xs uppercase tracking-[0.22em] text-amber-100/70">
+        {lang === "ro" ? "Publicitate pentru Free" : "Advertising for Free"}
+      </div>
+      <h3 className="mt-1 text-lg font-semibold">{title}</h3>
+      <p className="mt-1 text-sm leading-6 text-amber-50/85">{body}</p>
+    </section>
   );
 }
 
@@ -2085,7 +2124,7 @@ function LogicSection({ t, lang }: { t: Translation; lang: Lang }) {
     ["Weekend automat", "sâmbăta și duminica sunt detectate automat din calendar"],
     ["Sărbători automate", "zilele legale sunt marcate și primesc automat sporul de sărbătoare"],
     ["Ore suplimentare", "+75% din baza orară pentru fiecare oră introdusă"],
-    ["Monetizare", "free: 30 calcule/lună, banner permanent și poartă de reclamă la fiecare 3 calcule; premium: fără reclame și fără limită"],
+    ["Monetizare", "free: 30 calcule/lună, banner permanent + suprafețe de reclamă în aplicație și poartă de reclamă la fiecare 3 calcule; premium: doar bannerul discret de jos și fără limită"],
     ["Online only", "calculele noi și salvarea sunt permise doar când browserul este online"],
   ] : [
     ["Hourly base", "the reference gross salary is divided by roughly 160 monthly hours"],
@@ -2093,7 +2132,7 @@ function LogicSection({ t, lang }: { t: Translation; lang: Lang }) {
     ["Automatic weekend", "Saturday and Sunday are detected automatically from the calendar"],
     ["Automatic holidays", "legal holidays are marked and automatically receive the holiday bonus"],
     ["Overtime", "+75% of hourly base for each entered overtime hour"],
-    ["Monetization", "free: 30 calculations/month, permanent banner and ad gate every 3 calculations; premium: no ads and no limit"],
+    ["Monetization", "free: 30 calculations/month, permanent banner + in-app ad surfaces and an ad gate every 3 calculations; premium: only the discreet bottom banner and no limit"],
     ["Online only", "new calculations and saving are allowed only while the browser is online"],
   ];
 
