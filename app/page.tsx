@@ -576,8 +576,8 @@ export default function Home() {
   }, [user, profile?.isPremium, loading]);
 
   const statusLabel = profile?.isPremium
-    ? profile?.plan || "premium_monthly"
-    : "free";
+    ? (lang === "ro" ? "Premium lunar" : "Premium monthly")
+    : (lang === "ro" ? "Gratuit" : "Free");
 
   const calculationSignature = useMemo(() => JSON.stringify({
     grossSalary,
@@ -1103,18 +1103,18 @@ export default function Home() {
               </div>
             )}
 
-            <header className="flex flex-col gap-4 rounded-[28px] border border-white/10 bg-white/[0.03] p-5 shadow-[0_0_60px_rgba(0,80,255,0.08)] backdrop-blur-sm">
+            <header className="flex flex-col gap-5 rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_0_60px_rgba(0,80,255,0.08)] backdrop-blur-sm md:p-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="text-xs uppercase tracking-[0.22em] text-white/45">
                     {t.appTitle}
                   </div>
-                  <h1 className="mt-1 text-3xl font-bold md:text-5xl">
+                  <h1 className="mt-1 text-3xl font-bold tracking-tight md:text-5xl">
                     {t.appTitle}
                   </h1>
                 </div>
 
-                <div className="flex items-center gap-2 self-start rounded-full border border-white/10 bg-white/[0.03] px-3 py-2">
+                <div className="flex items-center gap-2 self-start rounded-full border border-white/10 bg-white/[0.03] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
                   <button
                     onClick={() => setLang("ro")}
                     className={`flex h-12 w-12 items-center justify-center rounded-full text-sm font-bold transition ${
@@ -1138,7 +1138,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="grid gap-3 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
+              <div className="grid gap-3 lg:grid-cols-[1.5fr_1fr_1fr_1fr] xl:gap-4">
                 <InfoCard label={t.account} value={user.email || "-"} />
                 <InfoCard label={t.plan} value={statusLabel} />
                 <UsageCard 
@@ -1151,7 +1151,7 @@ export default function Home() {
                 <InfoCard label="Status" value={isOnline ? t.online : t.offline} />
               </div>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2.5">
                 <ActionChip onClick={() => setActiveTab("calendar")} active={activeTab === "calendar"}>{t.calendar}</ActionChip>
                 <ActionChip onClick={() => setActiveTab("estimate")} active={activeTab === "estimate"}>{t.estimate}</ActionChip>
                 <ActionChip onClick={() => setActiveTab("rules")} active={activeTab === "rules"}>{t.rules}</ActionChip>
@@ -1160,19 +1160,19 @@ export default function Home() {
                 <ActionChip onClick={() => setActiveTab("logic")} active={activeTab === "logic"}>{t.logic}</ActionChip>
                 <Link
                   href="/premium"
-                  className="rounded-[16px] border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold transition hover:bg-white/10"
+                  className="rounded-[16px] border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/90 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white hover:shadow-[0_10px_24px_rgba(15,23,42,0.25)]"
                 >
                   {t.premiumManage}
                 </Link>
                 <Link
                   href="/history"
-                  className="rounded-[16px] border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold transition hover:bg-white/10"
+                  className="rounded-[16px] border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/90 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white hover:shadow-[0_10px_24px_rgba(15,23,42,0.25)]"
                 >
                   {t.history}
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="rounded-[16px] border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold transition hover:bg-white/10"
+                  className="rounded-[16px] border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/90 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white hover:shadow-[0_10px_24px_rgba(15,23,42,0.25)]"
                 >
                   {t.logout}
                 </button>
@@ -1229,11 +1229,11 @@ export default function Home() {
       </div>
 
       <div className="fixed bottom-0 left-0 z-50 w-full px-4 pb-3">
-        <div className="mx-auto max-w-6xl rounded-[16px] border border-white/10 bg-[#041224]/90 px-4 py-3 text-center text-sm text-white/70 shadow-lg backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-center rounded-[18px] border border-white/10 bg-[#041224]/88 px-4 py-3 text-center text-sm text-white/70 shadow-[0_12px_40px_rgba(2,8,23,0.45)] backdrop-blur-md">
           {!profile?.isPremium ? (
-            <div>Banner reclamă (placeholder)</div>
+            <div className="font-medium text-white/75">{lang === "ro" ? "Banner reclamă (placeholder)" : "Ad banner (placeholder)"}</div>
           ) : (
-            <div>{lang === "ro" ? "Premium activ — fără reclame" : "Premium active — ad-free"}</div>
+            <div className="font-medium text-white/75">{lang === "ro" ? "Premium activ — experiență fără reclame" : "Premium active — ad-free experience"}</div>
           )}
         </div>
       </div>
@@ -1243,15 +1243,16 @@ export default function Home() {
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[22px] border border-white/10 bg-[#071326]/80 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+    <div className="rounded-[24px] border border-white/10 bg-[#071326]/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/15 hover:bg-[#08182e]/90">
       <div className="text-[10px] uppercase tracking-[0.18em] text-white/45">{label}</div>
-      <div className="mt-2 break-all text-xl font-semibold md:text-2xl">{value}</div>
+      <div className="mt-2 break-words text-lg font-semibold leading-tight md:text-[2rem]">{value}</div>
     </div>
   );
 }
 
 function UsageCard({
   t,
+  lang,
   isPremium,
   usageStatus,
   loading,
@@ -1264,22 +1265,21 @@ function UsageCard({
 }) {
   const remaining = usageStatus?.remaining ?? "—";
   const limit = usageStatus?.limit ?? 30;
-
   const isUnlimited = isPremium || limit === 999999;
+  const value = loading
+    ? t.usageChecking
+    : isUnlimited
+      ? t.unlimited.charAt(0).toUpperCase() + t.unlimited.slice(1)
+      : `${remaining}/${limit}`;
+  const hint = isUnlimited
+    ? (lang === "ro" ? "Plan premium" : "Premium plan")
+    : (lang === "ro" ? "Fereastra lunară curentă" : "Current monthly window");
 
   return (
-    <div className="rounded-[22px] border border-white/10 bg-[#071326]/80 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+    <div className="rounded-[24px] border border-white/10 bg-[#071326]/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/15 hover:bg-[#08182e]/90">
       <div className="text-[10px] uppercase tracking-[0.18em] text-white/45">{t.usage}</div>
-      <div className="mt-2 break-words text-xl font-semibold md:text-2xl">
-        {loading
-  ? t.usageChecking
-  : isUnlimited
-    ? t.unlimited
-    : `${remaining}/${limit}`}
-      </div>
-      <div className="mt-1 text-xs text-white/60">
-        {isUnlimited ? t.unlimited : t.monthlyLeft}
-      </div>
+      <div className="mt-2 break-words text-lg font-semibold leading-tight md:text-[2rem]">{value}</div>
+      <div className="mt-1 text-xs text-white/60">{loading ? t.usageChecking : hint}</div>
     </div>
   );
 }
@@ -1393,10 +1393,10 @@ function ActionChip({
   return (
     <button
       onClick={onClick}
-      className={`rounded-[16px] border px-4 py-3 text-sm font-semibold transition ${
+      className={`rounded-[16px] border px-4 py-3 text-sm font-semibold text-white/90 transition-all duration-200 ${
         active
-          ? "border-blue-400/40 bg-blue-500 text-white shadow-[0_0_30px_rgba(59,130,246,0.35)]"
-          : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]"
+          ? "border-blue-400/40 bg-blue-500 text-white shadow-[0_10px_30px_rgba(59,130,246,0.35)]"
+          : "border-white/10 bg-white/[0.04] hover:-translate-y-0.5 hover:border-white/15 hover:bg-white/[0.08] hover:text-white"
       }`}
     >
       {children}
@@ -1414,7 +1414,7 @@ function SectionShell({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[28px] border border-white/10 bg-white/[0.03] p-5 shadow-[0_0_60px_rgba(0,80,255,0.08)] backdrop-blur-sm">
+    <section className="rounded-[30px] border border-white/10 bg-white/[0.03] p-5 shadow-[0_0_60px_rgba(0,80,255,0.08)] backdrop-blur-sm md:p-6">
       <div className="text-xs uppercase tracking-[0.22em] text-white/45">{kicker}</div>
       <h2 className="mt-1 text-2xl font-bold md:text-4xl">{title}</h2>
       <div className="mt-4">{children}</div>
@@ -1459,14 +1459,14 @@ function CalendarSection({
   function getStyle(day: number, isWeekend: boolean, isHoliday: boolean) {
     const type = daysData[day]?.type || "Liber";
 
-    if (type === "Morning") return "border-emerald-400/40 bg-emerald-500/[0.07]";
-    if (type === "After") return "border-amber-400/40 bg-amber-500/[0.08]";
-    if (type === "Night") return "border-blue-400/40 bg-blue-500/[0.08]";
-    if (type === "CO") return "border-violet-400/40 bg-violet-500/[0.10]";
-    if (type === "CM") return "border-rose-400/40 bg-rose-500/[0.10]";
-    if (isHoliday) return "border-rose-400/30 bg-rose-500/[0.07]";
-    if (isWeekend) return "border-amber-400/25 bg-amber-500/[0.05]";
-    return "border-cyan-400/15 bg-cyan-500/[0.03]";
+    if (type === "Morning") return "border-emerald-400/45 bg-emerald-500/[0.08] hover:bg-emerald-500/[0.11]";
+    if (type === "After") return "border-amber-400/45 bg-amber-500/[0.09] hover:bg-amber-500/[0.12]";
+    if (type === "Night") return "border-blue-400/45 bg-blue-500/[0.09] hover:bg-blue-500/[0.12]";
+    if (type === "CO") return "border-violet-400/45 bg-violet-500/[0.11] hover:bg-violet-500/[0.14]";
+    if (type === "CM") return "border-rose-400/45 bg-rose-500/[0.11] hover:bg-rose-500/[0.14]";
+    if (isHoliday) return "border-rose-400/30 bg-rose-500/[0.07] hover:bg-rose-500/[0.10]";
+    if (isWeekend) return "border-amber-400/25 bg-amber-500/[0.05] hover:bg-amber-500/[0.08]";
+    return "border-cyan-400/15 bg-cyan-500/[0.03] hover:bg-cyan-500/[0.05]";
   }
 
   return (
@@ -1476,7 +1476,7 @@ function CalendarSection({
           <div className="grid gap-2 md:grid-cols-[44px_1fr_44px]">
             <button
               onClick={prevMonth}
-              className="rounded-[12px] border border-white/10 bg-white/[0.04] px-2 py-2 text-base font-semibold"
+              className="rounded-[12px] border border-white/10 bg-white/[0.04] px-2 py-2 text-base font-semibold transition hover:bg-white/[0.08]"
             >
               ‹
             </button>
@@ -1485,7 +1485,7 @@ function CalendarSection({
             </div>
             <button
               onClick={nextMonth}
-              className="rounded-[12px] border border-white/10 bg-white/[0.04] px-2 py-2 text-base font-semibold"
+              className="rounded-[12px] border border-white/10 bg-white/[0.04] px-2 py-2 text-base font-semibold transition hover:bg-white/[0.08]"
             >
               ›
             </button>
@@ -1498,13 +1498,13 @@ function CalendarSection({
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               onClick={onToday}
-              className="rounded-[10px] border border-white/10 bg-blue-500 px-3 py-2 text-[11px] font-semibold"
+              className="rounded-[12px] border border-white/10 bg-blue-500 px-3 py-2 text-[11px] font-semibold shadow-[0_8px_20px_rgba(59,130,246,0.28)] transition hover:bg-blue-400"
             >
               {t.today}
             </button>
             <button
               onClick={onReset}
-              className="rounded-[10px] border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] font-semibold"
+              className="rounded-[12px] border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] font-semibold transition hover:bg-white/[0.08]"
             >
               {t.reset}
             </button>
@@ -1535,11 +1535,11 @@ function CalendarSection({
                 <button
                   key={`${item.day}-${idx}`}
                   onClick={() => setSelectedDay(item.day)}
-                  className={`h-[84px] rounded-[14px] border px-2 py-2 text-left transition hover:scale-[1.01] overflow-hidden ${getStyle(
+                  className={`h-[84px] overflow-hidden rounded-[14px] border px-2 py-2 text-left transition-all duration-200 hover:scale-[1.02] hover:border-white/20 ${getStyle(
                     item.day,
                     item.isWeekend,
                     item.isHoliday
-                  )} ${selectedDay === item.day ? "ring-2 ring-blue-400" : ""}`}
+                  )} ${selectedDay === item.day ? "ring-2 ring-blue-400 shadow-[0_0_0_1px_rgba(96,165,250,0.25),0_12px_30px_rgba(59,130,246,0.12)]" : ""}`}
                 >
                   <div className="text-2xl font-bold leading-none">{item.day}</div>
                   <div className="mt-1 text-[9px] font-medium leading-none text-white/75">
