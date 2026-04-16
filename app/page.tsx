@@ -1494,15 +1494,14 @@ function CalendarSection({
             </button>
           </div>
 
-         const labels = TYPE_LABELS[lang as Lang];
 
          <div className="mt-3 flex flex-wrap gap-2">
-           <LegendPill color="bg-emerald-400" label={labels.Morning} />
-           <LegendPill color="bg-amber-400" label={labels.After} />
-           <LegendPill color="bg-blue-400" label={labels.Night} />
-           <LegendPill color="bg-slate-500" label={labels.Liber} />
-           <LegendPill color="bg-violet-400" label={labels.CO} />
-           <LegendPill color="bg-rose-400" label={`${labels.CM} / ${t.holiday}`} />
+           <LegendPill color="bg-emerald-400" label={TYPE_LABELS[lang as Lang].Morning} />
+           <LegendPill color="bg-amber-400" label={TYPE_LABELS[lang as Lang].After} />
+           <LegendPill color="bg-blue-400" label={TYPE_LABELS[lang as Lang].Night} />
+           <LegendPill color="bg-slate-500" label={TYPE_LABELS[lang as Lang].Liber} />
+           <LegendPill color="bg-violet-400" label={TYPE_LABELS[lang as Lang].CO} />
+           <LegendPill color="bg-rose-400" label={`${TYPE_LABELS[lang as Lang].CM} / ${t.holiday}`} />
          </div>
 
           <div className="mt-4 grid grid-cols-7 gap-2">
