@@ -406,7 +406,7 @@ const T: Record<Lang, Translation> = {
 
 export default function Home() {
   const [lang, setLang] = useState<Lang>("ro");
-  const t = T[lang];
+  const t: Translation = T[lang]
   const months = lang === "ro" ? MONTHS_RO : MONTHS_EN;
   const weekdays = lang === "ro" ? WEEKDAYS_RO : WEEKDAYS_EN;
 
