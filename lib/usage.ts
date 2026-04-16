@@ -3,60 +3,117 @@ import { db } from "./firebase";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-export async function checkUsage(uid: string, isPremium: boolean) {
+export type UsageStatus = {
+  allowed: boolean;
+  remaining: number;
+  limit: number;
+  used: number;
+  windowStart: number;
+  resetAt: number;
+  isPremium: boolean;
+};
+
+type UsageDoc = {
+  count: number;
+  windowStart: number;
+};
+
+function getLimit(isPremium: boolean) {
+  return isPremium ? 10 : 2;
+}
+
+async function readUsage(uid: string): Promise<UsageDoc> {
   const ref = doc(db, "users", uid, "usage", "main");
   const snap = await getDoc(ref);
 
-  const now = Date.now();
-
-  let data = snap.exists()
-    ? snap.data()
-    : {
-        count: 0,
-        windowStart: now,
-      };
-
-  // reset după 24h
-  if (now - data.windowStart > DAY_MS) {
-    data = {
+  if (!snap.exists()) {
+    return {
       count: 0,
-      windowStart: now,
+      windowStart: Date.now(),
     };
   }
 
-  const limit = isPremium ? 10 : 2;
-
-  if (data.count >= limit) {
-    return { allowed: false, remaining: 0 };
-  }
+  const data = snap.data() as Partial<UsageDoc>;
 
   return {
-    allowed: true,
-    remaining: limit - data.count,
+    count: typeof data.count === "number" ? data.count : 0,
+    windowStart:
+      typeof data.windowStart === "number" ? data.windowStart : Date.now(),
   };
 }
 
-export async function increaseUsage(uid: string) {
+async function writeUsage(uid: string, data: UsageDoc) {
   const ref = doc(db, "users", uid, "usage", "main");
-  const snap = await getDoc(ref);
+  await setDoc(ref, data, { merge: true });
+}
 
+function normalizeWindow(data: UsageDoc): UsageDoc {
   const now = Date.now();
 
-  let data = snap.exists()
-    ? snap.data()
-    : {
-        count: 0,
-        windowStart: now,
-      };
-
-  if (now - data.windowStart > DAY_MS) {
-    data = {
+  if (!data.windowStart || now - data.windowStart >= DAY_MS) {
+    return {
       count: 0,
       windowStart: now,
     };
   }
 
-  data.count += 1;
+  return data;
+}
 
-  await setDoc(ref, data);
+export async function getUsageStatus(
+  uid: string,
+  isPremium: boolean
+): Promise<UsageStatus> {
+  const raw = await readUsage(uid);
+  const data = normalizeWindow(raw);
+  const limit = getLimit(isPremium);
+  const used = data.count;
+  const remaining = Math.max(0, limit - used);
+  const allowed = used < limit;
+
+  return {
+    allowed,
+    remaining,
+    limit,
+    used,
+    windowStart: data.windowStart,
+    resetAt: data.windowStart + DAY_MS,
+    isPremium,
+  };
+}
+
+export async function consumeUsage(
+  uid: string,
+  isPremium: boolean
+): Promise<UsageStatus> {
+  const raw = await readUsage(uid);
+  const data = normalizeWindow(raw);
+  const limit = getLimit(isPremium);
+
+  if (data.count < limit) {
+    data.count += 1;
+    await writeUsage(uid, data);
+  }
+
+  const used = data.count;
+  const remaining = Math.max(0, limit - used);
+  const allowed = used < limit;
+
+  return {
+    allowed,
+    remaining,
+    limit,
+    used,
+    windowStart: data.windowStart,
+    resetAt: data.windowStart + DAY_MS,
+    isPremium,
+  };
+}
+
+export async function checkUsage(uid: string, isPremium: boolean) {
+  return getUsageStatus(uid, isPremium);
+}
+
+export async function increaseUsage(uid: string, isPremium = false) {
+  return consumeUsage(uid, isPremium);
 }
