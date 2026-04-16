@@ -1532,30 +1532,32 @@ function CalendarSection({
 
             {monthDays.map((item: any, idx: number) =>
               item.day ? (
-                <button
-                  key={`${item.day}-${idx}`}
-                  onClick={() => setSelectedDay(item.day)}
-                  className={`h-[84px] overflow-hidden rounded-[14px] border px-2 py-2 text-left transition-all duration-200 transform-gpu over:scale-[1.04] active:scale-[0.97] hover:border-white/20 ${getStyle(
-                    item.day,
-                    item.isWeekend,
-                    item.isHoliday
-                  )}${selectedDay === item.day 
-                      ? "ring-2 ring-blue-400/70 bg-blue-500/10 shadow-[0_0_0_1px_rgba(96,165,250,0.3),0_8px_20px_rgba(59,130,246,0.2)] scale-[1.02]" 
-                      : ""}
-                >
-                  <div className="text-2xl font-bold leading-none">{item.day}</div>
-                  <div className="mt-1 text-[9px] font-medium leading-none text-white/75">
-                    {weekdays[item.weekdayIndex]}
-                  </div>
-                  <div className="mt-2 text-[10px] font-semibold leading-3 break-words">
-                    {TYPE_LABELS[lang as Lang][(daysData[item.day]?.type || "Liber") as keyof (typeof TYPE_LABELS)[Lang]]}
-                  </div>
-                  {item.holidayName && (
-                    <div className="mt-1 rounded-full bg-white/10 px-1.5 py-1 text-[7px] leading-2 text-white/80 break-words">
-                      {item.holidayName}
-                    </div>
-                  )}
-                </button>
+               <button
+  key={`${item.day}-${idx}`}
+  onClick={() => setSelectedDay(item.day)}
+  className={`h-[84px] overflow-hidden rounded-[14px] border px-2 py-2 text-left transition-all duration-200 transform-gpu hover:scale-[1.04] active:scale-[0.97] hover:border-white/20 ${getStyle(
+  item.day,
+  item.isWeekend,
+  item.isHoliday
+)}${selectedDay === item.day
+  ? " ring-2 ring-blue-400/70 bg-blue-500/10 shadow-[0_0_1px_rgba(96,165,250,0.3),0_8px_20px_rgba(59,130,246,0.2)] scale-[1.02]'}
+  : ""}`}
+>
+  <div className="text-2xl font-bold leading-none">{item.day}</div>
+  <div className="mt-1 text-[9px] font-medium leading-none text-white/75">
+    {weekdays[item.weekdayIndex]}
+  </div>
+  <div className="mt-2 text-[10px] font-semibold leading-3 break-words">
+    {TYPE_LABELS[lang as Lang][
+      ((daysData[item.day]?.type || "Liber") as keyof (typeof TYPE_LABELS)[Lang])
+    ]}
+  </div>
+  {item.holidayName && (
+    <div className="mt-1 rounded-full bg-white/10 px-1.5 py-1 text-[7px] leading-2 text-white/80 break-words">
+      {item.holidayName}
+    </div>
+  )}
+</button>
               ) : (
                 <div
                   key={`empty-${idx}`}
