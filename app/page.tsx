@@ -1963,7 +1963,7 @@ function Field({
 
 function DetailsSection({
   t,
-  lang,
+  lang, //
   isPremium,
   grossEstimate,
   hourlyBase,
@@ -1975,6 +1975,7 @@ function DetailsSection({
   onSaveCalculation,
 }: {
   t: Translation;
+  lang: Lang; //
   isPremium: boolean;
   grossEstimate: number;
   hourlyBase: number;
