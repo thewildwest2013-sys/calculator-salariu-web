@@ -56,10 +56,14 @@ export async function registerBrowserSession() {
   const fp = await getWebDeviceFingerprint();
   const headers = await authHeaders();
 
+  const user = auth.currentUser;
+  if (!user) throw new Error("User not logged");
+
   const res = await fetch("/api/security/session", {
     method: "POST",
     headers,
     body: JSON.stringify({
+      uid: user.uid, // 🔥 ASTA LIPSEA
       deviceId: fp.deviceId,
       deviceLabel: fp.deviceLabel,
       userAgent: fp.userAgent,
@@ -69,6 +73,13 @@ export async function registerBrowserSession() {
       confidence: fp.confidence,
     }),
   });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data?.error || "Nu am putut înregistra sesiunea.");
+  }
+}
 
   const data = await res.json();
 
