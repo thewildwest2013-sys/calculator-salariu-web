@@ -1,45 +1,87 @@
 "use client";
 
 import { auth } from "@/lib/firebase";
+import { getWebDeviceFingerprint } from "@/lib/device";
 
-const ACTIVE_DEVICE_KEY = "active_device_id";
+const SESSION_NONCE_KEY = "security.sessionNonce.v1";
+const ACTIVE_DEVICE_KEY = "security.activeDeviceId.v1";
 
-function setStoredValue(key: string, value: string) {
-  if (typeof window !== "undefined") {
-    localStorage.setItem(key, value);
-  }
+export type SecurityStatusResponse = {
+  ok: boolean;
+  valid: boolean;
+  activeDeviceId: string | null;
+  sessionNonce: string | null;
+  activeDeviceLabel: string | null;
+  deviceChangeAvailableAt: number | null;
+  canRequestImmediateChange: boolean;
+};
+
+export type RegisterBrowserSessionResponse = {
+  ok: true;
+  status: "created" | "same_device" | "transferred";
+  sessionNonce: string;
+  activeDeviceId: string;
+  activeDeviceLabel: string | null;
+  deviceChangeAvailableAt: number | null;
+};
+
+export type ForceLogoutResponse = {
+  ok: true;
+  sessionNonce: string;
+  activeDeviceId: string;
+  deviceChangeAvailableAt: number | null;
+};
+
+export type RequestImmediateDeviceChangeResponse = {
+  ok: true;
+  deviceChangeAvailableAt: number;
+  unlockedNow: boolean;
+};
+
+function getStoredValue(key: string) {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(key);
 }
 
-async function authHeaders() {
+function setStoredValue(key: string, value: string | null) {
+  if (typeof window === "undefined") return;
+  if (value == null) {
+    window.localStorage.removeItem(key);
+    return;
+  }
+  window.localStorage.setItem(key, value);
+}
+
+export function getStoredSessionNonce() {
+  return getStoredValue(SESSION_NONCE_KEY);
+}
+
+export function clearStoredSecurityState() {
+  setStoredValue(SESSION_NONCE_KEY, null);
+  setStoredValue(ACTIVE_DEVICE_KEY, null);
+}
+
+async function authHeaders(): Promise<HeadersInit> {
   const user = auth.currentUser;
-  if (!user) throw new Error("User not logged");
+  if (!user) {
+    throw new Error("Nu există utilizator autentificat.");
+  }
 
-  const token = await user.getIdToken();
-
+  const token = await user.getIdToken(true);
   return {
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,
   };
 }
 
-async function getWebDeviceFingerprint() {
-  return {
-    deviceId: crypto.randomUUID(),
-    deviceLabel: navigator.userAgent,
-    userAgent: navigator.userAgent,
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    language: navigator.language,
-    platform: navigator.platform,
-    confidence: 0.5,
-  };
-}
-
-export async function registerBrowserSession() {
+export async function registerBrowserSession(): Promise<RegisterBrowserSessionResponse> {
   const fp = await getWebDeviceFingerprint();
   const headers = await authHeaders();
-
   const user = auth.currentUser;
-  if (!user) throw new Error("User not logged");
+
+  if (!user) {
+    throw new Error("Nu există utilizator autentificat.");
+  }
 
   const res = await fetch("/api/security/session", {
     method: "POST",
@@ -56,39 +98,88 @@ export async function registerBrowserSession() {
     }),
   });
 
-  const data = await res.json();
+  const data: unknown = await res.json();
 
   if (!res.ok) {
-    throw new Error(data?.error || "Nu am putut înregistra sesiunea.");
+    const errorMessage = typeof data === "object" && data !== null && "error" in data ? String((data as { error?: unknown }).error || "") : "";
+    throw new Error(errorMessage || "Nu am putut înregistra sesiunea.");
   }
 
-  setStoredValue(
-    ACTIVE_DEVICE_KEY,
-    data.activeDeviceId ?? fp.deviceId
-  );
+  const result = data as RegisterBrowserSessionResponse;
+  setStoredValue(SESSION_NONCE_KEY, result.sessionNonce ?? null);
+  setStoredValue(ACTIVE_DEVICE_KEY, result.activeDeviceId ?? fp.deviceId);
 
-  return data;
+  return result;
 }
 
-export async function getSecurityStatus() {
+export async function getSecurityStatus(): Promise<SecurityStatusResponse> {
+  const fp = await getWebDeviceFingerprint();
   const headers = await authHeaders();
+  const sessionNonce = getStoredSessionNonce();
 
   const res = await fetch("/api/security/status", {
-    method: "GET",
+    method: "POST",
     headers,
+    body: JSON.stringify({
+      deviceId: fp.deviceId,
+      sessionNonce,
+    }),
   });
 
-  const data = await res.json();
+  const data: unknown = await res.json();
 
   if (!res.ok) {
-    throw new Error(data?.error || "Nu am putut obține statusul.");
+    const errorMessage = typeof data === "object" && data !== null && "error" in data ? String((data as { error?: unknown }).error || "") : "";
+    throw new Error(errorMessage || "Nu am putut verifica sesiunea.");
   }
 
-  return data;
+  return data as SecurityStatusResponse;
 }
 
-export function clearStoredSecurityState() {
-  if (typeof window !== "undefined") {
-    localStorage.removeItem(ACTIVE_DEVICE_KEY);
+export async function forceLogoutOtherSessions(): Promise<ForceLogoutResponse> {
+  const fp = await getWebDeviceFingerprint();
+  const headers = await authHeaders();
+
+  const res = await fetch("/api/security/force-logout", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      keepDeviceId: fp.deviceId,
+    }),
+  });
+
+  const data: unknown = await res.json();
+
+  if (!res.ok) {
+    const errorMessage = typeof data === "object" && data !== null && "error" in data ? String((data as { error?: unknown }).error || "") : "";
+    throw new Error(errorMessage || "Nu am putut închide celelalte sesiuni.");
   }
+
+  const result = data as ForceLogoutResponse;
+  setStoredValue(SESSION_NONCE_KEY, result.sessionNonce ?? null);
+  setStoredValue(ACTIVE_DEVICE_KEY, result.activeDeviceId ?? fp.deviceId);
+
+  return result;
+}
+
+export async function requestImmediateDeviceChange(): Promise<RequestImmediateDeviceChangeResponse> {
+  const fp = await getWebDeviceFingerprint();
+  const headers = await authHeaders();
+
+  const res = await fetch("/api/security/request-device-change", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      currentDeviceId: fp.deviceId,
+    }),
+  });
+
+  const data: unknown = await res.json();
+
+  if (!res.ok) {
+    const errorMessage = typeof data === "object" && data !== null && "error" in data ? String((data as { error?: unknown }).error || "") : "";
+    throw new Error(errorMessage || "Nu am putut activa schimbarea browserului.");
+  }
+
+  return data as RequestImmediateDeviceChangeResponse;
 }

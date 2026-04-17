@@ -1,100 +1,95 @@
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase-admin";
-import crypto from "crypto";
+import { requireUidFromRequest, securityDocRef } from "@/lib/server-security";
 
-const DEVICE_CHANGE_LOCK_HOURS = 48;
+const DEVICE_CHANGE_LOCK_MS = 48 * 60 * 60 * 1000;
 
 type SecurityDoc = {
-  activeDeviceId: string | null;
-  activeDeviceLabel: string | null;
-  sessionNonce: string | null;
-  deviceChangeAvailableAt: string | null;
-  updatedAt: string | null;
+  activeDeviceId?: string | null;
+  activeDeviceLabel?: string | null;
+  sessionNonce?: string | null;
+  deviceChangeAvailableAt?: number | null;
+  updatedAt?: number;
 };
-
-function addHours(date: Date, hours: number) {
-  return new Date(date.getTime() + hours * 60 * 60 * 1000);
-}
 
 export async function POST(req: Request) {
   try {
+    const uid = await requireUidFromRequest(req);
     const body = await req.json().catch(() => null);
 
-    const uid = body?.uid;
-    const deviceId = body?.deviceId;
-    const deviceLabel = body?.deviceLabel || "Browser web";
-    const forceTransfer = body?.forceTransfer === true;
-
-    if (!uid || !deviceId) {
-      return NextResponse.json(
-        { error: "Missing uid or deviceId" },
-        { status: 400 }
-      );
+    const bodyUid = String(body?.uid || "").trim();
+    if (bodyUid && bodyUid !== uid) {
+      return NextResponse.json({ error: "UID mismatch" }, { status: 403 });
     }
 
-    const securityRef = adminDb.doc(`users/${uid}/security/main`);
-    const now = new Date();
-    const nowIso = now.toISOString();
+    const deviceId = String(body?.deviceId || "").trim();
+    const deviceLabel = String(body?.deviceLabel || "Browser web").trim();
+    const forceTransfer = body?.forceTransfer === true;
 
-    const snap = await securityRef.get();
-    const current = snap.exists ? (snap.data() as Partial<SecurityDoc>) : null;
+    if (!deviceId) {
+      return NextResponse.json({ error: "Missing uid or deviceId" }, { status: 400 });
+    }
+
+    const ref = securityDocRef(uid);
+    const snap = await ref.get();
+    const current = snap.exists ? (snap.data() as SecurityDoc) : null;
+    const now = Date.now();
 
     const activeDeviceId = current?.activeDeviceId ?? null;
-    const deviceChangeAvailableAt = current?.deviceChangeAvailableAt
-      ? new Date(current.deviceChangeAvailableAt)
-      : null;
+    const deviceChangeAvailableAt = current?.deviceChangeAvailableAt ?? null;
 
-    let action: "created" | "same_device" | "blocked" | "transferred" = "created";
+    const sessionNonce = crypto.randomUUID();
+    const nextDeviceChangeAvailableAt = now + DEVICE_CHANGE_LOCK_MS;
 
-    let newSecurityData: SecurityDoc = {
-      activeDeviceId: deviceId,
-      activeDeviceLabel: deviceLabel,
-      sessionNonce: crypto.randomUUID(),
-      deviceChangeAvailableAt: addHours(now, DEVICE_CHANGE_LOCK_HOURS).toISOString(),
-      updatedAt: nowIso,
-    };
-
-    // Primul login web
-    if (!snap.exists || !activeDeviceId) {
-      await securityRef.set(newSecurityData, { merge: true });
+    if (!activeDeviceId) {
+      await ref.set(
+        {
+          activeDeviceId: deviceId,
+          activeDeviceLabel: deviceLabel,
+          sessionNonce,
+          deviceChangeAvailableAt: nextDeviceChangeAvailableAt,
+          updatedAt: now,
+          lastSeenAt: now,
+          lastLoginAt: now,
+        },
+        { merge: true }
+      );
 
       return NextResponse.json({
         ok: true,
         status: "created",
-        sessionNonce: newSecurityData.sessionNonce,
-        activeDeviceId: newSecurityData.activeDeviceId,
-        activeDeviceLabel: newSecurityData.activeDeviceLabel,
-        deviceChangeAvailableAt: newSecurityData.deviceChangeAvailableAt,
+        sessionNonce,
+        activeDeviceId: deviceId,
+        activeDeviceLabel: deviceLabel,
+        deviceChangeAvailableAt: nextDeviceChangeAvailableAt,
       });
     }
 
-    // Același browser/dispozitiv
     if (activeDeviceId === deviceId) {
-      action = "same_device";
+      const nonce = current?.sessionNonce ?? sessionNonce;
+      const availableAt = current?.deviceChangeAvailableAt ?? nextDeviceChangeAvailableAt;
 
-      newSecurityData = {
-        activeDeviceId,
-        activeDeviceLabel: current?.activeDeviceLabel ?? deviceLabel,
-        sessionNonce: current?.sessionNonce ?? crypto.randomUUID(),
-        deviceChangeAvailableAt:
-          current?.deviceChangeAvailableAt ??
-          addHours(now, DEVICE_CHANGE_LOCK_HOURS).toISOString(),
-        updatedAt: nowIso,
-      };
-
-      await securityRef.set(newSecurityData, { merge: true });
+      await ref.set(
+        {
+          activeDeviceId,
+          activeDeviceLabel: current?.activeDeviceLabel ?? deviceLabel,
+          sessionNonce: nonce,
+          deviceChangeAvailableAt: availableAt,
+          updatedAt: now,
+          lastSeenAt: now,
+        },
+        { merge: true }
+      );
 
       return NextResponse.json({
         ok: true,
-        status: action,
-        sessionNonce: newSecurityData.sessionNonce,
-        activeDeviceId: newSecurityData.activeDeviceId,
-        activeDeviceLabel: newSecurityData.activeDeviceLabel,
-        deviceChangeAvailableAt: newSecurityData.deviceChangeAvailableAt,
+        status: "same_device",
+        sessionNonce: nonce,
+        activeDeviceId: activeDeviceId,
+        activeDeviceLabel: current?.activeDeviceLabel ?? deviceLabel,
+        deviceChangeAvailableAt: availableAt,
       });
     }
 
-    // Alt browser și încă e blocat
     if (!forceTransfer && deviceChangeAvailableAt && now < deviceChangeAvailableAt) {
       return NextResponse.json(
         {
@@ -102,38 +97,39 @@ export async function POST(req: Request) {
           error: "DEVICE_LOCKED",
           activeDeviceId,
           activeDeviceLabel: current?.activeDeviceLabel ?? null,
-          deviceChangeAvailableAt: current?.deviceChangeAvailableAt ?? null,
+          deviceChangeAvailableAt,
         },
         { status: 403 }
       );
     }
 
-    // Transfer pe alt browser
-    action = "transferred";
-
-    newSecurityData = {
-      activeDeviceId: deviceId,
-      activeDeviceLabel: deviceLabel,
-      sessionNonce: crypto.randomUUID(),
-      deviceChangeAvailableAt: addHours(now, DEVICE_CHANGE_LOCK_HOURS).toISOString(),
-      updatedAt: nowIso,
-    };
-
-    await securityRef.set(newSecurityData, { merge: true });
+    await ref.set(
+      {
+        activeDeviceId: deviceId,
+        activeDeviceLabel: deviceLabel,
+        sessionNonce,
+        deviceChangeAvailableAt: nextDeviceChangeAvailableAt,
+        updatedAt: now,
+        lastSeenAt: now,
+        lastLoginAt: now,
+      },
+      { merge: true }
+    );
 
     return NextResponse.json({
       ok: true,
-      status: action,
-      sessionNonce: newSecurityData.sessionNonce,
-      activeDeviceId: newSecurityData.activeDeviceId,
-      activeDeviceLabel: newSecurityData.activeDeviceLabel,
-      deviceChangeAvailableAt: newSecurityData.deviceChangeAvailableAt,
+      status: "transferred",
+      sessionNonce,
+      activeDeviceId: deviceId,
+      activeDeviceLabel: deviceLabel,
+      deviceChangeAvailableAt: nextDeviceChangeAvailableAt,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "Missing auth token") {
+      return NextResponse.json({ error: "Autentificare invalidă." }, { status: 401 });
+    }
+
     console.error("Security session error:", error);
-    return NextResponse.json(
-      { error: "SERVER_ERROR" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "SERVER_ERROR" }, { status: 500 });
   }
 }
