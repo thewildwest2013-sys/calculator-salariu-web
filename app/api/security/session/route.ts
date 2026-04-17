@@ -1,130 +1,139 @@
-import Stripe from "stripe";
-import { adminDb } from "@/lib/firebase-admin";
 import { NextResponse } from "next/server";
+import { adminDb } from "@/lib/firebase-admin";
+import crypto from "crypto";
+
+const DEVICE_CHANGE_LOCK_HOURS = 48;
+
+type SecurityDoc = {
+  activeDeviceId: string | null;
+  activeDeviceLabel: string | null;
+  sessionNonce: string | null;
+  deviceChangeAvailableAt: string | null;
+  updatedAt: string | null;
+};
+
+function addHours(date: Date, hours: number) {
+  return new Date(date.getTime() + hours * 60 * 60 * 1000);
+}
 
 export async function POST(req: Request) {
-  if (!process.env.STRIPE_SECRET_KEY) {
-    return NextResponse.json(
-      { error: "Missing STRIPE_SECRET_KEY" },
-      { status: 400 }
-    );
-  }
+  try {
+    const body = await req.json().catch(() => null);
 
-  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    const uid = body?.uid;
+    const deviceId = body?.deviceId;
+    const deviceLabel = body?.deviceLabel || "Browser web";
+    const forceTransfer = body?.forceTransfer === true;
+
+    if (!uid || !deviceId) {
+      return NextResponse.json(
+        { error: "Missing uid or deviceId" },
+        { status: 400 }
+      );
+    }
+
+    const securityRef = adminDb.doc(`users/${uid}/security/main`);
+    const now = new Date();
+    const nowIso = now.toISOString();
+
+    const snap = await securityRef.get();
+    const current = snap.exists ? (snap.data() as Partial<SecurityDoc>) : null;
+
+    const activeDeviceId = current?.activeDeviceId ?? null;
+    const deviceChangeAvailableAt = current?.deviceChangeAvailableAt
+      ? new Date(current.deviceChangeAvailableAt)
+      : null;
+
+    let action: "created" | "same_device" | "blocked" | "transferred" = "created";
+
+    let newSecurityData: SecurityDoc = {
+      activeDeviceId: deviceId,
+      activeDeviceLabel: deviceLabel,
+      sessionNonce: crypto.randomUUID(),
+      deviceChangeAvailableAt: addHours(now, DEVICE_CHANGE_LOCK_HOURS).toISOString(),
+      updatedAt: nowIso,
+    };
+
+    // Primul login web
+    if (!snap.exists || !activeDeviceId) {
+      await securityRef.set(newSecurityData, { merge: true });
+
+      return NextResponse.json({
+        ok: true,
+        status: "created",
+        sessionNonce: newSecurityData.sessionNonce,
+        activeDeviceId: newSecurityData.activeDeviceId,
+        activeDeviceLabel: newSecurityData.activeDeviceLabel,
+        deviceChangeAvailableAt: newSecurityData.deviceChangeAvailableAt,
+      });
+    }
+
+    // Același browser/dispozitiv
+    if (activeDeviceId === deviceId) {
+      action = "same_device";
+
+      newSecurityData = {
+        activeDeviceId,
+        activeDeviceLabel: current?.activeDeviceLabel ?? deviceLabel,
+        sessionNonce: current?.sessionNonce ?? crypto.randomUUID(),
+        deviceChangeAvailableAt:
+          current?.deviceChangeAvailableAt ??
+          addHours(now, DEVICE_CHANGE_LOCK_HOURS).toISOString(),
+        updatedAt: nowIso,
+      };
+
+      await securityRef.set(newSecurityData, { merge: true });
+
+      return NextResponse.json({
+        ok: true,
+        status: action,
+        sessionNonce: newSecurityData.sessionNonce,
+        activeDeviceId: newSecurityData.activeDeviceId,
+        activeDeviceLabel: newSecurityData.activeDeviceLabel,
+        deviceChangeAvailableAt: newSecurityData.deviceChangeAvailableAt,
+      });
+    }
+
+    // Alt browser și încă e blocat
+    if (!forceTransfer && deviceChangeAvailableAt && now < deviceChangeAvailableAt) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "DEVICE_LOCKED",
+          activeDeviceId,
+          activeDeviceLabel: current?.activeDeviceLabel ?? null,
+          deviceChangeAvailableAt: current?.deviceChangeAvailableAt ?? null,
+        },
+        { status: 403 }
+      );
+    }
+
+    // Transfer pe alt browser
+    action = "transferred";
+
+    newSecurityData = {
+      activeDeviceId: deviceId,
+      activeDeviceLabel: deviceLabel,
+      sessionNonce: crypto.randomUUID(),
+      deviceChangeAvailableAt: addHours(now, DEVICE_CHANGE_LOCK_HOURS).toISOString(),
+      updatedAt: nowIso,
+    };
+
+    await securityRef.set(newSecurityData, { merge: true });
+
+    return NextResponse.json({
+      ok: true,
+      status: action,
+      sessionNonce: newSecurityData.sessionNonce,
+      activeDeviceId: newSecurityData.activeDeviceId,
+      activeDeviceLabel: newSecurityData.activeDeviceLabel,
+      deviceChangeAvailableAt: newSecurityData.deviceChangeAvailableAt,
+    });
+  } catch (error) {
+    console.error("Security session error:", error);
     return NextResponse.json(
-      { error: "Missing STRIPE_WEBHOOK_SECRET" },
+      { error: "SERVER_ERROR" },
       { status: 500 }
     );
   }
-
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-  const body = await req.text();
-  const signature = req.headers.get("stripe-signature");
-
-  if (!signature) {
-    return NextResponse.json({ error: "No signature" }, { status: 400 });
-  }
-
-  let event: Stripe.Event;
-
-  try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET
-    );
-  } catch (error) {
-    console.error("Webhook signature error:", error);
-    return NextResponse.json({ error: "Webhook Error" }, { status: 400 });
-  }
-
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
-    let userId = session.metadata?.userId || session.client_reference_id || null;
-    const email = session.customer_email || null;
-    const now = new Date().toISOString();
-
-    try {
-      if (!userId && email) {
-        const profiles = await adminDb
-          .collectionGroup("profile")
-          .where("email", "==", email)
-          .limit(1)
-          .get();
-
-        if (!profiles.empty) {
-          const profileDoc = profiles.docs[0];
-          userId = profileDoc.ref.parent.parent?.id || null;
-        }
-      }
-
-      if (!userId) {
-        console.error("No userId found for session:", session.id, "email:", email);
-        return NextResponse.json({ error: "No userId" }, { status: 400 });
-      }
-
-      const paymentRef = adminDb
-        .collection("users")
-        .doc(userId)
-        .collection("payments")
-        .doc(session.id);
-
-      const existing = await paymentRef.get();
-      if (existing.exists) {
-        return NextResponse.json({ ok: true, alreadyProcessed: true }, { status: 200 });
-      }
-
-      const premiumData = {
-        isPremium: true,
-        email: email ?? null,
-        plan: "premium_monthly",
-        stripeCustomerId: session.customer ?? null,
-        premiumSince: now,
-        premiumUpdatedAt: now,
-        premiumSource: "stripe",
-      };
-
-      await adminDb
-        .collection("users")
-        .doc(userId)
-        .set(
-          {
-            isPremium: true,
-            email: email ?? null,
-            plan: "premium_monthly",
-            stripeCustomerId: session.customer ?? null,
-            premiumUpdatedAt: now,
-            premiumSource: "stripe",
-          },
-          { merge: true }
-        );
-
-      await adminDb
-        .collection("users")
-        .doc(userId)
-        .collection("profile")
-        .doc("main")
-        .set(premiumData, { merge: true });
-
-      await paymentRef.set(
-        {
-          processedAt: now,
-          sessionId: session.id,
-          email: email ?? null,
-          stripeCustomerId: session.customer ?? null,
-          source: "stripe_webhook",
-          type: event.type,
-        },
-        { merge: true }
-      );
-    } catch (error) {
-      console.error("Failed to update user after Stripe webhook:", error);
-      return NextResponse.json(
-        { error: "Failed to update user" },
-        { status: 500 }
-      );
-    }
-  }
-
-  return NextResponse.json({ ok: true }, { status: 200 });
 }
