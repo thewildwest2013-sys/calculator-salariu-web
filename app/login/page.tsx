@@ -5,6 +5,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginWithEmail, logoutUser } from "@/lib/auth";
 import { clearStoredSecurityState, registerBrowserSession } from "@/lib/security-client";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -48,7 +50,7 @@ export default function LoginPage() {
 
     try {
       setResetLoading(true);
-      await sendResetPasswordEmail(finalEmail);
+      await sendPasswordResetEmail(auth, finalEmail);
       alert("Ți-am trimis emailul pentru resetarea parolei.");
     } catch (error: unknown) {
       const message =
