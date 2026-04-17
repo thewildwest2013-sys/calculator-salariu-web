@@ -1,14 +1,20 @@
-import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { NextResponse } from "next/server";
+import { requireValidWebSession } from "@/lib/server-auth-guard";
+
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+const priceId = process.env.STRIPE_PRICE_ID;
+const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+
+if (!stripeSecretKey) {
+  throw new Error("Missing STRIPE_SECRET_KEY");
+}
+
+const stripe = new Stripe(stripeSecretKey);
 
 export async function POST(req: Request) {
   try {
-    if (!process.env.STRIPE_SECRET_KEY) {
-      return NextResponse.json({ error: "Lipsește STRIPE_SECRET_KEY" }, { status: 500 });
-    }
-
-    const priceId = process.env.STRIPE_PRICE_ID;
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    const session = await requireValidWebSession(req);
 
     if (!priceId) {
       return NextResponse.json({ error: "Lipsește STRIPE_PRICE_ID" }, { status: 500 });
@@ -18,32 +24,52 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Lipsește NEXT_PUBLIC_APP_URL" }, { status: 500 });
     }
 
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-    const requestBody = (await req.json()) as { uid?: string; email?: string | null };
-    const uid = requestBody?.uid;
-    const email = requestBody?.email;
+    const body = await req.json().catch(() => ({}));
+    const email = body?.email || session.email || null;
 
-    if (!uid) {
-      return NextResponse.json({ error: "Lipsește uid-ul utilizatorului" }, { status: 400 });
-    }
-
-    const session = await stripe.checkout.sessions.create({
+    const checkoutSession = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
       success_url: `${appUrl}/premium/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/premium?canceled=1`,
-      client_reference_id: uid,
+      client_reference_id: session.uid,
       customer_email: email || undefined,
       metadata: {
-        userId: uid,
+        userId: session.uid,
         email: email || "",
+        plan: "premium_monthly",
       },
     });
 
-    return NextResponse.json({ url: session.url });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Stripe error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    if (!checkoutSession.url) {
+      return NextResponse.json({ error: "Nu s-a putut crea URL-ul de checkout" }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      url: checkoutSession.url,
+    });
+  } catch (error: any) {
+    const code = String(error?.message || "SERVER_ERROR");
+
+    if (code === "UNAUTHENTICATED" || code === "MISSING_SESSION_HEADERS") {
+      return NextResponse.json({ error: code }, { status: 401 });
+    }
+
+    if (
+      code === "SECURITY_PROFILE_NOT_FOUND" ||
+      code === "DEVICE_MISMATCH" ||
+      code === "SESSION_INVALID"
+    ) {
+      return NextResponse.json({ error: code }, { status: 403 });
+    }
+
+    console.error("create-checkout-session error:", error);
+    return NextResponse.json({ error: "SERVER_ERROR" }, { status: 500 });
   }
 }

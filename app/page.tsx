@@ -6,6 +6,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { addDoc, collection, doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { logoutUser } from "@/lib/auth";
+import { clearStoredSecurityState } from "@/lib/security-client";
 import { consumeUsage, getUsageStatus, UsageStatus } from "@/lib/usage";
 
 type Lang = "ro" | "en";
@@ -851,6 +852,7 @@ export default function Home() {
 
   async function handleLogout() {
     try {
+      clearStoredSecurityState();
       await logoutUser();
       alert(t.logoutOk);
     } catch {
@@ -1172,6 +1174,12 @@ export default function Home() {
                   className="rounded-[16px] border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/90 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white hover:shadow-[0_10px_24px_rgba(15,23,42,0.25)]"
                 >
                   {t.history}
+                </Link>
+                <Link
+                  href="/security"
+                  className="rounded-[16px] border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/90 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white hover:shadow-[0_10px_24px_rgba(15,23,42,0.25)]"
+                >
+                  Security
                 </Link>
                 <button
                   onClick={handleLogout}
