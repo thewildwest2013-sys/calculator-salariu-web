@@ -1,203 +1,120 @@
-import { NextResponse } from "next/server";
-import {
-  buildFreshSessionNonce,
-  DEVICE_COOLDOWN_MS,
-  deviceDocRef,
-  requireUidFromRequest,
-  securityDocRef,
-} from "@/lib/server-security";
+import Stripe from "stripe";
 import { adminDb } from "@/lib/firebase-admin";
 
 export async function POST(req: Request) {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return new Response("Missing STRIPE_SECRET_KEY", { status: 500 });
+  }
+
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    return new Response("Missing STRIPE_WEBHOOK_SECRET", { status: 500 });
+  }
+
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const body = await req.text();
+  const signature = req.headers.get("stripe-signature");
+
+  if (!signature) {
+    return new Response("No signature", { status: 400 });
+  }
+
+  let event: Stripe.Event;
+
   try {
-    const uid = await requireUidFromRequest(req);
-    const body = await req.json();
-    const deviceId = String(body?.deviceId || "").trim();
-    const deviceLabel = String(body?.deviceLabel || "").trim() || null;
-    const userAgent = String(body?.userAgent || "").trim() || null;
-    const timezone = String(body?.timezone || "").trim() || null;
-    const language = String(body?.language || "").trim() || null;
-    const platform = String(body?.platform || "").trim() || null;
-    const confidence = typeof body?.confidence === "number" ? body.confidence : null;
+    event = stripe.webhooks.constructEvent(
+      body,
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (error) {
+    console.error("Webhook signature error:", error);
+    return new Response("Webhook Error", { status: 400 });
+  }
 
-    if (!deviceId || deviceId.length < 8) {
-      return NextResponse.json({ error: "deviceId invalid" }, { status: 400 });
-    }
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    let userId = session.metadata?.userId || session.client_reference_id || null;
+    const email = session.customer_email || null;
+    const now = new Date().toISOString();
 
-    const now = Date.now();
-    const secRef = securityDocRef(uid);
-    const thisDeviceRef = deviceDocRef(uid, deviceId);
+    try {
+      if (!userId && email) {
+        const profiles = await adminDb
+          .collectionGroup("profile")
+          .where("email", "==", email)
+          .limit(1)
+          .get();
 
-    let action: "ok" | "transferred" = "ok";
-    let newSecurityData: Record<string, unknown> | null = null;
-
-    await adminDb.runTransaction(async (tx) => {
-      const secSnap = await tx.get(secRef);
-      const current = secSnap.exists ? secSnap.data() : null;
-      const newSessionNonce = buildFreshSessionNonce();
-
-      if (!current?.activeDeviceId) {
-        newSecurityData = {
-          activeDeviceId: deviceId,
-          activeDeviceLabel: deviceLabel,
-          sessionNonce: newSessionNonce,
-          deviceLockedAt: now,
-          deviceChangeAvailableAt: now + DEVICE_COOLDOWN_MS,
-          lastLoginAt: now,
-          lastSeenAt: now,
-          lastUserAgent: userAgent,
-          lastTimezone: timezone,
-          lastLanguage: language,
-          lastPlatform: platform,
-          failedTakeoverCount: 0,
-          updatedAt: now,
-        };
-
-        tx.set(secRef, newSecurityData, { merge: true });
-        tx.set(
-          thisDeviceRef,
-          {
-            deviceId,
-            label: deviceLabel,
-            userAgent,
-            timezone,
-            language,
-            platform,
-            confidence,
-            firstSeenAt: now,
-            lastSeenAt: now,
-            isActive: true,
-            revokedAt: null,
-            updatedAt: now,
-          },
-          { merge: true }
-        );
-        return;
+        if (!profiles.empty) {
+          const profileDoc = profiles.docs[0];
+          userId = profileDoc.ref.parent.parent?.id || null;
+        }
       }
 
-      if (current.activeDeviceId === deviceId) {
-        newSecurityData = {
-          activeDeviceId: deviceId,
-          activeDeviceLabel: deviceLabel ?? current.activeDeviceLabel ?? null,
-          sessionNonce: current.sessionNonce || newSessionNonce,
-          lastLoginAt: now,
-          lastSeenAt: now,
-          lastUserAgent: userAgent,
-          lastTimezone: timezone,
-          lastLanguage: language,
-          lastPlatform: platform,
-          updatedAt: now,
-        };
-
-        tx.set(secRef, newSecurityData, { merge: true });
-        tx.set(
-          thisDeviceRef,
-          {
-            deviceId,
-            label: deviceLabel,
-            userAgent,
-            timezone,
-            language,
-            platform,
-            confidence,
-            lastSeenAt: now,
-            isActive: true,
-            revokedAt: null,
-            updatedAt: now,
-          },
-          { merge: true }
-        );
-        return;
+      if (!userId) {
+        console.error("No userId found for session:", session.id, "email:", email);
+        return new Response("No userId", { status: 400 });
       }
 
-      if (now < (current.deviceChangeAvailableAt || 0)) {
-        tx.set(
-          secRef,
-          {
-            failedTakeoverCount: (current.failedTakeoverCount || 0) + 1,
-            lastSeenAt: now,
-            updatedAt: now,
-          },
-          { merge: true }
-        );
-        throw new Error("DEVICE_LOCKED");
+      const paymentRef = adminDb
+        .collection("users")
+        .doc(userId)
+        .collection("payments")
+        .doc(session.id);
+
+      const existing = await paymentRef.get();
+      if (existing.exists) {
+        return new Response("Already processed", { status: 200 });
       }
 
-      action = "transferred";
-      newSecurityData = {
-        activeDeviceId: deviceId,
-        activeDeviceLabel: deviceLabel,
-        sessionNonce: newSessionNonce,
-        deviceLockedAt: now,
-        deviceChangeAvailableAt: now + DEVICE_COOLDOWN_MS,
-        lastLoginAt: now,
-        lastSeenAt: now,
-        lastUserAgent: userAgent,
-        lastTimezone: timezone,
-        lastLanguage: language,
-        lastPlatform: platform,
-        failedTakeoverCount: 0,
-        updatedAt: now,
+      const premiumData = {
+        isPremium: true,
+        email: email ?? null,
+        plan: "premium_monthly",
+        stripeCustomerId: session.customer ?? null,
+        premiumSince: now,
+        premiumUpdatedAt: now,
+        premiumSource: "stripe",
       };
 
-      const previousDeviceId = String(current.activeDeviceId || "");
-      if (previousDeviceId) {
-        tx.set(
-          deviceDocRef(uid, previousDeviceId),
+      await adminDb
+        .collection("users")
+        .doc(userId)
+        .set(
           {
-            isActive: false,
-            revokedAt: now,
-            updatedAt: now,
+            isPremium: true,
+            email: email ?? null,
+            plan: "premium_monthly",
+            stripeCustomerId: session.customer ?? null,
+            premiumUpdatedAt: now,
+            premiumSource: "stripe",
           },
           { merge: true }
         );
-      }
 
-      tx.set(secRef, newSecurityData, { merge: true });
-      tx.set(
-        thisDeviceRef,
+      await adminDb
+        .collection("users")
+        .doc(userId)
+        .collection("profile")
+        .doc("main")
+        .set(premiumData, { merge: true });
+
+      await paymentRef.set(
         {
-          deviceId,
-          label: deviceLabel,
-          userAgent,
-          timezone,
-          language,
-          platform,
-          confidence,
-          firstSeenAt: now,
-          lastSeenAt: now,
-          isActive: true,
-          revokedAt: null,
-          updatedAt: now,
+          processedAt: now,
+          sessionId: session.id,
+          email: email ?? null,
+          stripeCustomerId: session.customer ?? null,
+          source: "stripe_webhook",
+          type: event.type,
         },
         { merge: true }
       );
-    });
-
-    return NextResponse.json({
-      ok: true,
-      status: action,
-      sessionNonce: newSecurityData?.sessionNonce ?? null,
-      activeDeviceId: newSecurityData?.activeDeviceId ?? null,
-      activeDeviceLabel: newSecurityData?.activeDeviceLabel ?? null,
-      deviceChangeAvailableAt: newSecurityData?.deviceChangeAvailableAt ?? null,
-    });
-  } catch (error) {
-    if (error instanceof Error && error.message === "DEVICE_LOCKED") {
-      return NextResponse.json(
-        {
-          error: "Contul este deja activ pe alt browser/dispozitiv. Îl poți muta după expirarea ferestrei de 48h sau din pagina Security de pe dispozitivul curent.",
-          code: "DEVICE_LOCKED",
-        },
-        { status: 403 }
-      );
+    } catch (error) {
+      console.error("Failed to update user after Stripe webhook:", error);
+      return new Response("Failed to update user", { status: 500 });
     }
-
-    if (error instanceof Error && error.message === "Missing auth token") {
-      return NextResponse.json({ error: "Autentificare invalidă." }, { status: 401 });
-    }
-
-    console.error("security/session", error);
-    return NextResponse.json({ error: "Eroare la înregistrarea sesiunii." }, { status: 500 });
   }
+
+  return new Response("ok", { status: 200 });
 }
