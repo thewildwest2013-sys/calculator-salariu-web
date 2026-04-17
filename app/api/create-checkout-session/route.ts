@@ -2,19 +2,16 @@ import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { requireValidWebSession } from "@/lib/server-auth-guard";
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-const priceId = process.env.STRIPE_PRICE_ID;
-const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-
-if (!stripeSecretKey) {
-  throw new Error("Missing STRIPE_SECRET_KEY");
-}
-
-const stripe = new Stripe(stripeSecretKey);
-
 export async function POST(req: Request) {
   try {
     const session = await requireValidWebSession(req);
+
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return NextResponse.json({ error: "Lipsește STRIPE_SECRET_KEY" }, { status: 500 });
+    }
+
+    const priceId = process.env.STRIPE_PRICE_ID;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 
     if (!priceId) {
       return NextResponse.json({ error: "Lipsește STRIPE_PRICE_ID" }, { status: 500 });
@@ -24,8 +21,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Lipsește NEXT_PUBLIC_APP_URL" }, { status: 500 });
     }
 
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
     const body = await req.json().catch(() => ({}));
-    const email = body?.email || session.email || null;
+    const email = body?.email || null;
 
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: "subscription",
@@ -47,13 +46,7 @@ export async function POST(req: Request) {
       },
     });
 
-    if (!checkoutSession.url) {
-      return NextResponse.json({ error: "Nu s-a putut crea URL-ul de checkout" }, { status: 500 });
-    }
-
-    return NextResponse.json({
-      url: checkoutSession.url,
-    });
+    return NextResponse.json({ url: checkoutSession.url });
   } catch (error: any) {
     const code = String(error?.message || "SERVER_ERROR");
 
@@ -69,7 +62,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: code }, { status: 403 });
     }
 
-    console.error("create-checkout-session error:", error);
     return NextResponse.json({ error: "SERVER_ERROR" }, { status: 500 });
   }
 }

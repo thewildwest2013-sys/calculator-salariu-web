@@ -17,7 +17,7 @@ export async function requireValidWebSession(req: Request) {
     throw new Error("MISSING_SESSION_HEADERS");
   }
 
-  const decoded = await adminAuth.verifyIdToken(token, true);
+  const decoded = await adminAuth.verifyIdToken(token);
   const uid = decoded.uid;
 
   const secSnap = await adminDb.doc(`users/${uid}/security/main`).get();
