@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { loginWithEmail } from "@/lib/auth";
+import { loginWithEmail, logoutUser } from "@/lib/auth";
+import { clearStoredSecurityState, registerBrowserSession } from "@/lib/security-client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,8 +17,15 @@ export default function LoginPage() {
     try {
       setLoading(true);
       await loginWithEmail(email, password);
+      await registerBrowserSession();
       router.push("/");
     } catch (error: unknown) {
+      clearStoredSecurityState();
+      try {
+        await logoutUser();
+      } catch {
+        // ignore
+      }
       const message = error instanceof Error ? error.message : "Eroare la autentificare";
       alert(message);
     } finally {
@@ -31,6 +39,9 @@ export default function LoginPage() {
         <div className="text-sm uppercase tracking-[0.22em] text-white/45">Autentificare</div>
         <h1 className="mt-2 text-4xl font-bold">Login</h1>
         <p className="mt-3 text-white/70">Intră în contul tău și continuă de unde ai rămas.</p>
+        <p className="mt-2 text-sm text-white/55">
+          Contul web poate rămâne activ pe un singur browser/dispozitiv. Dacă vezi blocare, mutarea se face după 48h sau din pagina Security a browserului curent.
+        </p>
 
         <form onSubmit={handleLogin} className="mt-8 flex flex-col gap-4">
           <input className="auth-input" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
@@ -41,6 +52,7 @@ export default function LoginPage() {
         <div className="mt-6 flex flex-wrap gap-3">
           <Link href="/" className="secondary-btn">Înapoi la Home</Link>
           <Link href="/register" className="secondary-btn">Creează cont</Link>
+          <Link href="/security" className="secondary-btn">Security</Link>
         </div>
       </section>
     </main>

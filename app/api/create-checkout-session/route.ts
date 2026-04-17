@@ -1,8 +1,11 @@
-import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { NextResponse } from "next/server";
+import { requireValidWebSession } from "@/lib/server-auth-guard";
 
 export async function POST(req: Request) {
   try {
+    const session = await requireValidWebSession(req);
+
     if (!process.env.STRIPE_SECRET_KEY) {
       return NextResponse.json({ error: "Lipsește STRIPE_SECRET_KEY" }, { status: 500 });
     }
@@ -19,31 +22,40 @@ export async function POST(req: Request) {
     }
 
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-    const requestBody = (await req.json()) as { uid?: string; email?: string | null };
-    const uid = requestBody?.uid;
-    const email = requestBody?.email;
 
-    if (!uid) {
-      return NextResponse.json({ error: "Lipsește uid-ul utilizatorului" }, { status: 400 });
-    }
+    const body = await req.json().catch(() => ({}));
+    const email = body?.email || null;
 
-    const session = await stripe.checkout.sessions.create({
+    const checkoutSession = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${appUrl}/premium/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/premium?canceled=1`,
-      client_reference_id: uid,
+      client_reference_id: session.uid,
       customer_email: email || undefined,
       metadata: {
-        userId: uid,
+        userId: session.uid,
         email: email || "",
       },
     });
 
-    return NextResponse.json({ url: session.url });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Stripe error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ url: checkoutSession.url });
+  } catch (error: any) {
+    const code = String(error?.message || "SERVER_ERROR");
+
+    if (code === "UNAUTHENTICATED" || code === "MISSING_SESSION_HEADERS") {
+      return NextResponse.json({ error: code }, { status: 401 });
+    }
+
+    if (
+      code === "SECURITY_PROFILE_NOT_FOUND" ||
+      code === "DEVICE_MISMATCH" ||
+      code === "SESSION_INVALID"
+    ) {
+      return NextResponse.json({ error: code }, { status: 403 });
+    }
+
+    return NextResponse.json({ error: "SERVER_ERROR" }, { status: 500 });
   }
 }

@@ -1,100 +1,108 @@
 import Stripe from "stripe";
+import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
 export async function POST(req: Request) {
-  if (!process.env.STRIPE_SECRET_KEY) {
-    return new Response("Missing STRIPE_SECRET_KEY", { status: 500 });
+  const sig = req.headers.get("stripe-signature");
+
+  if (!sig) {
+    return new Response("Missing Stripe signature", { status: 400 });
   }
 
-  if (!process.env.STRIPE_WEBHOOK_SECRET) {
-    return new Response("Missing STRIPE_WEBHOOK_SECRET", { status: 500 });
-  }
-
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-  const body = await req.text();
-  const signature = req.headers.get("stripe-signature");
-
-  if (!signature) {
-    return new Response("No signature", { status: 400 });
-  }
+  const rawBody = await req.text();
 
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET);
-  } catch {
-    return new Response("Webhook Error", { status: 400 });
+    event = stripe.webhooks.constructEvent(
+      rawBody,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
+  } catch (err) {
+    console.error("Webhook signature verification failed.", err);
+    return new Response("Invalid signature", { status: 400 });
   }
 
+  // 🔥 DOAR AICI MODIFICĂM
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    const userId = session.metadata?.userId || session.client_reference_id || null;
+
+    let userId =
+      session.metadata?.userId || session.client_reference_id || null;
+
     const email = session.customer_email || null;
 
-    try {
-      if (userId) {
-        const premiumData = {
-          isPremium: true,
-          plan: "premium_monthly",
-          stripeCustomerId: session.customer ?? null,
-          premiumSince: new Date().toISOString(),
-          premiumUpdatedAt: new Date().toISOString(),
-          premiumSource: "stripe",
-        };
+    // 🔥 fallback pe email
+    if (!userId && email) {
+      const snap = await adminDb
+        .collectionGroup("profile")
+        .where("email", "==", email)
+        .limit(1)
+        .get();
 
-        await adminDb.collection("users").doc(userId).set(
-          {
-            isPremium: true,
-            email: email ?? null,
-            plan: "premium_monthly",
-            stripeCustomerId: session.customer ?? null,
-            premiumUpdatedAt: new Date().toISOString(),
-          },
-          { merge: true }
-        );
-
-        await adminDb.collection("users").doc(userId).collection("profile").doc("main").set(
-          {
-            email: email ?? null,
-            ...premiumData,
-          },
-          { merge: true }
-        );
-      } else if (email) {
-        const profiles = await adminDb.collectionGroup("profile").where("email", "==", email).get();
-
-        if (!profiles.empty) {
-          const profileDoc = profiles.docs[0];
-          const userRef = profileDoc.ref.parent.parent;
-          const premiumData = {
-            isPremium: true,
-            email,
-            plan: "premium_monthly",
-            stripeCustomerId: session.customer ?? null,
-            premiumSince: new Date().toISOString(),
-            premiumUpdatedAt: new Date().toISOString(),
-            premiumSource: "stripe",
-          };
-
-          await profileDoc.ref.set(premiumData, { merge: true });
-          if (userRef) {
-            await userRef.set(
-              {
-                isPremium: true,
-                email,
-                plan: "premium_monthly",
-                stripeCustomerId: session.customer ?? null,
-                premiumUpdatedAt: new Date().toISOString(),
-              },
-              { merge: true }
-            );
-          }
-        }
+      if (!snap.empty) {
+        const doc = snap.docs[0];
+        userId = doc.ref.parent.parent?.id || null;
       }
-    } catch {
-      return new Response("Failed to update user", { status: 500 });
     }
+
+    if (!userId) {
+      console.error("No userId found for session:", session.id);
+      return new Response("No userId", { status: 400 });
+    }
+
+    const now = new Date().toISOString();
+
+    // 🔐 PROTECȚIE DUPLICATE
+    const existing = await adminDb
+      .collection("users")
+      .doc(userId)
+      .collection("payments")
+      .doc(session.id)
+      .get();
+
+    if (existing.exists) {
+      console.log("Webhook deja procesat:", session.id);
+      return new Response("Already processed", { status: 200 });
+    }
+
+    // 🔥 ACTIVEZI PREMIUM
+    await adminDb.doc(`users/${userId}`).set(
+      {
+        isPremium: true,
+        plan: "premium_monthly",
+        premiumSince: now,
+        premiumSource: "stripe",
+        updatedAt: now,
+      },
+      { merge: true }
+    );
+
+    // 🔥 UPDATE PROFIL (dacă îl folosești în UI)
+    await adminDb.doc(`users/${userId}/profile/main`).set(
+      {
+        isPremium: true,
+        plan: "premium_monthly",
+        updatedAt: now,
+      },
+      { merge: true }
+    );
+
+    // 🔥 MARCHEZI SESSION CA PROCESAT
+    await adminDb
+      .collection("users")
+      .doc(userId)
+      .collection("payments")
+      .doc(session.id)
+      .set({
+        processedAt: now,
+      });
+
+    console.log("Premium activat pentru:", userId);
   }
 
-  return new Response("ok", { status: 200 });
+  return NextResponse.json({ received: true });
 }

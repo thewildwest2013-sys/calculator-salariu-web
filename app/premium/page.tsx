@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import { getSecureHeaders } from "@/lib/secure-api";
 
 type UserProfile = {
   email: string;
@@ -35,10 +36,12 @@ export default function PremiumPage() {
 
     try {
       setCheckoutLoading(true);
+      const headers = await getSecureHeaders();
+
       const res = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uid: user.uid, email: user.email }),
+         method: "POST",
+         headers,
+         body: JSON.stringify({ uid: user.uid, email: user.email }),
       });
       const data = (await res.json()) as { url?: string; error?: string };
       if (data.url) {

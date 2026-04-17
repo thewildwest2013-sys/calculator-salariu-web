@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import SessionGuard from "@/components/SessionGuard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +34,7 @@ export default function RootLayout({
           paddingBottom: "90px",
         }}
       >
+        <SessionGuard />
         {children}
 
         <div
