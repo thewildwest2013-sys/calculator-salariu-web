@@ -1,5 +1,5 @@
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db } from "./firebase";
+import { db } from "@/lib/firebase";
 
 const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 
