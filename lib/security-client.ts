@@ -1,54 +1,36 @@
 "use client";
 
 import { auth } from "@/lib/firebase";
-import { getWebDeviceFingerprint } from "@/lib/device";
 
-const SESSION_NONCE_KEY = "security.sessionNonce.v1";
-const ACTIVE_DEVICE_KEY = "security.activeDeviceId.v1";
+const ACTIVE_DEVICE_KEY = "active_device_id";
 
-export type SecurityStatusResponse = {
-  ok: boolean;
-  valid: boolean;
-  activeDeviceId: string | null;
-  sessionNonce: string | null;
-  activeDeviceLabel: string | null;
-  deviceChangeAvailableAt: number | null;
-  canRequestImmediateChange: boolean;
-};
-
-function getStoredValue(key: string) {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem(key);
-}
-
-function setStoredValue(key: string, value: string | null) {
-  if (typeof window === "undefined") return;
-  if (value == null) {
-    window.localStorage.removeItem(key);
-    return;
+function setStoredValue(key: string, value: string) {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(key, value);
   }
-  window.localStorage.setItem(key, value);
 }
 
-export function getStoredSessionNonce() {
-  return getStoredValue(SESSION_NONCE_KEY);
-}
-
-export function clearStoredSecurityState() {
-  setStoredValue(SESSION_NONCE_KEY, null);
-  setStoredValue(ACTIVE_DEVICE_KEY, null);
-}
-
-async function authHeaders(): Promise<HeadersInit> {
+async function authHeaders() {
   const user = auth.currentUser;
-  if (!user) {
-    throw new Error("Nu există utilizator autentificat.");
-  }
+  if (!user) throw new Error("User not logged");
 
-  const token = await user.getIdToken(true);
+  const token = await user.getIdToken();
+
   return {
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,
+  };
+}
+
+async function getWebDeviceFingerprint() {
+  return {
+    deviceId: crypto.randomUUID(),
+    deviceLabel: navigator.userAgent,
+    userAgent: navigator.userAgent,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    language: navigator.language,
+    platform: navigator.platform,
+    confidence: 0.5,
   };
 }
 
@@ -63,7 +45,7 @@ export async function registerBrowserSession() {
     method: "POST",
     headers,
     body: JSON.stringify({
-      uid: user.uid, // 🔥 ASTA LIPSEA
+      uid: user.uid,
       deviceId: fp.deviceId,
       deviceLabel: fp.deviceLabel,
       userAgent: fp.userAgent,
@@ -79,100 +61,34 @@ export async function registerBrowserSession() {
   if (!res.ok) {
     throw new Error(data?.error || "Nu am putut înregistra sesiunea.");
   }
+
+  setStoredValue(
+    ACTIVE_DEVICE_KEY,
+    data.activeDeviceId ?? fp.deviceId
+  );
+
+  return data;
 }
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data?.error || "Nu am putut înregistra sesiunea.");
-  }
-
-  setStoredValue(SESSION_NONCE_KEY, data.sessionNonce ?? null);
-  setStoredValue(ACTIVE_DEVICE_KEY, data.activeDeviceId ?? fp.deviceId);
-
-  return data as {
-    ok: true;
-    status: "ok" | "transferred";
-    sessionNonce: string;
-    activeDeviceId: string;
-    activeDeviceLabel: string | null;
-    deviceChangeAvailableAt: number | null;
-  };
-}
-
-export async function getSecurityStatus(): Promise<SecurityStatusResponse> {
-  const fp = await getWebDeviceFingerprint();
+export async function getSecurityStatus() {
   const headers = await authHeaders();
-  const sessionNonce = getStoredSessionNonce();
 
   const res = await fetch("/api/security/status", {
-    method: "POST",
+    method: "GET",
     headers,
-    body: JSON.stringify({
-      deviceId: fp.deviceId,
-      sessionNonce,
-    }),
   });
 
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(data?.error || "Nu am putut verifica sesiunea.");
+    throw new Error(data?.error || "Nu am putut obține statusul.");
   }
 
-  return data as SecurityStatusResponse;
+  return data;
 }
 
-export async function forceLogoutOtherSessions() {
-  const fp = await getWebDeviceFingerprint();
-  const headers = await authHeaders();
-
-  const res = await fetch("/api/security/force-logout", {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      keepDeviceId: fp.deviceId,
-    }),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data?.error || "Nu am putut închide celelalte sesiuni.");
+export function clearStoredSecurityState() {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(ACTIVE_DEVICE_KEY);
   }
-
-  setStoredValue(SESSION_NONCE_KEY, data.sessionNonce ?? null);
-  setStoredValue(ACTIVE_DEVICE_KEY, data.activeDeviceId ?? fp.deviceId);
-
-  return data as {
-    ok: true;
-    sessionNonce: string;
-    activeDeviceId: string;
-    deviceChangeAvailableAt: number | null;
-  };
-}
-
-export async function requestImmediateDeviceChange() {
-  const fp = await getWebDeviceFingerprint();
-  const headers = await authHeaders();
-
-  const res = await fetch("/api/security/request-device-change", {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      currentDeviceId: fp.deviceId,
-    }),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data?.error || "Nu am putut activa schimbarea dispozitivului.");
-  }
-
-  return data as {
-    ok: true;
-    deviceChangeAvailableAt: number;
-    unlockedNow: boolean;
-  };
 }
