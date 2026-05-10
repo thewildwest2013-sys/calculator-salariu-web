@@ -129,12 +129,11 @@ type Translation = {
   monthHolidays: string;
   selectedDay: string;
   workedDay: string;
+  weekend: string;
+  holiday: string;
   workedHours: string;
   workedHoursHint: string;
   undertimeHours: string;
-  undertimeAdjust: string;
-  weekend: string;
-  holiday: string;
   overtimeHours: string;
   note: string;
   notePlaceholder: string;
@@ -239,12 +238,11 @@ const T: Record<Lang, Translation> = {
     monthHolidays: "Sărbători lună",
     selectedDay: "📅 Zi selectată",
     workedDay: "Zi lucrătoare",
-    workedHours: "Ore lucrate efectiv",
-    workedHoursHint: "Lasă 8 pentru tură completă. Pune 3, 4, 5, 6 etc. dacă ai plecat mai devreme sau 0 dacă ai plecat de la început.",
-    undertimeHours: "Ore nelucrate",
-    undertimeAdjust: "Ajustare ore nelucrate",
     weekend: "Weekend",
     holiday: "Sărbătoare",
+    workedHours: "Ore lucrate efectiv",
+    workedHoursHint: "Pentru zile în care ai plecat mai devreme: alege 1–8h sau scrie manual, ex. 6.5",
+    undertimeHours: "Ore nelucrate / undertime",
     overtimeHours: "Ore suplimentare",
     note: "Notiță pentru ziua asta",
     notePlaceholder: "Ex: schimb cu colegul, tură specială, observații...",
@@ -347,12 +345,11 @@ const T: Record<Lang, Translation> = {
     monthHolidays: "Monthly holidays",
     selectedDay: "📅 Selected day",
     workedDay: "Work day",
-    workedHours: "Actual worked hours",
-    workedHoursHint: "Keep 8 for a full shift. Enter 3, 4, 5, 6 etc. if you left early or 0 if you left at the start.",
-    undertimeHours: "Undertime hours",
-    undertimeAdjust: "Undertime adjustment",
     weekend: "Weekend",
     holiday: "Holiday",
+    workedHours: "Actual worked hours",
+    workedHoursHint: "For days when you left early: choose 1–8h or type manually, e.g. 6.5",
+    undertimeHours: "Undertime / missing hours",
     overtimeHours: "Overtime hours",
     note: "Note for this day",
     notePlaceholder: "Ex: shift swap, special shift, observations...",
@@ -699,9 +696,9 @@ export default function Home() {
     const hourlyBase = gross / Math.max(1, 160);
     const dailyBase = hourlyBase * hoursShift;
 
+    let overtimeHoursTotal = 0;
     let workedHoursTotal = 0;
     let undertimeHoursTotal = 0;
-    let overtimeHoursTotal = 0;
     let undertimeAdjustment = 0;
     let overtimeExtra = 0;
     let nightExtra = 0;
@@ -713,45 +710,43 @@ export default function Home() {
       const entry = daysData[item.day];
       if (!entry) return;
 
-      const overtimeHours = Math.max(0, Number(entry.overtimeHours || 0));
-      overtimeHoursTotal += overtimeHours;
-      overtimeExtra += overtimeHours * hourlyBase * overtimeRate;
+      const overtimeDayHours = Math.max(0, Number(entry.overtimeHours || 0));
+      overtimeHoursTotal += overtimeDayHours;
+      overtimeExtra += overtimeDayHours * hourlyBase * overtimeRate;
 
       const isWorkedShift =
         entry.type === "Morning" || entry.type === "After" || entry.type === "Night";
 
-      const actualWorkedHours = isWorkedShift
-        ? Math.min(hoursShift, Math.max(0, Number(entry.workedHours ?? hoursShift)))
+      const rawWorkedHours = Number(entry.workedHours);
+      const workedHours = isWorkedShift
+        ? Math.min(hoursShift, Math.max(0, Number.isFinite(rawWorkedHours) ? rawWorkedHours : hoursShift))
         : 0;
+      const undertimeHours = isWorkedShift ? Math.max(0, hoursShift - workedHours) : 0;
 
-      workedHoursTotal += actualWorkedHours;
+      workedHoursTotal += workedHours;
+      undertimeHoursTotal += undertimeHours;
+      undertimeAdjustment += undertimeHours * hourlyBase;
 
-      if (isWorkedShift) {
-        const undertimeHours = Math.max(0, hoursShift - actualWorkedHours);
-        undertimeHoursTotal += undertimeHours;
-        undertimeAdjustment += undertimeHours * hourlyBase;
+      if (entry.type === "Night") {
+        nightExtra += workedHours * hourlyBase * nightRate;
       }
 
-      if (entry.type === "Night" && actualWorkedHours > 0) {
-        nightExtra += actualWorkedHours * hourlyBase * nightRate;
+      if (isWorkedShift && item.isWeekend) {
+        weekendExtra += workedHours * hourlyBase * weekendRate;
       }
 
-      if (isWorkedShift && actualWorkedHours > 0 && item.isWeekend) {
-        weekendExtra += actualWorkedHours * hourlyBase * weekendRate;
+      if (isWorkedShift && item.isHoliday) {
+        holidayExtra += workedHours * hourlyBase * holidayRate;
       }
 
-      if (isWorkedShift && actualWorkedHours > 0 && item.isHoliday) {
-        holidayExtra += actualWorkedHours * hourlyBase * holidayRate;
+      if (overtimeDayHours > 0 && entry.otNight) {
+        nightExtra += overtimeDayHours * hourlyBase * nightRate;
       }
-
-      if (overtimeHours > 0 && entry.otNight) {
-        nightExtra += overtimeHours * hourlyBase * nightRate;
+      if (overtimeDayHours > 0 && entry.otWeekend) {
+        weekendExtra += overtimeDayHours * hourlyBase * weekendRate;
       }
-      if (overtimeHours > 0 && entry.otWeekend) {
-        weekendExtra += overtimeHours * hourlyBase * weekendRate;
-      }
-      if (overtimeHours > 0 && entry.otHoliday) {
-        holidayExtra += overtimeHours * hourlyBase * holidayRate;
+      if (overtimeDayHours > 0 && entry.otHoliday) {
+        holidayExtra += overtimeDayHours * hourlyBase * holidayRate;
       }
     });
 
@@ -765,10 +760,7 @@ export default function Home() {
     const incomeTax = taxableIncome * taxRate;
     const netSalary = Math.max(0, grossEstimate - casValue - cassValue - incomeTax);
 
-    const mealTickets = Object.values(daysData).filter((d) => {
-      const isWorkedShift = d.type === "Morning" || d.type === "After" || d.type === "Night";
-      return isWorkedShift && Number(d.workedHours ?? hoursShift) > 0;
-    }).length * mealValue;
+    const mealTickets = (morningCount + afterCount + nightCount) * mealValue;
     const totalEstimated = netSalary + mealTickets;
 
     return {
@@ -779,9 +771,10 @@ export default function Home() {
       nightCount,
       coCount,
       cmCount,
+      overtimeHours: overtimeHoursTotal,
       workedHours: workedHoursTotal,
       undertimeHours: undertimeHoursTotal,
-      overtimeHours: overtimeHoursTotal,
+      undertimeAdjustment,
       hourlyBase,
       grossEstimate,
       cas: casValue,
@@ -795,7 +788,6 @@ export default function Home() {
       weekendExtra,
       holidayExtra,
       medicalAdjustment,
-      undertimeAdjustment,
       totalEstimated,
     };
   }, [
@@ -988,7 +980,6 @@ export default function Home() {
             selectedDay={selectedDay}
             setSelectedDay={setSelectedDay}
             daysData={daysData}
-            hoursPerShift={Number(hoursPerShift || 8)}
             onToday={setToday}
             onReset={resetCalendar}
             lang={lang}
@@ -1003,18 +994,18 @@ export default function Home() {
             mealTickets={calculation.mealTickets}
             total={calculation.totalEstimated}
             workedDays={calculation.workedDays}
-            workedHours={calculation.workedHours}
-            undertimeHours={calculation.undertimeHours}
             morning={calculation.morningCount}
             after={calculation.afterCount}
             night={calculation.nightCount}
+            workedHours={calculation.workedHours}
+            undertimeHours={calculation.undertimeHours}
+            undertimeAdjustment={calculation.undertimeAdjustment}
             overtimeHours={calculation.overtimeHours}
             overtimeExtra={calculation.overtimeExtra}
             nightExtra={calculation.nightExtra}
             weekendExtra={calculation.weekendExtra}
             holidayExtra={calculation.holidayExtra}
             medicalAdjustment={calculation.medicalAdjustment}
-            undertimeAdjustment={calculation.undertimeAdjustment}
           />
         ) : (
           <CalculationLockedSection
@@ -1255,7 +1246,6 @@ export default function Home() {
                 monthIndex={monthIndex}
                 year={year}
                 data={daysData[selectedDay]}
-                hoursPerShift={Number(hoursPerShift || 8)}
                 isWeekend={!!monthDays.find((item) => item.day === selectedDay)?.isWeekend}
                 holidayName={monthDays.find((item) => item.day === selectedDay)?.holidayName}
                 onClose={() => setSelectedDay(null)}
@@ -1520,7 +1510,6 @@ function CalendarSection({
   selectedDay,
   setSelectedDay,
   daysData,
-  hoursPerShift,
   onToday,
   onReset,
   lang,
@@ -1639,11 +1628,6 @@ function CalendarSection({
       ((daysData[item.day]?.type || "Liber") as keyof (typeof TYPE_LABELS)[Lang])
     ]}
   </div>
-  {daysData[item.day]?.type && daysData[item.day]?.type !== "Liber" && (
-    <div className="mt-1 text-[9px] font-semibold leading-none text-cyan-100/90">
-      {(daysData[item.day]?.workedHours ?? hoursPerShift)}h{daysData[item.day]?.overtimeHours ? ` +${daysData[item.day]?.overtimeHours}OT` : ""}
-    </div>
-  )}
   {item.holidayName && (
     <div className="mt-1 rounded-full bg-white/10 px-1.5 py-1 text-[7px] leading-2 text-white/80 break-words">
       {item.holidayName}
@@ -1665,14 +1649,6 @@ function CalendarSection({
           <MiniMetric title={TYPE_LABELS[lang as Lang].Morning} value={String(Object.values(daysData).filter((d: any) => d.type === "Morning").length || "0")} />
           <MiniMetric title={TYPE_LABELS[lang as Lang].After} value={String(Object.values(daysData).filter((d: any) => d.type === "After").length || "0")} />
           <MiniMetric title={TYPE_LABELS[lang as Lang].Night} value={String(Object.values(daysData).filter((d: any) => d.type === "Night").length || "0")} />
-          <MiniMetric title={t.workedHours} value={`${Object.values(daysData).reduce((sum: number, d: any) => {
-            const isWorkedShift = d.type === "Morning" || d.type === "After" || d.type === "Night";
-            return sum + (isWorkedShift ? Number(d.workedHours ?? hoursPerShift) : 0);
-          }, 0)}h`} />
-          <MiniMetric title={t.undertimeHours} value={`${Object.values(daysData).reduce((sum: number, d: any) => {
-            const isWorkedShift = d.type === "Morning" || d.type === "After" || d.type === "Night";
-            return sum + (isWorkedShift ? Math.max(0, hoursPerShift - Number(d.workedHours ?? hoursPerShift)) : 0);
-          }, 0)}h`} />
           <MiniMetric title="OT" value={`${Object.values(daysData).reduce((sum: number, d: any) => sum + (d.overtimeHours || 0), 0)}h`} />
           <MiniMetric title={t.monthHolidays} value={String(monthDays.filter((d: any) => d.day && d.isHoliday).length || "0")} />
         </div>
@@ -1709,7 +1685,6 @@ function DayModal({
   monthIndex,
   year,
   data,
-  hoursPerShift,
   isWeekend,
   holidayName,
   onClose,
@@ -1722,14 +1697,15 @@ function DayModal({
   monthIndex: number;
   year: number;
   data?: DayData;
-  hoursPerShift: number;
   isWeekend?: boolean;
   holidayName?: string;
   onClose: () => void;
   onSave: (newData: DayData) => void;
 }) {
   const [type, setType] = useState<DayType>(data?.type || "Liber");
-  const [workedHoursInput, setWorkedHoursInput] = useState<string>(String(data?.workedHours ?? hoursPerShift));
+  const maxShiftHours = 8;
+  const initialWorkedHours = typeof data?.workedHours === "number" ? data.workedHours : (data?.type && data.type !== "Liber" && data.type !== "CO" && data.type !== "CM" ? maxShiftHours : 0);
+  const [workedHoursInput, setWorkedHoursInput] = useState<string>(String(initialWorkedHours));
   const [overtimeHours, setOvertimeHours] = useState<number>(data?.overtimeHours || 0);
   const [note, setNote] = useState<string>(data?.note || "");
   const [otNight, setOtNight] = useState<boolean>(data?.otNight || false);
@@ -1737,29 +1713,6 @@ function DayModal({
   const [otHoliday, setOtHoliday] = useState<boolean>(data?.otHoliday || false);
 
   const isHoliday = !!holidayName;
-  const isWorkedShift = type === "Morning" || type === "After" || type === "Night";
-  const maxHours = Math.max(1, Number(hoursPerShift || 8));
-  const quickHours = Array.from({ length: Math.min(8, Math.floor(maxHours)) }, (_, index) => index + 1);
-
-  function parseHours(value: string) {
-    const normalized = value.replace(",", ".").trim();
-    const parsed = Number(normalized);
-    if (!Number.isFinite(parsed)) return 0;
-    return Math.min(maxHours, Math.max(0, parsed));
-  }
-
-  const workedHoursValue = parseHours(workedHoursInput);
-  const undertimeValue = isWorkedShift ? Math.max(0, maxHours - workedHoursValue) : 0;
-
-  function handleTypeChange(nextType: DayType) {
-    setType(nextType);
-    if (nextType === "Morning" || nextType === "After" || nextType === "Night") {
-      const current = parseHours(workedHoursInput);
-      setWorkedHoursInput(String(current > 0 ? current : maxHours));
-    } else {
-      setWorkedHoursInput("0");
-    }
-  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
@@ -1789,55 +1742,58 @@ function DayModal({
                 dayType === "CO" ? "bg-violet-500/25 border-violet-300/25" :
                 "bg-rose-500/25 border-rose-300/25"
               }
-              onClick={() => handleTypeChange(dayType)}
+              onClick={() => {
+                setType(dayType);
+                if (dayType === "Morning" || dayType === "After" || dayType === "Night") {
+                  setWorkedHoursInput((current) => current === "0" || current.trim() === "" ? String(maxShiftHours) : current);
+                } else {
+                  setWorkedHoursInput("0");
+                }
+              }}
             >
               {dayTypeLabels[dayType]}
             </ShiftButton>
           ))}
         </div>
 
-        <div className="mt-5 rounded-[22px] border border-cyan-400/15 bg-cyan-500/[0.05] p-4">
-          <label className="mb-2 block text-sm font-semibold text-cyan-100">{t.workedHours}</label>
-
-          <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
-            {quickHours.map((hour) => (
-              <button
-                key={hour}
-                type="button"
-                disabled={!isWorkedShift}
-                onClick={() => setWorkedHoursInput(String(hour))}
-                className={`rounded-[14px] border px-3 py-2 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40 ${
-                  workedHoursValue === hour
-                    ? "border-cyan-300 bg-cyan-400/25 text-cyan-50 shadow-[0_0_18px_rgba(34,211,238,0.18)]"
-                    : "border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08]"
-                }`}
-              >
-                {hour}h
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]">
-            <input
-              type="text"
-              inputMode="decimal"
-              value={workedHoursInput}
-              onChange={(e) => {
-                const cleaned = e.target.value.replace(/[^0-9.,]/g, "");
-                setWorkedHoursInput(cleaned);
-              }}
-              onBlur={() => setWorkedHoursInput(String(parseHours(workedHoursInput)))}
-              disabled={!isWorkedShift}
-              placeholder="ex: 6.5"
-              className="w-full rounded-[18px] border border-white/10 bg-[#041224] px-5 py-4 text-2xl font-semibold outline-none disabled:cursor-not-allowed disabled:opacity-50"
-            />
-            <div className="rounded-[18px] border border-white/10 bg-[#041224] px-4 py-3 text-sm text-white/70">
-              <div className="text-[10px] uppercase tracking-[0.16em] text-white/40">{t.undertimeHours}</div>
-              <div className="mt-1 text-xl font-bold text-rose-100">{undertimeValue.toFixed(undertimeValue % 1 ? 1 : 0)}h</div>
+        <div className="mt-5 rounded-[22px] border border-blue-400/20 bg-blue-500/10 p-4">
+          <div className="flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
+            <div>
+              <label className="block text-sm font-semibold text-blue-100">{t.workedHours}</label>
+              <p className="mt-1 text-xs leading-5 text-white/55">{t.workedHoursHint}</p>
+            </div>
+            <div className="text-sm font-semibold text-white/75">
+              {t.undertimeHours}: {Math.max(0, maxShiftHours - Math.min(maxShiftHours, Math.max(0, Number(workedHoursInput.replace(',', '.')) || 0))).toFixed(1)}h
             </div>
           </div>
 
-          <p className="mt-2 text-xs leading-5 text-white/60">{t.workedHoursHint}</p>
+          <div className="mt-4 grid grid-cols-4 gap-2 md:grid-cols-8">
+            {[1,2,3,4,5,6,7,8].map((hour) => {
+              const active = Number(workedHoursInput.replace(',', '.')) === hour;
+              return (
+                <button
+                  key={hour}
+                  type="button"
+                  onClick={() => setWorkedHoursInput(String(hour))}
+                  className={`rounded-2xl border px-3 py-3 text-sm font-semibold transition ${active ? "border-blue-300 bg-blue-500 text-white" : "border-white/10 bg-white/[0.04] text-white/75 hover:bg-white/[0.08]"}`}
+                >
+                  {hour}h
+                </button>
+              );
+            })}
+          </div>
+
+          <input
+            type="number"
+            min={0}
+            max={maxShiftHours}
+            step={0.5}
+            inputMode="decimal"
+            value={workedHoursInput}
+            onChange={(e) => setWorkedHoursInput(e.target.value)}
+            className="mt-4 w-full rounded-[18px] border border-white/10 bg-[#041224] px-5 py-4 text-2xl font-semibold outline-none"
+            placeholder="Ex: 6.5"
+          />
         </div>
 
         <div className="mt-5">
@@ -1872,7 +1828,9 @@ function DayModal({
             onClick={() =>
               onSave({
                 type,
-                workedHours: isWorkedShift ? workedHoursValue : 0,
+                workedHours: type === "Morning" || type === "After" || type === "Night"
+                  ? Math.min(maxShiftHours, Math.max(0, Number(workedHoursInput.replace(',', '.')) || 0))
+                  : 0,
                 overtimeHours,
                 note,
                 otNight,
@@ -1946,18 +1904,18 @@ function EstimateSection({
   mealTickets,
   total,
   workedDays,
-  workedHours,
-  undertimeHours,
   morning,
   after,
   night,
+  workedHours,
+  undertimeHours,
+  undertimeAdjustment,
   overtimeHours,
   overtimeExtra,
   nightExtra,
   weekendExtra,
   holidayExtra,
   medicalAdjustment,
-  undertimeAdjustment,
 }: {
   t: Translation;
   lang: Lang;
@@ -1965,18 +1923,18 @@ function EstimateSection({
   mealTickets: number;
   total: number;
   workedDays: number;
-  workedHours: number;
-  undertimeHours: number;
   morning: number;
   after: number;
   night: number;
+  workedHours: number;
+  undertimeHours: number;
+  undertimeAdjustment: number;
   overtimeHours: number;
   overtimeExtra: number;
   nightExtra: number;
   weekendExtra: number;
   holidayExtra: number;
   medicalAdjustment: number;
-  undertimeAdjustment: number;
 }) {
   return (
     <SectionShell kicker={t.summary} title={t.monthlyEstimate}>
@@ -1995,10 +1953,6 @@ function EstimateSection({
       <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
   <DetailCard label={t.workedDays} value={String(workedDays || "0")} />
 
-  <DetailCard label={t.workedHours} value={`${workedHours || 0}h`} />
-
-  <DetailCard label={t.undertimeHours} value={`${undertimeHours || 0}h`} />
-
   <DetailCard
     label={TYPE_LABELS[lang as Lang].Morning}
     value={String(morning || "0")}
@@ -2012,6 +1966,16 @@ function EstimateSection({
   <DetailCard
     label={TYPE_LABELS[lang as Lang].Night}
     value={String(night || "0")}
+  />
+
+  <DetailCard
+    label={t.workedHours}
+    value={`${workedHours.toFixed(1)}h`}
+  />
+
+  <DetailCard
+    label={t.undertimeHours}
+    value={`${undertimeHours.toFixed(1)}h${undertimeAdjustment ? ` / -${undertimeAdjustment.toFixed(2)} RON` : ""}`}
   />
 
   <DetailCard
@@ -2044,15 +2008,6 @@ function EstimateSection({
     value={
       medicalAdjustment
         ? `-${medicalAdjustment.toFixed(2)} RON`
-        : "-"
-    }
-  />
-
-  <DetailCard
-    label={t.undertimeAdjust}
-    value={
-      undertimeAdjustment
-        ? `-${undertimeAdjustment.toFixed(2)} RON`
         : "-"
     }
   />
@@ -2275,7 +2230,6 @@ function LogicSection({ t, lang }: { t: Translation; lang: Lang }) {
     ["Weekend automat", "sâmbăta și duminica sunt detectate automat din calendar"],
     ["Sărbători automate", "zilele legale sunt marcate și primesc automat sporul de sărbătoare"],
     ["Ore suplimentare", "+75% din baza orară pentru fiecare oră introdusă"],
-    ["Undertime / plecat mai devreme", "în popup-ul zilei poți seta 0-8 ore lucrate efectiv; diferența până la tura completă se scade din brut"],
     ["Monetizare", "free: 30 calcule/lună, banner permanent + suprafețe de reclamă în aplicație și poartă de reclamă la fiecare 3 calcule; premium: doar bannerul discret de jos și fără limită"],
     ["Online only", "calculele noi și salvarea sunt permise doar când browserul este online"],
   ] : [

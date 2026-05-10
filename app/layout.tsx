@@ -28,13 +28,6 @@ export default function RootLayout({
       lang="ro"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <head>
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8481480017542259"
-          crossOrigin="anonymous"
-        />
-      </head>
       <body
         className="min-h-full"
         style={{
@@ -70,14 +63,20 @@ export default function RootLayout({
               pointerEvents: "auto",
             }}
           >
-            <ins
-              className="adsbygoogle"
-              style={{ display: "block", width: "100%", minHeight: 50 }}
-              data-ad-client="ca-pub-8481480017542259"
-              data-ad-slot="auto"
-              data-ad-format="auto"
-              data-full-width-responsive="true"
-            />
+            <div
+              style={{
+                minHeight: 50,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "rgba(255,255,255,0.78)",
+                fontSize: 13,
+                textAlign: "center",
+                fontWeight: 600,
+              }}
+            >
+              Banner reclamă (placeholder)
+            </div>
           </div>
         </div>
       </body>

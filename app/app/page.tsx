@@ -30,6 +30,7 @@ type DayType = "Liber" | "Morning" | "After" | "Night" | "CO" | "CM";
 
 type DayData = {
   type: DayType;
+  workedHours?: number;
   overtimeHours: number;
   note: string;
   otNight: boolean;
@@ -306,20 +307,20 @@ export default function Home() {
     const holidayRate = Number(holidayPercent || 0) / 100;
     const unpaidMedicalDays = Math.max(0, Number(medicalLeaveDays || 0));
 
-    const workedBaseDays = Object.values(daysData).filter(
-      (d) => d.type === "Morning" || d.type === "After" || d.type === "Night" || d.type === "CO",
-    ).length;
-
     const morningCount = Object.values(daysData).filter((d) => d.type === "Morning").length;
     const afterCount = Object.values(daysData).filter((d) => d.type === "After").length;
     const nightCount = Object.values(daysData).filter((d) => d.type === "Night").length;
     const coCount = Object.values(daysData).filter((d) => d.type === "CO").length;
     const cmCount = Object.values(daysData).filter((d) => d.type === "CM").length;
+    const workedBaseDays = morningCount + afterCount + nightCount + coCount;
 
     const hourlyBase = gross / Math.max(1, 160);
     const dailyBase = hourlyBase * hoursShift;
 
     let overtimeHoursTotal = 0;
+    let workedHoursTotal = 0;
+    let undertimeHoursTotal = 0;
+    let undertimeAdjustment = 0;
     let overtimeExtra = 0;
     let nightExtra = 0;
     let weekendExtra = 0;
@@ -330,39 +331,49 @@ export default function Home() {
       const entry = daysData[item.day];
       if (!entry) return;
 
-      const dayHours = Number(entry.overtimeHours || 0);
-      overtimeHoursTotal += dayHours;
-      overtimeExtra += dayHours * hourlyBase * overtimeRate;
+      const overtimeDayHours = Math.max(0, Number(entry.overtimeHours || 0));
+      overtimeHoursTotal += overtimeDayHours;
+      overtimeExtra += overtimeDayHours * hourlyBase * overtimeRate;
 
       const isWorkedShift =
         entry.type === "Morning" || entry.type === "After" || entry.type === "Night";
 
+      const rawWorkedHours = Number(entry.workedHours);
+      const workedHours = isWorkedShift
+        ? Math.min(hoursShift, Math.max(0, Number.isFinite(rawWorkedHours) ? rawWorkedHours : hoursShift))
+        : 0;
+      const undertimeHours = isWorkedShift ? Math.max(0, hoursShift - workedHours) : 0;
+
+      workedHoursTotal += workedHours;
+      undertimeHoursTotal += undertimeHours;
+      undertimeAdjustment += undertimeHours * hourlyBase;
+
       if (entry.type === "Night") {
-        nightExtra += dailyBase * nightRate;
+        nightExtra += workedHours * hourlyBase * nightRate;
       }
 
       if (isWorkedShift && item.isWeekend) {
-        weekendExtra += dailyBase * weekendRate;
+        weekendExtra += workedHours * hourlyBase * weekendRate;
       }
 
       if (isWorkedShift && item.isHoliday) {
-        holidayExtra += dailyBase * holidayRate;
+        holidayExtra += workedHours * hourlyBase * holidayRate;
       }
 
-      if (dayHours > 0 && entry.otNight) {
-        nightExtra += dayHours * hourlyBase * nightRate;
+      if (overtimeDayHours > 0 && entry.otNight) {
+        nightExtra += overtimeDayHours * hourlyBase * nightRate;
       }
-      if (dayHours > 0 && entry.otWeekend) {
-        weekendExtra += dayHours * hourlyBase * weekendRate;
+      if (overtimeDayHours > 0 && entry.otWeekend) {
+        weekendExtra += overtimeDayHours * hourlyBase * weekendRate;
       }
-      if (dayHours > 0 && entry.otHoliday) {
-        holidayExtra += dayHours * hourlyBase * holidayRate;
+      if (overtimeDayHours > 0 && entry.otHoliday) {
+        holidayExtra += overtimeDayHours * hourlyBase * holidayRate;
       }
     });
 
     const medicalAdjustment = Math.min(cmCount, unpaidMedicalDays) * dailyBase;
     const grossEstimate =
-      gross + overtimeExtra + nightExtra + weekendExtra + holidayExtra - medicalAdjustment;
+      gross + overtimeExtra + nightExtra + weekendExtra + holidayExtra - medicalAdjustment - undertimeAdjustment;
 
     const casValue = grossEstimate * casRate;
     const cassValue = grossEstimate * cassRate;
@@ -382,6 +393,9 @@ export default function Home() {
       coCount,
       cmCount,
       overtimeHours: overtimeHoursTotal,
+      workedHours: workedHoursTotal,
+      undertimeHours: undertimeHoursTotal,
+      undertimeAdjustment,
       hourlyBase,
       grossEstimate,
       cas: casValue,
@@ -588,6 +602,9 @@ export default function Home() {
             morning={calculation.morningCount}
             after={calculation.afterCount}
             night={calculation.nightCount}
+            workedHours={calculation.workedHours}
+            undertimeHours={calculation.undertimeHours}
+            undertimeAdjustment={calculation.undertimeAdjustment}
             overtimeHours={calculation.overtimeHours}
             overtimeExtra={calculation.overtimeExtra}
             nightExtra={calculation.nightExtra}
@@ -1189,6 +1206,9 @@ function DayModal({
   onSave: (newData: DayData) => void;
 }) {
   const [type, setType] = useState<DayType>(data?.type || "Liber");
+  const maxShiftHours = 8;
+  const initialWorkedHours = typeof data?.workedHours === "number" ? data.workedHours : (data?.type && data.type !== "Liber" && data.type !== "CO" && data.type !== "CM" ? maxShiftHours : 0);
+  const [workedHoursInput, setWorkedHoursInput] = useState<string>(String(initialWorkedHours));
   const [overtimeHours, setOvertimeHours] = useState<number>(data?.overtimeHours || 0);
   const [note, setNote] = useState<string>(data?.note || "");
   const [otNight, setOtNight] = useState<boolean>(data?.otNight || false);
@@ -1217,24 +1237,64 @@ function DayModal({
         </div>
 
         <div className="mt-5 grid gap-3 md:grid-cols-2">
-          <ShiftButton selected={type === "Liber"} color="bg-slate-500/25 border-slate-300/25" onClick={() => setType("Liber")}>
+          <ShiftButton selected={type === "Liber"} color="bg-slate-500/25 border-slate-300/25" onClick={() => { setType("Liber"); setWorkedHoursInput("0"); }}>
             Liber
           </ShiftButton>
-          <ShiftButton selected={type === "Morning"} color="bg-emerald-500/25 border-emerald-300/25" onClick={() => setType("Morning")}>
+          <ShiftButton selected={type === "Morning"} color="bg-emerald-500/25 border-emerald-300/25" onClick={() => { setType("Morning"); setWorkedHoursInput((current) => current === "0" || current.trim() === "" ? String(maxShiftHours) : current); }}>
             Morning
           </ShiftButton>
-          <ShiftButton selected={type === "After"} color="bg-amber-500/25 border-amber-300/25" onClick={() => setType("After")}>
+          <ShiftButton selected={type === "After"} color="bg-amber-500/25 border-amber-300/25" onClick={() => { setType("After"); setWorkedHoursInput((current) => current === "0" || current.trim() === "" ? String(maxShiftHours) : current); }}>
             After
           </ShiftButton>
-          <ShiftButton selected={type === "Night"} color="bg-blue-500/25 border-blue-300/25" onClick={() => setType("Night")}>
+          <ShiftButton selected={type === "Night"} color="bg-blue-500/25 border-blue-300/25" onClick={() => { setType("Night"); setWorkedHoursInput((current) => current === "0" || current.trim() === "" ? String(maxShiftHours) : current); }}>
             Night
           </ShiftButton>
-          <ShiftButton selected={type === "CO"} color="bg-violet-500/25 border-violet-300/25" onClick={() => setType("CO")}>
+          <ShiftButton selected={type === "CO"} color="bg-violet-500/25 border-violet-300/25" onClick={() => { setType("CO"); setWorkedHoursInput("0"); }}>
             Concediu odihnă
           </ShiftButton>
-          <ShiftButton selected={type === "CM"} color="bg-rose-500/25 border-rose-300/25" onClick={() => setType("CM")}>
+          <ShiftButton selected={type === "CM"} color="bg-rose-500/25 border-rose-300/25" onClick={() => { setType("CM"); setWorkedHoursInput("0"); }}>
             Concediu medical
           </ShiftButton>
+        </div>
+
+        <div className="mt-5 rounded-[22px] border border-blue-400/20 bg-blue-500/10 p-4">
+          <div className="flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
+            <div>
+              <label className="block text-sm font-semibold text-blue-100">Ore lucrate efectiv</label>
+              <p className="mt-1 text-xs leading-5 text-white/55">Pentru zile în care ai plecat mai devreme: alege 1–8h sau scrie manual, ex. 6.5</p>
+            </div>
+            <div className="text-sm font-semibold text-white/75">
+              Ore nelucrate / undertime: {Math.max(0, maxShiftHours - Math.min(maxShiftHours, Math.max(0, Number(workedHoursInput.replace(',', '.')) || 0))).toFixed(1)}h
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-4 gap-2 md:grid-cols-8">
+            {[1,2,3,4,5,6,7,8].map((hour) => {
+              const active = Number(workedHoursInput.replace(',', '.')) === hour;
+              return (
+                <button
+                  key={hour}
+                  type="button"
+                  onClick={() => setWorkedHoursInput(String(hour))}
+                  className={`rounded-2xl border px-3 py-3 text-sm font-semibold transition ${active ? "border-blue-300 bg-blue-500 text-white" : "border-white/10 bg-white/[0.04] text-white/75 hover:bg-white/[0.08]"}`}
+                >
+                  {hour}h
+                </button>
+              );
+            })}
+          </div>
+
+          <input
+            type="number"
+            min={0}
+            max={maxShiftHours}
+            step={0.5}
+            inputMode="decimal"
+            value={workedHoursInput}
+            onChange={(e) => setWorkedHoursInput(e.target.value)}
+            className="mt-4 w-full rounded-[18px] border border-white/10 bg-[#041224] px-5 py-4 text-2xl font-semibold outline-none"
+            placeholder="Ex: 6.5"
+          />
         </div>
 
         <div className="mt-5">
@@ -1275,6 +1335,9 @@ function DayModal({
             onClick={() =>
               onSave({
                 type,
+                workedHours: type === "Morning" || type === "After" || type === "Night"
+                  ? Math.min(maxShiftHours, Math.max(0, Number(workedHoursInput.replace(',', '.')) || 0))
+                  : 0,
                 overtimeHours,
                 note,
                 otNight,
@@ -1349,6 +1412,9 @@ function EstimateSection({
   morning,
   after,
   night,
+  workedHours,
+  undertimeHours,
+  undertimeAdjustment,
   overtimeHours,
   overtimeExtra,
   nightExtra,
@@ -1363,6 +1429,9 @@ function EstimateSection({
   morning: number;
   after: number;
   night: number;
+  workedHours: number;
+  undertimeHours: number;
+  undertimeAdjustment: number;
   overtimeHours: number;
   overtimeExtra: number;
   nightExtra: number;
@@ -1389,6 +1458,8 @@ function EstimateSection({
         <DetailCard label="Morning" value={String(morning || "0")} />
         <DetailCard label="After" value={String(after || "0")} />
         <DetailCard label="Night" value={String(night || "0")} />
+        <DetailCard label="Ore lucrate efectiv" value={`${workedHours.toFixed(1)}h`} />
+        <DetailCard label="Ore nelucrate / undertime" value={`${undertimeHours.toFixed(1)}h${undertimeAdjustment ? ` / -${undertimeAdjustment.toFixed(2)} RON` : ""}`} />
         <DetailCard label="Ore suplimentare" value={`${overtimeHours || 0}h`} />
         <DetailCard label="OT +75%" value={overtimeExtra ? `${overtimeExtra.toFixed(2)} RON` : "—"} />
         <DetailCard label="Spor noapte" value={nightExtra ? `${nightExtra.toFixed(2)} RON` : "—"} />
