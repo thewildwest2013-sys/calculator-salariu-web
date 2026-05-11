@@ -1,0 +1,34 @@
+export default function TermsPage() {
+  return (
+    <main style={{ maxWidth: 900, margin: "0 auto", padding: "40px 20px", color: "white" }}>
+      <h1>Termeni și condiții</h1>
+
+      <p>
+        Prin utilizarea aplicației Calculator Salariu, sunteți de acord cu acești termeni și condiții.
+      </p>
+
+      <h2>Scopul aplicației</h2>
+      <p>
+        Aplicația oferă calcule salariale estimative. Rezultatele pot diferi de salariul final real,
+        în funcție de contract, legislație, taxe, sporuri și politicile angajatorului.
+      </p>
+
+      <h2>Responsabilitate</h2>
+      <p>
+        Calculator Salariu nu oferă consultanță financiară, fiscală sau juridică. Utilizatorul este
+        responsabil pentru verificarea informațiilor cu angajatorul sau cu un specialist.
+      </p>
+
+      <h2>Conturi premium</h2>
+      <p>
+        Anumite funcții pot necesita abonament premium. Accesul premium este gestionat prin platformele
+        de plată disponibile.
+      </p>
+
+      <h2>Modificări</h2>
+      <p>
+        Ne rezervăm dreptul de a actualiza acești termeni atunci când este necesar.
+      </p>
+    </main>
+  );
+}

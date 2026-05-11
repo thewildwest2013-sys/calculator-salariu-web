@@ -39,55 +39,56 @@ export default function RootLayout({
       <body
         className="min-h-full"
         style={{
-          paddingBottom: "90px",
+          paddingBottom: "40px",
+          background: "#020817",
         }}
       >
         <SessionGuard />
 
         {children}
 
-        <div
+        <footer
           style={{
-            position: "fixed",
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 999999,
-            display: "flex",
-            justifyContent: "center",
-            padding: "8px",
-            pointerEvents: "none",
+            marginTop: 40,
+            padding: "24px 16px",
+            textAlign: "center",
+            color: "rgba(255,255,255,0.7)",
+            fontSize: 14,
+            borderTop: "1px solid rgba(255,255,255,0.08)",
           }}
         >
-          <div
+          <a
+            href="/privacy"
             style={{
-              width: "100%",
-              maxWidth: 1200,
-              minHeight: 70,
-              borderRadius: 14,
-              border: "1px solid rgba(255,255,255,0.10)",
-              background: "rgba(7,19,38,0.96)",
-              boxShadow: "0 0 30px rgba(0,0,0,0.25)",
-              padding: "8px 10px",
-              pointerEvents: "auto",
+              color: "inherit",
+              marginRight: 16,
+              textDecoration: "none",
             }}
           >
-            <div
-              style={{
-                minHeight: 50,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "rgba(255,255,255,0.78)",
-                fontSize: 13,
-                textAlign: "center",
-                fontWeight: 600,
-              }}
-            >
-              Banner reclamă (placeholder)
-            </div>
-          </div>
-        </div>
+            Politica de confidențialitate
+          </a>
+
+          <a
+            href="/terms"
+            style={{
+              color: "inherit",
+              marginRight: 16,
+              textDecoration: "none",
+            }}
+          >
+            Termeni și condiții
+          </a>
+
+          <a
+            href="/contact"
+            style={{
+              color: "inherit",
+              textDecoration: "none",
+            }}
+          >
+            Contact
+          </a>
+        </footer>
       </body>
     </html>
   );

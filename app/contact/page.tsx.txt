@@ -1,0 +1,20 @@
+export default function ContactPage() {
+  return (
+    <main style={{ maxWidth: 900, margin: "0 auto", padding: "40px 20px", color: "white" }}>
+      <h1>Contact</h1>
+
+      <p>
+        Pentru întrebări, sugestii, probleme tehnice sau solicitări legate de aplicația Calculator Salariu,
+        ne puteți contacta la:
+      </p>
+
+      <p style={{ fontSize: 18, fontWeight: 700 }}>
+        helpcalculatorsalariu@gmail.com
+      </p>
+
+      <p>
+        Încercăm să răspundem solicitărilor într-un timp rezonabil.
+      </p>
+    </main>
+  );
+}

@@ -1,0 +1,37 @@
+export default function PrivacyPage() {
+  return (
+    <main style={{ maxWidth: 900, margin: "0 auto", padding: "40px 20px", color: "white" }}>
+      <h1>Politica de confidențialitate</h1>
+
+      <p>
+        Calculator Salariu respectă confidențialitatea utilizatorilor. Această aplicație este creată
+        pentru calcularea estimativă a veniturilor salariale, pe baza datelor introduse de utilizator.
+      </p>
+
+      <h2>Ce date colectăm</h2>
+      <p>
+        Putem colecta adresa de email folosită la autentificare, informații despre contul premium și
+        date introduse de utilizator pentru calculul salariului.
+      </p>
+
+      <h2>Publicitate</h2>
+      <p>
+        Site-ul poate folosi Google AdSense pentru afișarea reclamelor. Google poate utiliza cookie-uri
+        pentru personalizarea și măsurarea anunțurilor.
+      </p>
+
+      <h2>Plăți</h2>
+      <p>
+        Plățile sunt procesate prin furnizori externi precum Stripe sau Google Play, în funcție de platformă.
+        Nu stocăm datele cardului bancar.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        Pentru întrebări privind datele personale, ne puteți contacta la:
+        <br />
+        <strong>helpcalculatorsalariu@gmail.com</strong>
+      </p>
+    </main>
+  );
+}
