@@ -28,10 +28,7 @@ async function readUsage(uid: string): Promise<UsageDoc> {
   const snap = await getDoc(ref);
 
   if (!snap.exists()) {
-    return {
-      count: 0,
-      windowStart: Date.now(),
-    };
+    return { count: 0, windowStart: Date.now() };
   }
 
   const data = snap.data() as Partial<UsageDoc>;
@@ -52,10 +49,7 @@ function normalizeWindow(data: UsageDoc): UsageDoc {
   const now = Date.now();
 
   if (!data.windowStart || now - data.windowStart >= MONTH_MS) {
-    return {
-      count: 0,
-      windowStart: now,
-    };
+    return { count: 0, windowStart: now };
   }
 
   return data;
