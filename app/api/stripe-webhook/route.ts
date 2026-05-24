@@ -113,7 +113,7 @@ export async function POST(req: Request) {
         processedAt: now,
       });
 
-      console.log("Premium activat pentru:", userId);
+      console.log("Premium activeat pentru:", userId);
     } catch (err) {
       console.error("Webhook processing error:", err);
       return NextResponse.json(

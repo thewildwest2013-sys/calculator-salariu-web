@@ -20,7 +20,7 @@ type UsageDoc = {
 };
 
 function getLimit(isPremium: boolean) {
-  return isPremium ? 999999 : 30;
+  return isPremium ? 999999 : 15;
 }
 
 async function readUsage(uid: string): Promise<UsageDoc> {

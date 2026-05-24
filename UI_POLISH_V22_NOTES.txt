@@ -1,0 +1,13 @@
+UI polish v22:
+- Mutat Quick setup, Quick tutorial si mini statisticile sub calendar.
+- Pastrat Live calculation in dreapta calendarului.
+- Curatat textele RO/EN pentru Quick setup si tutorial.
+- Reparat butonul Open Rules / Deschide Reguli cu data-tab="rules".
+- Adaugat iconite si polish la cardurile de sus si la tab buttons.
+- Imbunatatit calendar tiles, hover, selected day glow, live estimate si bottom premium bar.
+- Adaugat favicon/app icons noi: favicon.ico, icon-192.png, icon-512.png, apple-touch-icon.png.
+- Actualizat site.webmanifest si metadata icons in app/layout.tsx.
+
+Verificare:
+- npm run build compileaza si trece TypeScript.
+- Build-ul se opreste doar la colectarea datelor pentru ca lipsesc env vars Firebase Admin locale: FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY.

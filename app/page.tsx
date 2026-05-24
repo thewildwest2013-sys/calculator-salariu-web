@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { addDoc, collection, doc, getDoc } from "firebase/firestore";
+import { addDoc, collection, doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { logoutUser } from "@/lib/auth";
 import { clearStoredSecurityState } from "@/lib/security-client";
@@ -28,7 +28,7 @@ type TabKey =
   | "holidays"
   | "logic";
 
-type DayType = "Liber" | "Morning" | "After" | "Night" | "CO" | "CM";
+type DayType = "Off" | "Morning" | "After" | "Night" | "CO" | "CM";
 
 type DayData = {
   type: DayType;
@@ -40,24 +40,142 @@ type DayData = {
   otHoliday: boolean;
 };
 
-const HOLIDAYS_2026 = [
+type CloudSalaryState = {
+  grossSalary?: string;
+  mealTicketPerDay?: string;
+  nightPercent?: string;
+  overtimePercent?: string;
+  weekendPercent?: string;
+  holidayPercent?: string;
+  casPercent?: string;
+  cassPercent?: string;
+  taxPercent?: string;
+  hoursPerShift?: string;
+  medicalLeaveDays?: string;
+  monthIndex?: number;
+  year?: number;
+  daysData?: Record<number, DayData>;
+  lang?: Lang;
+  updatedAt?: string;
+};
+
+type HolidayItem = {
+  day: number;
+  month: number;
+  date: string;
+  name: string;
+  enDate: string;
+  enName: string;
+};
+
+const HOLIDAYS_2026: HolidayItem[] = [
   { day: 1, month: 1, date: "01 ianuarie", name: "Anul Nou", enDate: "01 January", enName: "New Year's Day" },
   { day: 2, month: 1, date: "02 ianuarie", name: "A doua zi de Anul Nou", enDate: "02 January", enName: "Second day of New Year" },
   { day: 6, month: 1, date: "06 ianuarie", name: "Boboteaza", enDate: "06 January", enName: "Epiphany" },
   { day: 7, month: 1, date: "07 ianuarie", name: "Sf. Ioan", enDate: "07 January", enName: "Saint John" },
-  { day: 24, month: 1, date: "24 ianuarie", name: "Ziua Unirii", enDate: "24 January", enName: "Union Day" },
+  { day: 24, month: 1, date: "24 ianuarie", name: "Ziua Unirii Principatelor Române", enDate: "24 January", enName: "Union Day" },
   { day: 10, month: 4, date: "10 aprilie", name: "Vinerea Mare", enDate: "10 April", enName: "Good Friday" },
-  { day: 12, month: 4, date: "12 aprilie", name: "Paște", enDate: "12 April", enName: "Easter" },
-  { day: 13, month: 4, date: "13 aprilie", name: "A doua zi de Paște", enDate: "13 April", enName: "Second day of Easter" },
+  { day: 12, month: 4, date: "12 aprilie", name: "Paște Ortodox", enDate: "12 April", enName: "Orthodox Easter" },
+  { day: 13, month: 4, date: "13 aprilie", name: "A doua zi de Paște", enDate: "13 April", enName: "Second day of Orthodox Easter" },
   { day: 1, month: 5, date: "01 mai", name: "Ziua Muncii", enDate: "01 May", enName: "Labour Day" },
   { day: 31, month: 5, date: "31 mai", name: "Rusalii", enDate: "31 May", enName: "Pentecost" },
   { day: 1, month: 6, date: "01 iunie", name: "A doua zi de Rusalii", enDate: "01 June", enName: "Second day of Pentecost" },
   { day: 15, month: 8, date: "15 august", name: "Adormirea Maicii Domnului", enDate: "15 August", enName: "Dormition of the Mother of God" },
   { day: 30, month: 11, date: "30 noiembrie", name: "Sf. Andrei", enDate: "30 November", enName: "Saint Andrew" },
-  { day: 1, month: 12, date: "01 decembrie", name: "Ziua Națională", enDate: "01 December", enName: "National Day" },
+  { day: 1, month: 12, date: "01 decembrie", name: "Ziua Națională a României", enDate: "01 December", enName: "National Day" },
   { day: 25, month: 12, date: "25 decembrie", name: "Crăciun", enDate: "25 December", enName: "Christmas" },
   { day: 26, month: 12, date: "26 decembrie", name: "A doua zi de Crăciun", enDate: "26 December", enName: "Second day of Christmas" },
 ];
+
+function getOrthodoxEasterDate(year: number) {
+  const a = year % 4;
+  const b = year % 7;
+  const c = year % 19;
+  const d = (19 * c + 15) % 30;
+  const e = (2 * a + 4 * b - d + 34) % 7;
+  const month = Math.floor((d + e + 114) / 31);
+  const day = ((d + e + 114) % 31) + 1;
+
+  const julianEaster = new Date(year, month - 1, day);
+  julianEaster.setDate(julianEaster.getDate() + 13);
+  return julianEaster;
+}
+
+function addDays(date: Date, days: number) {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + days);
+  return copy;
+}
+
+function formatRoDate(day: number, month: number) {
+  return `${String(day).padStart(2, "0")} ${MONTHS_RO[month - 1].toLowerCase()}`;
+}
+
+function formatEnDate(day: number, month: number) {
+  return `${String(day).padStart(2, "0")} ${MONTHS_EN[month - 1]}`;
+}
+
+function holidayFromDate(dateObj: Date, name: string, enName: string): HolidayItem {
+  const day = dateObj.getDate();
+  const month = dateObj.getMonth() + 1;
+
+  return {
+    day,
+    month,
+    date: formatRoDate(day, month),
+    name,
+    enDate: formatEnDate(day, month),
+    enName,
+  };
+}
+
+function dedupeHolidaysPreferMovable(holidays: HolidayItem[]) {
+  const map = new Map<string, HolidayItem>();
+
+  for (const holiday of holidays) {
+    const key = `${holiday.month}-${holiday.day}`;
+    // Dacă două sărbători cad în aceeași zi, afișăm o singură linie curată.
+    // Holidaysle mobile (Paște/Rusalii) sunt adăugate ultimele și au prioritate.
+    map.set(key, holiday);
+  }
+
+  return Array.from(map.values()).sort((a, b) => a.month - b.month || a.day - b.day);
+}
+
+function getRomanianHolidays(year: number): HolidayItem[] {
+  // Pentru anul curent folosit în aplicație păstrăm lista stabilă, verificată manual.
+  if (year === 2026) {
+    return HOLIDAYS_2026;
+  }
+
+  const easter = getOrthodoxEasterDate(year);
+
+  const fixed: HolidayItem[] = [
+    { day: 1, month: 1, date: "01 ianuarie", name: "Anul Nou", enDate: "01 January", enName: "New Year's Day" },
+    { day: 2, month: 1, date: "02 ianuarie", name: "A doua zi de Anul Nou", enDate: "02 January", enName: "Second day of New Year" },
+    { day: 6, month: 1, date: "06 ianuarie", name: "Boboteaza", enDate: "06 January", enName: "Epiphany" },
+    { day: 7, month: 1, date: "07 ianuarie", name: "Sf. Ioan", enDate: "07 January", enName: "Saint John" },
+    { day: 24, month: 1, date: "24 ianuarie", name: "Ziua Unirii Principatelor Române", enDate: "24 January", enName: "Union Day" },
+    { day: 1, month: 5, date: "01 mai", name: "Ziua Muncii", enDate: "01 May", enName: "Labour Day" },
+    { day: 1, month: 6, date: "01 iunie", name: "Ziua Copilului", enDate: "01 June", enName: "Children's Day" },
+    { day: 15, month: 8, date: "15 august", name: "Adormirea Maicii Domnului", enDate: "15 August", enName: "Dormition of the Mother of God" },
+    { day: 30, month: 11, date: "30 noiembrie", name: "Sf. Andrei", enDate: "30 November", enName: "Saint Andrew" },
+    { day: 1, month: 12, date: "01 decembrie", name: "Ziua Națională a României", enDate: "01 December", enName: "National Day" },
+    { day: 25, month: 12, date: "25 decembrie", name: "Crăciun", enDate: "25 December", enName: "Christmas" },
+    { day: 26, month: 12, date: "26 decembrie", name: "A doua zi de Crăciun", enDate: "26 December", enName: "Second day of Christmas" },
+  ];
+
+  const movable: HolidayItem[] = [
+    holidayFromDate(addDays(easter, -2), "Vinerea Mare", "Good Friday"),
+    holidayFromDate(easter, "Paște Ortodox", "Orthodox Easter"),
+    holidayFromDate(addDays(easter, 1), "A doua zi de Paște", "Second day of Orthodox Easter"),
+    holidayFromDate(addDays(easter, 49), "Rusalii", "Pentecost"),
+    holidayFromDate(addDays(easter, 50), "A doua zi de Rusalii", "Second day of Pentecost"),
+  ];
+
+  return dedupeHolidaysPreferMovable([...fixed, ...movable]);
+}
+
 
 const MONTHS_RO = [
   "Ianuarie","Februarie","Martie","Aprilie","Mai","Iunie",
@@ -73,15 +191,15 @@ const WEEKDAYS_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 const TYPE_LABELS: Record<Lang, Record<DayType, string>> = {
   ro: {
-    Liber: "Liber",
+    Off: "Off",
     Morning: "Morning",
     After: "After",
     Night: "Night",
-    CO: "Concediu",
+    CO: "Vacation",
     CM: "Medical",
   },
   en: {
-    Liber: "Off",
+    Off: "Off",
     Morning: "Morning",
     After: "Afternoon",
     Night: "Night",
@@ -202,17 +320,17 @@ const T: Record<Lang, Translation> = {
   ro: {
     appTitle: "Calculator Salariu",
     secureAuth: "🔒 Autentificare securizată",
-    intro: "Intră în cont sau creează unul nou ca să folosești aplicația. Datele tale sunt salvate în cloud pe contul tău.",
+    intro: "Autentifică-te sau creează un cont nou pentru a folosi aplicația. Datele tale sunt salvate în cloud, în contul tău.",
     register: "Înregistrare",
-    login: "Login",
+    login: "Autentificare",
     account: "Cont",
     plan: "Plan",
-    premiumManage: "Manage Premium",
+    premiumManage: "Gestionează Premium",
     history: "Istoric",
-    logout: "Logout",
+    logout: "Ieșire",
     freePlan: "Plan Free",
     activatePremium: "Activează Premium",
-    freeDescription: "Reclame + funcții limitate. Pentru detalii complete și experiență fără reclame, treci la Premium.",
+    freeDescription: "Plan Free activ. Pentru istoric extins, setări avansate și acces complet, treci la Premium.",
     calendar: "Calendar",
     estimate: "Estimare",
     rules: "Reguli",
@@ -224,28 +342,29 @@ const T: Record<Lang, Translation> = {
     onlineRequired: "Trebuie să fii online pentru a genera calcule noi și pentru a salva rezultate.",
     lockedTitle: "Deblochează estimarea",
     lockedKicker: "Calcul blocat",
-    lockedFree: "Pe planul Free ai 30 calcule pe lună. Bannerul de jos rămâne activ, iar la fiecare 3 calcule apare poarta de reclamă.",
+    lockedFree: "Pe planul Free ai 15 calcule pe lună. Estimatea rapidă se vede în pagina Calendar, iar detaliile complete se deblochează controlat.",
     lockedPremium: "Premium are acces nelimitat și fără reclame. Pentru acest calcul trebuie doar să fii online.",
-    unlockFree: "Continuă spre reclamă și calcul",
+    unlockFree: "Generează calculul complet",
     unlockPremium: "Generează estimarea",
     loading: "Se încarcă...",
     usageChecking: "Se verifică...",
     monthlyProgram: "Programul tău lunar",
+
     quickCalendar: "Calendar rapid",
-    today: "Azi",
-    reset: "Reset",
+    today: "Astăzi",
+    reset: "Resetează",
     shiftsSet: "Ture setate",
-    monthHolidays: "Sărbători lună",
+    monthHolidays: "Sărbători lunare",
     selectedDay: "📅 Zi selectată",
     workedDay: "Zi lucrătoare",
     weekend: "Weekend",
     holiday: "Sărbătoare",
     workedHours: "Ore lucrate efectiv",
-    workedHoursHint: "Pentru zile în care ai plecat mai devreme: alege 1–8h sau scrie manual, ex. 6.5",
-    undertimeHours: "Ore nelucrate / undertime",
+    workedHoursHint: "Pentru zilele în care ai plecat mai devreme: alege 1–8h sau scrie manual, de exemplu 6.5",
+    undertimeHours: "Ore nelucrate / minus",
     overtimeHours: "Ore suplimentare",
-    note: "Notiță pentru ziua asta",
-    notePlaceholder: "Ex: schimb cu colegul, tură specială, observații...",
+    note: "Notă pentru această zi",
+    notePlaceholder: "Ex: schimb de tură, tură specială, observații...",
     otNight: "OT noapte",
     otWeekend: "OT weekend",
     otHoliday: "OT sărbătoare",
@@ -259,49 +378,49 @@ const T: Record<Lang, Translation> = {
     totalEstimated: "Total estimat",
     workedDays: "Zile lucrate",
     overtimePlus: "OT +75%",
-    nightBonus: "Spor noapte",
+    nightBonus: "Spor de noapte",
     weekendBonus: "Spor weekend",
     holidayBonus: "Spor sărbătoare",
     sickAdjust: "Ajustare CM",
     personalSettings: "Setări personale",
     salaryRules: "Reguli salariale",
     grossSalary: "Salariu brut de referință",
-    ticketValue: "Bon masă / zi",
+    ticketValue: "Bon de masă / zi",
     nightPercent: "Spor noapte (%)",
-    overtimePercent: "Spor overtime (%)",
+    overtimePercent: "Spor ore suplimentare (%)",
     weekendPercent: "Spor weekend (%)",
     holidayPercent: "Spor sărbătoare (%)",
     casPercent: "CAS (%)",
     cassPercent: "CASS (%)",
-    taxPercent: "Impozit (%)",
+    taxPercent: "Impozit venit (%)",
     hoursPerShift: "Ore / tură",
-    unpaidMedical: "Zile CM neplătite / lună",
+    unpaidMedical: "Zile medicale neplătite / lună",
     calculate: "Calculează salariul",
     loadExample: "Încarcă exemplu",
-    rulesHint1: "Weekendul și sărbătorile se detectează automat din calendar. Tura Night se alege direct din ziua selectată.",
-    rulesHint2Free: "Plan Free: 30 calcule / lună, reclamă la fiecare 3 calcule și banner permanent jos.",
-    rulesHint2Premium: "Plan Premium: fără reclame și fără limită de calcul.",
+    rulesHint1: "Weekendurile și sărbătorile legale sunt detectate automat din calendar. Tura de noapte se selectează direct pe ziua aleasă.",
+    rulesHint2Free: "Plan Free: 15 calcule / lună. În perioada de review AdSense, reclamele sunt dezactivate.",
+    rulesHint2Premium: "Plan Premium: acces extins și fără limită de calcule.",
     quickCheck: "Verificare rapidă",
     calcDetails: "Detaliu calcul",
-    preview: "Preview",
+    preview: "Previzualizare",
     premiumOnly: "Valorile reale și modelul de calcul sunt afișate doar pentru Premium deblocat.",
-    saveCalc: "Salvează calcul",
+    saveCalc: "Salvează calculul",
     annualReference: "Referință anuală",
     howItWorks: "Cum calculează aplicația",
-    logicImplemented: "Logica implementată",
-    adKicker: "Publicitate",
-    adTitle: "Se deschide pasul de monetizare",
-    adBody: "Aici intră reclama reală fullscreen sau overlay atunci când o legi la providerul tău de ads. Până atunci, aplicația aplică deja logica: la fiecare 3 calcule free, se oprește aici înainte de deblocarea estimării.",
-    adContinue: "Am văzut reclama / continuă",
+    logicImplemented: "Logică implementată",
+    adKicker: "Informare",
+    adTitle: "Calcul disponibil",
+    adBody: "Estimarea este deblocată fără reclamă în perioada de review AdSense.",
+    adContinue: "Continuă",
     noInternet: "Ești offline. Re conectează-te la internet ca să poți calcula și salva.",
-    freeLimitReached: "Ai atins limita lunară de 30 calcule. Activează Premium pentru acces nelimitat.",
+    freeLimitReached: "Ai atins limita lunară de 15 calcule. Activează Premium pentru acces nelimitat.",
     loginNeeded: "Trebuie să fii autentificat",
     savedSuccess: "Calcul salvat cu succes",
     savedError: "Eroare la salvarea calculului",
     loadExampleDone: "Exemplu încărcat",
-    logoutOk: "Logout făcut",
-    logoutErr: "Eroare la logout",
-    adEveryThree: "reclamă la fiecare 3 calcule",
+    logoutOk: "Deconectare reușită",
+    logoutErr: "Eroare la deconectare",
+    adEveryThree: "mod review curat",
     unlimited: "nelimitat",
     online: "Online",
     offline: "Offline",
@@ -319,7 +438,7 @@ const T: Record<Lang, Translation> = {
     logout: "Logout",
     freePlan: "Free Plan",
     activatePremium: "Activate Premium",
-    freeDescription: "Ads + limited features. For full details and an ad-free experience, upgrade to Premium.",
+    freeDescription: "Limited features. For full details and extended access, upgrade to Premium.",
     calendar: "Calendar",
     estimate: "Estimate",
     rules: "Rules",
@@ -331,9 +450,9 @@ const T: Record<Lang, Translation> = {
     onlineRequired: "You must stay online to generate new calculations and save results.",
     lockedTitle: "Unlock the estimate",
     lockedKicker: "Calculation locked",
-    lockedFree: "Free plan includes 30 calculations per month. The bottom banner stays active, and every 3 calculations you hit the ad gate.",
+    lockedFree: "Free plan includes 15 calculations per month. During AdSense review, promotional surfaces are disabled.",
     lockedPremium: "Premium has unlimited access and no ads. For this calculation you only need to stay online.",
-    unlockFree: "Continue to ad and calculation",
+    unlockFree: "Continue to calculation",
     unlockPremium: "Generate estimate",
     loading: "Loading...",
     usageChecking: "Checking...",
@@ -386,8 +505,8 @@ const T: Record<Lang, Translation> = {
     calculate: "Calculate salary",
     loadExample: "Load example",
     rulesHint1: "Weekends and legal holidays are detected automatically from the calendar. The Night shift is selected directly on the day.",
-    rulesHint2Free: "Free plan: 30 calculations / month, ad every 3 calculations and permanent bottom banner.",
-    rulesHint2Premium: "Premium plan: no ads and no calculation limit.",
+    rulesHint2Free: "Free plan: 15 calculations / month. Ads are disabled during AdSense review.",
+    rulesHint2Premium: "Premium plan: extended access and no calculation limit.",
     quickCheck: "Quick check",
     calcDetails: "Calculation details",
     preview: "Preview",
@@ -396,19 +515,19 @@ const T: Record<Lang, Translation> = {
     annualReference: "Annual reference",
     howItWorks: "How the app calculates",
     logicImplemented: "Implemented logic",
-    adKicker: "Advertising",
-    adTitle: "Monetization step opens here",
-    adBody: "This is where your real fullscreen or overlay ad will go when you connect your ad provider. Until then, the app already applies the logic: every 3 free calculations, it stops here before unlocking the estimate.",
-    adContinue: "I watched the ad / continue",
+    adKicker: "Notice",
+    adTitle: "Calculation available",
+    adBody: "The estimate is unlocked without ads during the AdSense review period.",
+    adContinue: "Continue",
     noInternet: "You are offline. Reconnect to the internet to calculate and save.",
-    freeLimitReached: "You reached the monthly limit of 30 calculations. Activate Premium for unlimited access.",
+    freeLimitReached: "You reached the monthly limit of 15 calculations. Activate Premium for unlimited access.",
     loginNeeded: "You need to be signed in",
     savedSuccess: "Calculation saved successfully",
     savedError: "Error while saving calculation",
     loadExampleDone: "Example loaded",
     logoutOk: "Logged out",
     logoutErr: "Logout error",
-    adEveryThree: "ad every 3 calculations",
+    adEveryThree: "review mode without ads",
     unlimited: "unlimited",
     online: "Online",
     offline: "Offline",
@@ -428,7 +547,7 @@ export default function Home() {
 
   const [activeTab, setActiveTab] = useState<TabKey>("calendar");
 
-  const [grossSalary, setGrossSalary] = useState("13611");
+  const [grossSalary, setGrossSalary] = useState("0");
   const [mealTicketPerDay, setMealTicketPerDay] = useState("30");
   const [nightPercent, setNightPercent] = useState("25");
   const [overtimePercent, setOvertimePercent] = useState("75");
@@ -444,11 +563,13 @@ export default function Home() {
   const [year, setYear] = useState(2026);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [daysData, setDaysData] = useState<Record<number, DayData>>({});
+  const [cloudStateLoaded, setCloudStateLoaded] = useState(false);
 
   const [usageStatus, setUsageStatus] = useState<UsageStatus | null>(null);
   const [usageLoading, setUsageLoading] = useState(false);
   const [adGateOpen, setAdGateOpen] = useState(false);
   const [approvedCalculationSignature, setApprovedCalculationSignature] = useState<string | null>(null);
+  const holidaysForYear = useMemo(() => getRomanianHolidays(year), [year]);
 
   useEffect(() => {
     setIsOnline(typeof navigator !== "undefined" ? navigator.onLine : true);
@@ -471,45 +592,25 @@ export default function Home() {
 
   useEffect(() => {
     try {
-      const savedSettings = localStorage.getItem("salary-settings-v3");
-      const savedCalendar = localStorage.getItem("salary-calendar-v3");
       const savedLang = localStorage.getItem("salary-lang-v1") as Lang | null;
 
       if (savedLang === "ro" || savedLang === "en") {
         setLang(savedLang);
       }
-
-      if (savedSettings) {
-        const s = JSON.parse(savedSettings);
-        setGrossSalary(String(s.grossSalary ?? "13611"));
-        setMealTicketPerDay(String(s.mealTicketPerDay ?? "30"));
-        setNightPercent(String(s.nightPercent ?? "25"));
-        setOvertimePercent(String(s.overtimePercent ?? "75"));
-        setWeekendPercent(String(s.weekendPercent ?? "10"));
-        setHolidayPercent(String(s.holidayPercent ?? "100"));
-        setCasPercent(String(s.casPercent ?? "25"));
-        setCassPercent(String(s.cassPercent ?? "10"));
-        setTaxPercent(String(s.taxPercent ?? "10"));
-        setHoursPerShift(String(s.hoursPerShift ?? "8"));
-        setMedicalLeaveDays(String(s.medicalLeaveDays ?? "0"));
-      }
-
-      if (savedCalendar) {
-        const c = JSON.parse(savedCalendar);
-        setMonthIndex(Number(c.monthIndex ?? 3));
-        setYear(Number(c.year ?? 2026));
-        setDaysData(c.daysData ?? {});
-      }
     } catch (err) {
-      console.error("Local state load failed:", err);
+      console.error("Local language load failed:", err);
     }
   }, []);
 
   useEffect(() => {
     localStorage.setItem("salary-lang-v1", lang);
+    localStorage.setItem("calculator-salariu-lang", lang);
+    window.dispatchEvent(new CustomEvent("calculator-salariu-lang-change", { detail: lang }));
   }, [lang]);
 
   useEffect(() => {
+    if (!user) return;
+
     const payload = {
       grossSalary,
       mealTicketPerDay,
@@ -523,8 +624,10 @@ export default function Home() {
       hoursPerShift,
       medicalLeaveDays,
     };
-    localStorage.setItem("salary-settings-v3", JSON.stringify(payload));
+
+    localStorage.setItem(`salary-settings-v3-${user.uid}`, JSON.stringify(payload));
   }, [
+    user,
     grossSalary,
     mealTicketPerDay,
     nightPercent,
@@ -539,22 +642,166 @@ export default function Home() {
   ]);
 
   useEffect(() => {
+    if (!user) return;
+
     localStorage.setItem(
-      "salary-calendar-v3",
+      `salary-calendar-v3-${user.uid}`,
       JSON.stringify({ monthIndex, year, daysData }),
     );
-  }, [monthIndex, year, daysData]);
+  }, [user, monthIndex, year, daysData]);
+
+  useEffect(() => {
+    if (!user || !cloudStateLoaded) return;
+
+    const payload: CloudSalaryState = {
+      grossSalary,
+      mealTicketPerDay,
+      nightPercent,
+      overtimePercent,
+      weekendPercent,
+      holidayPercent,
+      casPercent,
+      cassPercent,
+      taxPercent,
+      hoursPerShift,
+      medicalLeaveDays,
+      monthIndex,
+      year,
+      daysData,
+      lang,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const timeout = window.setTimeout(async () => {
+      try {
+        await setDoc(
+          doc(db, "users", user.uid, "calendarState", "main"),
+          payload,
+          { merge: true },
+        );
+      } catch (error) {
+        console.error("Cloud state save error:", error);
+      }
+    }, 700);
+
+    return () => window.clearTimeout(timeout);
+  }, [
+    user,
+    cloudStateLoaded,
+    grossSalary,
+    mealTicketPerDay,
+    nightPercent,
+    overtimePercent,
+    weekendPercent,
+    holidayPercent,
+    casPercent,
+    cassPercent,
+    taxPercent,
+    hoursPerShift,
+    medicalLeaveDays,
+    monthIndex,
+    year,
+    daysData,
+    lang,
+  ]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      setCloudStateLoaded(false);
 
       if (currentUser) {
-        const ref = doc(db, "users", currentUser.uid, "profile", "main");
-        const snap = await getDoc(ref);
-        setProfile(snap.exists() ? (snap.data() as UserProfile) : null);
+        try {
+          const ref = doc(db, "users", currentUser.uid, "profile", "main");
+          const snap = await getDoc(ref);
+          setProfile(snap.exists() ? (snap.data() as UserProfile) : null);
+
+          const stateRef = doc(db, "users", currentUser.uid, "calendarState", "main");
+          const stateSnap = await getDoc(stateRef);
+
+          if (stateSnap.exists()) {
+            const state = stateSnap.data() as CloudSalaryState;
+
+            setGrossSalary(String(state.grossSalary ?? "0"));
+            setMealTicketPerDay(String(state.mealTicketPerDay ?? "30"));
+            setNightPercent(String(state.nightPercent ?? "25"));
+            setOvertimePercent(String(state.overtimePercent ?? "75"));
+            setWeekendPercent(String(state.weekendPercent ?? "10"));
+            setHolidayPercent(String(state.holidayPercent ?? "100"));
+            setCasPercent(String(state.casPercent ?? "25"));
+            setCassPercent(String(state.cassPercent ?? "10"));
+            setTaxPercent(String(state.taxPercent ?? "10"));
+            setHoursPerShift(String(state.hoursPerShift ?? "8"));
+            setMedicalLeaveDays(String(state.medicalLeaveDays ?? "0"));
+            setMonthIndex(Number(state.monthIndex ?? 3));
+            setYear(Number(state.year ?? 2026));
+            setDaysData(state.daysData ?? {});
+
+            if (state.lang === "ro" || state.lang === "en") {
+              setLang(state.lang);
+            }
+          } else {
+            const savedSettings = localStorage.getItem(`salary-settings-v3-${currentUser.uid}`);
+            const savedCalendar = localStorage.getItem(`salary-calendar-v3-${currentUser.uid}`);
+
+            if (savedSettings) {
+              const s = JSON.parse(savedSettings);
+              setGrossSalary(String(s.grossSalary ?? "0"));
+              setMealTicketPerDay(String(s.mealTicketPerDay ?? "30"));
+              setNightPercent(String(s.nightPercent ?? "25"));
+              setOvertimePercent(String(s.overtimePercent ?? "75"));
+              setWeekendPercent(String(s.weekendPercent ?? "10"));
+              setHolidayPercent(String(s.holidayPercent ?? "100"));
+              setCasPercent(String(s.casPercent ?? "25"));
+              setCassPercent(String(s.cassPercent ?? "10"));
+              setTaxPercent(String(s.taxPercent ?? "10"));
+              setHoursPerShift(String(s.hoursPerShift ?? "8"));
+              setMedicalLeaveDays(String(s.medicalLeaveDays ?? "0"));
+            } else {
+              setGrossSalary("0");
+              setMealTicketPerDay("30");
+              setNightPercent("25");
+              setOvertimePercent("75");
+              setWeekendPercent("10");
+              setHolidayPercent("100");
+              setCasPercent("25");
+              setCassPercent("10");
+              setTaxPercent("10");
+              setHoursPerShift("8");
+              setMedicalLeaveDays("0");
+            }
+
+            if (savedCalendar) {
+              const c = JSON.parse(savedCalendar);
+              setMonthIndex(Number(c.monthIndex ?? 3));
+              setYear(Number(c.year ?? 2026));
+              setDaysData(c.daysData ?? {});
+            } else {
+              setMonthIndex(3);
+              setYear(2026);
+              setDaysData({});
+            }
+          }
+        } catch (error) {
+          console.error("Cloud state load error:", error);
+        } finally {
+          setCloudStateLoaded(true);
+        }
       } else {
         setProfile(null);
+        setCloudStateLoaded(false);
+        setGrossSalary("0");
+        setMealTicketPerDay("30");
+        setNightPercent("25");
+        setOvertimePercent("75");
+        setWeekendPercent("10");
+        setHolidayPercent("100");
+        setCasPercent("25");
+        setCassPercent("10");
+        setTaxPercent("10");
+        setHoursPerShift("8");
+        setMedicalLeaveDays("0");
+        setDaysData({});
       }
 
       setLoading(false);
@@ -591,7 +838,9 @@ export default function Home() {
     : (lang === "ro" ? "Gratuit" : "Free");
 
   const isPremium = !!profile?.isPremium;
-  const adMode = isPremium ? "banner_only" : "full_ads";
+  // Pentru review AdSense nu afișăm reclame/placeholder-e în ecranele aplicației.
+  // Reclamele pot fi reactivate controlat doar pe pagini editoriale după aprobare.
+  const adMode = "adsense_review_safe";
 
   const calculationSignature = useMemo(() => JSON.stringify({
     grossSalary,
@@ -649,7 +898,7 @@ export default function Home() {
       const weekday = date.getDay();
       const weekdayIndex = weekday === 0 ? 6 : weekday - 1;
       const isWeekend = weekdayIndex >= 5;
-      const holiday = HOLIDAYS_2026.find(
+      const holiday = holidaysForYear.find(
         (h) => h.month === monthIndex + 1 && h.day === day,
       );
 
@@ -671,7 +920,7 @@ export default function Home() {
     }
 
     return items;
-  }, [monthIndex, year, lang]);
+  }, [monthIndex, year, lang, holidaysForYear]);
 
   const calculation = useMemo(() => {
     const gross = Number(grossSalary || 0);
@@ -841,11 +1090,8 @@ export default function Home() {
         return;
       }
 
-      if (result.shouldShowAd && !profile?.isPremium) {
-        setAdGateOpen(true);
-        return;
-      }
-
+      // În modul de review AdSense nu folosim porți, overlay-uri sau placeholder-e de reclamă.
+      // După aprobare, monetizarea se reactivează controlat fără a forța clickuri/vizionări.
       setApprovedCalculationSignature(calculationSignature);
       setActiveTab("estimate");
     } catch (error) {
@@ -983,6 +1229,10 @@ export default function Home() {
             onToday={setToday}
             onReset={resetCalendar}
             lang={lang}
+            calculation={calculation}
+            onCalculate={handleCalculateRequest}
+            usageLoading={usageLoading}
+            isOnline={isOnline}
           />
         );
       case "estimate":
@@ -1079,7 +1329,7 @@ export default function Home() {
           />
         );
       case "holidays":
-        return <HolidaysSection t={t} lang={lang} />;
+        return <HolidaysSection t={t} lang={lang} year={year} holidays={holidaysForYear} />;
       case "logic":
         return <LogicSection t={t} lang={lang} />;
       default:
@@ -1099,9 +1349,10 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_right,_rgba(59,130,246,0.20),_transparent_18%),linear-gradient(180deg,#071427_0%,#07192f_40%,#051324_100%)] pb-28 text-white">
-      <div className="mx-auto max-w-6xl px-4 py-4 md:px-6 lg:px-8">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_15%_8%,_rgba(34,211,238,0.18),_transparent_22%),radial-gradient(circle_at_85%_5%,_rgba(59,130,246,0.22),_transparent_24%),linear-gradient(180deg,#061122_0%,#07192f_45%,#04101f_100%)] pb-28 text-white">
+      <div className="mx-auto max-w-7xl px-4 py-5 md:px-6 lg:px-8">
         {!user && (
+          <>
           <section className="mx-auto mt-10 max-w-3xl rounded-[32px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_0_60px_rgba(0,80,255,0.08)] backdrop-blur-sm">
             <div className="mb-5 inline-flex rounded-full bg-indigo-500/20 px-4 py-2 text-sm font-semibold text-indigo-200">
               {t.secureAuth}
@@ -1127,6 +1378,24 @@ export default function Home() {
               </Link>
             </div>
           </section>
+
+          <section className="mx-auto mt-6 max-w-5xl rounded-[28px] border border-white/10 bg-[#071326]/75 p-6 text-white/80 shadow-[0_0_50px_rgba(0,80,255,0.06)]">
+            <div className="text-xs uppercase tracking-[0.22em] text-blue-200/70">Ghid salarizare România</div>
+            <h2 className="mt-2 text-2xl font-bold text-white md:text-3xl">Calculator salariu, sporuri, ture și sărbători legale</h2>
+            <p className="mt-4 leading-8">
+              Salary Calculator este construit pentru angajații care lucrează în ture și vor o estimare rapidă a venitului lunar.
+              Pe lângă aplicația de calcul, site-ul include ghiduri despre salariul brut/net, sporul de noapte, concediul medical,
+              bonurile de masă și sărbătorile legale din România. Informațiile sunt orientative și trebuie verificate cu legislația
+              actuală, contractul individual de muncă și regulamentul intern al angajatorului.
+            </p>
+            <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+              <Link href="/calculator-brut-net" className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 font-semibold text-white transition hover:bg-white/[0.08]">Brut vs net</Link>
+              <Link href="/spor-de-noapte" className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 font-semibold text-white transition hover:bg-white/[0.08]">Spor de noapte</Link>
+              <Link href="/concediu-medical" className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 font-semibold text-white transition hover:bg-white/[0.08]">Medical leave</Link>
+              <Link href="/sarbatori-legale-2026" className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 font-semibold text-white transition hover:bg-white/[0.08]">Holidays 2026</Link>
+            </div>
+          </section>
+          </>
         )}
 
         {user && (
@@ -1137,44 +1406,53 @@ export default function Home() {
               </div>
             )}
 
-            <header className="flex flex-col gap-5 rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_0_60px_rgba(0,80,255,0.08)] backdrop-blur-sm md:p-6">
+            <header className="flex flex-col gap-5 rounded-[34px] border border-white/10 bg-[#08162a]/80 p-5 shadow-[0_0_80px_rgba(14,165,233,0.10),inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-xl md:p-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="text-xs uppercase tracking-[0.22em] text-white/45">
                     {t.appTitle}
                   </div>
-                  <h1 className="mt-1 text-3xl font-bold tracking-tight md:text-5xl">
+                  <h1 className="mt-1 text-[2.65rem] font-bold leading-[0.98] tracking-tight sm:text-5xl md:text-6xl">
                     {t.appTitle}
                   </h1>
                 </div>
 
-                <div className="flex items-center gap-2 self-start rounded-full border border-white/10 bg-white/[0.03] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                <div className="flex flex-wrap items-center gap-2 self-start lg:justify-end">
+                  <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                    <button
+                      onClick={() => setLang("ro")}
+                      className={`flex h-12 w-12 items-center justify-center rounded-full text-sm font-bold transition ${
+                        lang === "ro"
+                          ? "bg-gradient-to-br from-blue-400 to-cyan-400 shadow-[0_0_24px_rgba(59,130,246,0.45)]"
+                          : "border border-white/10 bg-white/[0.04]"
+                      }`}
+                    >
+                      RO
+                    </button>
+                    <button
+                      onClick={() => setLang("en")}
+                      className={`flex h-12 w-12 items-center justify-center rounded-full text-sm font-bold transition ${
+                        lang === "en"
+                          ? "bg-gradient-to-br from-blue-400 to-cyan-400 shadow-[0_0_24px_rgba(59,130,246,0.45)]"
+                          : "border border-white/10 bg-white/[0.04]"
+                      }`}
+                    >
+                      EN
+                    </button>
+                  </div>
+
                   <button
-                    onClick={() => setLang("ro")}
-                    className={`flex h-12 w-12 items-center justify-center rounded-full text-sm font-bold transition ${
-                      lang === "ro"
-                        ? "bg-gradient-to-br from-blue-400 to-cyan-400 shadow-[0_0_24px_rgba(59,130,246,0.45)]"
-                        : "border border-white/10 bg-white/[0.04]"
-                    }`}
+                    onClick={handleLogout}
+                    className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-bold text-white/80 transition-all duration-200 hover:-translate-y-0.5 hover:border-rose-300/30 hover:bg-rose-500/10 hover:text-white"
                   >
-                    RO
-                  </button>
-                  <button
-                    onClick={() => setLang("en")}
-                    className={`flex h-12 w-12 items-center justify-center rounded-full text-sm font-bold transition ${
-                      lang === "en"
-                        ? "bg-gradient-to-br from-blue-400 to-cyan-400 shadow-[0_0_24px_rgba(59,130,246,0.45)]"
-                        : "border border-white/10 bg-white/[0.04]"
-                    }`}
-                  >
-                    EN
+                    {lang === "ro" ? "Ieșire" : "Logout"}
                   </button>
                 </div>
               </div>
 
-              <div className="grid gap-3 lg:grid-cols-[1.5fr_1fr_1fr_1fr] xl:gap-4">
-                <InfoCard label={t.account} value={user.email || "-"} />
-                <InfoCard label={t.plan} value={statusLabel} />
+              <div className="grid gap-3 lg:grid-cols-[1.7fr_1fr_1fr_1fr] xl:gap-4">
+                <InfoCard icon="👤" label={t.account} value={user.email || "-"} />
+                <InfoCard icon="👑" label={t.plan} value={statusLabel} />
                 <UsageCard 
                   t={t}
                   lang={lang}
@@ -1182,21 +1460,21 @@ export default function Home() {
                   usageStatus={usageStatus} 
                   loading={usageLoading} 
                 />
-                <InfoCard label="Status" value={isOnline ? t.online : t.offline} />
+                <InfoCard icon="🟢" label="Status" value={isOnline ? t.online : t.offline} />
               </div>
 
-              <div className="flex flex-wrap gap-2.5">
-                <ActionChip onClick={() => setActiveTab("calendar")} active={activeTab === "calendar"}>{t.calendar}</ActionChip>
-                <ActionChip onClick={() => setActiveTab("estimate")} active={activeTab === "estimate"}>{t.estimate}</ActionChip>
-                <ActionChip onClick={() => setActiveTab("rules")} active={activeTab === "rules"}>{t.rules}</ActionChip>
-                <ActionChip onClick={() => setActiveTab("details")} active={activeTab === "details"}>{t.details}</ActionChip>
-                <ActionChip onClick={() => setActiveTab("holidays")} active={activeTab === "holidays"}>{t.holidays}</ActionChip>
-                <ActionChip onClick={() => setActiveTab("logic")} active={activeTab === "logic"}>{t.logic}</ActionChip>
+              <div className="flex flex-wrap gap-2.5 rounded-[24px] border border-white/10 bg-[#041224]/65 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                <ActionChip dataTab="calendar" onClick={() => setActiveTab("calendar")} active={activeTab === "calendar"}>📅 {t.calendar}</ActionChip>
+                <ActionChip dataTab="estimate" onClick={() => setActiveTab("estimate")} active={activeTab === "estimate"}>📊 {t.estimate}</ActionChip>
+                <ActionChip dataTab="rules" onClick={() => setActiveTab("rules")} active={activeTab === "rules"}>⚙️ {t.rules}</ActionChip>
+                <ActionChip dataTab="details" onClick={() => setActiveTab("details")} active={activeTab === "details"}>🧾 {t.details}</ActionChip>
+                <ActionChip dataTab="holidays" onClick={() => setActiveTab("holidays")} active={activeTab === "holidays"}>🎉 {t.holidays}</ActionChip>
+                <ActionChip dataTab="logic" onClick={() => setActiveTab("logic")} active={activeTab === "logic"}>🧠 {t.logic}</ActionChip>
                 <Link
                   href="/premium"
-                  className="rounded-[16px] border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/90 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white hover:shadow-[0_10px_24px_rgba(15,23,42,0.25)]"
+                  className="rounded-[15px] border border-amber-300/20 bg-amber-400/10 px-4 py-2.5 text-sm font-bold text-amber-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-amber-400/15 hover:text-white hover:shadow-[0_10px_24px_rgba(15,23,42,0.25)]"
                 >
-                  {t.premiumManage}
+                  👑 {t.premiumManage}
                 </Link>
                 <Link
                   href="/history"
@@ -1210,12 +1488,7 @@ export default function Home() {
                 >
                   Security
                 </Link>
-                <button
-                  onClick={handleLogout}
-                  className="rounded-[16px] border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/90 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white hover:shadow-[0_10px_24px_rgba(15,23,42,0.25)]"
-                >
-                  {t.logout}
-                </button>
+
               </div>
             </header>
 
@@ -1233,9 +1506,6 @@ export default function Home() {
 
             {renderTabContent()}
 
-            {adMode === "full_ads" && user && (
-              <InlineAdSurface lang={lang} activeTab={activeTab} />
-            )}
 
             {selectedDay && (
               <DayModal
@@ -1272,12 +1542,20 @@ export default function Home() {
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 z-50 w-full px-4 pb-3">
-        <div className="mx-auto flex max-w-6xl items-center justify-center rounded-[18px] border border-white/10 bg-[#041224]/88 px-4 py-3 text-center text-sm text-white/70 shadow-[0_12px_40px_rgba(2,8,23,0.45)] backdrop-blur-md">
+      <div className="fixed bottom-0 left-0 z-50 w-full px-3 pb-2">
+        <div className="mx-auto flex max-w-7xl items-center justify-center rounded-[16px] border border-white/10 bg-[#041224]/90 px-3 py-2 text-center text-[12px] text-white/70 shadow-[0_10px_32px_rgba(2,8,23,0.45)] backdrop-blur-md sm:text-sm">
           {!profile?.isPremium ? (
-            <div className="font-medium text-white/75">{lang === "ro" ? "Banner reclamă (placeholder)" : "Ad banner (placeholder)"}</div>
+            <div className="flex flex-wrap items-center justify-center gap-2 font-medium text-white/75">
+              <span>{lang === "ro" ? "Plan Free activ" : "Free plan active"}</span>
+              <Link
+                href="/premium"
+                className="rounded-full border border-blue-300/35 bg-gradient-to-r from-blue-600/80 to-cyan-500/70 px-3 py-1 text-white shadow-[0_0_22px_rgba(59,130,246,0.35)] transition-all duration-200 hover:scale-[1.03] hover:from-blue-500 hover:to-cyan-400 hover:shadow-[0_0_30px_rgba(34,211,238,0.45)]"
+              >
+                {lang === "ro" ? "Deblochează Premium" : "Unlock Premium"}
+              </Link>
+            </div>
           ) : (
-            <div className="font-medium text-white/75">{lang === "ro" ? "Premium activ — experiență fără reclame" : "Premium active — ad-free experience"}</div>
+            <div className="font-medium text-white/75">{lang === "ro" ? "Premium activ" : "Premium active"}</div>
           )}
         </div>
       </div>
@@ -1285,43 +1563,27 @@ export default function Home() {
   );
 }
 
-function InlineAdSurface({
-  lang,
-  activeTab,
-}: {
-  lang: Lang;
-  activeTab: TabKey;
-}) {
-  const title =
-    activeTab === "estimate"
-      ? (lang === "ro" ? "Spațiu reclamă pentru utilizatori Free" : "Ad space for Free users")
-      : activeTab === "rules"
-        ? (lang === "ro" ? "Reclamă integrată în ecranul de reguli" : "Inline ad inside the rules screen")
-        : activeTab === "details"
-          ? (lang === "ro" ? "Reclamă discretă în conținut" : "Discreet inline content ad")
-          : (lang === "ro" ? "Suprafață reclamă în aplicație" : "In-app ad surface");
-
-  const body =
-    lang === "ro"
-      ? "Această zonă apare doar pe planul Free. La Premium dispare și rămâne doar bannerul fix din partea de jos, fără să blocheze acțiunile utilizatorului."
-      : "This area is shown only on the Free plan. On Premium it disappears and only the fixed bottom banner remains, without blocking user actions.";
+function InfoCard({ label, value, icon = "•" }: { label: string; value: string; icon?: string }) {
+  const isLongValue = value.length > 18;
 
   return (
-    <section className="mt-5 rounded-[24px] border border-amber-400/20 bg-amber-400/10 p-4 text-amber-50 shadow-[0_0_30px_rgba(250,204,21,0.08)]">
-      <div className="text-xs uppercase tracking-[0.22em] text-amber-100/70">
-        {lang === "ro" ? "Publicitate pentru Free" : "Advertising for Free"}
+    <div
+      title={value}
+      className="rounded-[26px] border border-white/10 bg-[#071326]/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300/20 hover:bg-[#08182e]/90 hover:shadow-[0_14px_34px_rgba(15,23,42,0.24)]"
+    >
+      <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-white/45">
+        <span className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-sm">{icon}</span>
+        <span>{label}</span>
       </div>
-      <h3 className="mt-1 text-lg font-semibold">{title}</h3>
-      <p className="mt-1 text-sm leading-6 text-amber-50/85">{body}</p>
-    </section>
-  );
-}
-
-function InfoCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[24px] border border-white/10 bg-[#071326]/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/15 hover:bg-[#08182e]/90">
-      <div className="text-[10px] uppercase tracking-[0.18em] text-white/45">{label}</div>
-      <div className="mt-2 break-words text-lg font-semibold leading-tight md:text-[2rem]">{value}</div>
+      <div
+        className={`mt-3 break-all font-black leading-tight ${
+          isLongValue
+            ? "text-[1rem] sm:text-[1.05rem] md:text-[1.1rem] xl:text-[1.2rem]"
+            : "text-xl md:text-[2rem]"
+        }`}
+      >
+        {value}
+      </div>
     </div>
   );
 }
@@ -1340,7 +1602,7 @@ function UsageCard({
   loading: boolean;
 }) {
   const remaining = usageStatus?.remaining ?? "—";
-  const limit = usageStatus?.limit ?? 30;
+  const limit = usageStatus?.limit ?? 15;
   const isUnlimited = isPremium || limit === 999999;
   const value = loading
     ? t.usageChecking
@@ -1351,10 +1613,20 @@ function UsageCard({
     ? (lang === "ro" ? "Plan premium" : "Premium plan")
     : (lang === "ro" ? "Fereastra lunară curentă" : "Current monthly window");
 
+  const tooltip = isUnlimited
+    ? (lang === "ro" ? "Planul Premium permite utilizare nelimitată." : "Premium allows unlimited use.")
+    : (lang === "ro" ? `Planul Free permite ${limit} calcule pe lună.` : `Free plan allows ${limit} calculations per month.`);
+
   return (
-    <div className="rounded-[24px] border border-white/10 bg-[#071326]/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/15 hover:bg-[#08182e]/90">
-      <div className="text-[10px] uppercase tracking-[0.18em] text-white/45">{t.usage}</div>
-      <div className="mt-2 break-words text-lg font-semibold leading-tight md:text-[2rem]">{value}</div>
+    <div
+      title={tooltip}
+      className="cursor-help rounded-[26px] border border-white/10 bg-[#061327]/90 p-4 shadow-[0_14px_34px_rgba(2,8,23,0.25),inset_0_1px_0_rgba(255,255,255,0.035)] transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-300/20 hover:bg-[#08182e]/95"
+    >
+      <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-white/45">
+        <span className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-sm">⚡</span>
+        <span>{t.usage}</span>
+      </div>
+      <div className="mt-3 break-all text-xl font-black leading-tight md:break-words md:text-[2rem]">{value}</div>
       <div className="mt-1 text-xs text-white/60">{loading ? t.usageChecking : hint}</div>
     </div>
   );
@@ -1461,19 +1733,22 @@ function ActionChip({
   children,
   active,
   onClick,
+  dataTab,
 }: {
   children: React.ReactNode;
   active?: boolean;
   onClick?: () => void;
+  dataTab?: string;
 }) {
   return (
     <button
+      data-tab={dataTab}
       onClick={onClick}
-     className={`rounded-[14px] px-4 py-2 text-sm font-medium transition-all duration-200
-     ${active
-       ? "bg-blue-500/20 text-blue-300 border border-blue-400/30 shadow-[0_0_20px_rgba(59,130,246,0.25)]"
-       : "bg-white/[0.04] text-white/70 border border-white/10 hover:bg-white/[0.08] hover:text-white hover:-translate-y-[1px]"
-     }`}
+      className={`rounded-[15px] px-4 py-2.5 text-sm font-bold transition-all duration-200
+      ${active
+        ? "bg-blue-500/20 text-blue-200 border border-blue-400/35 shadow-[0_0_22px_rgba(59,130,246,0.28)]"
+        : "bg-white/[0.04] text-white/72 border border-white/10 hover:bg-white/[0.08] hover:text-white hover:-translate-y-[1px]"
+      }`}
     >
       {children}
     </button>
@@ -1490,7 +1765,7 @@ function SectionShell({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[30px] border border-white/10 bg-white/[0.03] p-5 shadow-[0_0_60px_rgba(0,80,255,0.08)] backdrop-blur-sm md:p-6">
+    <section className="rounded-[34px] border border-white/10 bg-[#08162a]/72 p-5 shadow-[0_0_80px_rgba(14,165,233,0.09),inset_0_1px_0_rgba(255,255,255,0.035)] backdrop-blur-xl md:p-6">
       <div className="text-xs uppercase tracking-[0.22em] text-white/45">{kicker}</div>
       <h2 className="mt-1 text-2xl font-bold md:text-4xl">{title}</h2>
       <div className="mt-4">{children}</div>
@@ -1513,6 +1788,10 @@ function CalendarSection({
   onToday,
   onReset,
   lang,
+  calculation,
+  onCalculate,
+  usageLoading,
+  isOnline,
 }: any) {
   function prevMonth() {
     if (monthIndex === 0) {
@@ -1532,75 +1811,103 @@ function CalendarSection({
     }
   }
 
-  function getStyle(day: number, isWeekend: boolean, isHoliday: boolean) {
-    const type = daysData[day]?.type || "Liber";
+  function openRules() {
+    const direct =
+      (document.querySelector('[data-tab="rules"]') as HTMLElement | null) ||
+      (document.querySelector('[data-tab="reguli"]') as HTMLElement | null);
 
-    if (type === "Morning") return "border-emerald-400/45 bg-emerald-500/[0.08] hover:bg-emerald-500/[0.11]";
-    if (type === "After") return "border-amber-400/45 bg-amber-500/[0.09] hover:bg-amber-500/[0.12]";
-    if (type === "Night") return "border-blue-400/45 bg-blue-500/[0.09] hover:bg-blue-500/[0.12]";
-    if (type === "CO") return "border-violet-400/45 bg-violet-500/[0.11] hover:bg-violet-500/[0.14]";
-    if (type === "CM") return "border-rose-400/45 bg-rose-500/[0.11] hover:bg-rose-500/[0.14]";
-    if (isHoliday) return "border-rose-400/30 bg-rose-500/[0.07] hover:bg-rose-500/[0.10]";
-    if (isWeekend) return "border-amber-400/25 bg-amber-500/[0.05] hover:bg-amber-500/[0.08]";
-    return "border-cyan-400/15 bg-cyan-500/[0.03] hover:bg-cyan-500/[0.05]";
+    if (direct) {
+      direct.click();
+      return;
+    }
+
+    const buttons = Array.from(document.querySelectorAll("button")) as HTMLElement[];
+    const rulesButton = buttons.find((button) => {
+      const text = button.textContent?.trim().toLowerCase() || "";
+      return text.includes("rules") || text.includes("reguli");
+    });
+
+    rulesButton?.click();
+  }
+
+  const dayEntries = Object.values(daysData) as DayData[];
+  const morningCount = dayEntries.filter((d) => d.type === "Morning").length;
+  const afternoonCount = dayEntries.filter((d) => d.type === "After").length;
+  const nightCount = dayEntries.filter((d) => d.type === "Night").length;
+  const vacationCount = dayEntries.filter((d) => d.type === "CO").length;
+  const medicalCount = dayEntries.filter((d) => d.type === "CM").length;
+  const totalHours = calculation?.workedHours ?? dayEntries.reduce((sum, d) => sum + (d.workedHours || 0), 0);
+
+  function getStyle(day: number, isWeekend: boolean, isHoliday: boolean) {
+    const type = daysData[day]?.type || "Off";
+
+    if (type === "Morning") return "border-emerald-400/45 bg-emerald-500/[0.09] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:bg-emerald-500/[0.13]";
+    if (type === "After") return "border-amber-400/45 bg-amber-500/[0.10] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:bg-amber-500/[0.14]";
+    if (type === "Night") return "border-blue-400/45 bg-blue-500/[0.10] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:bg-blue-500/[0.14]";
+    if (type === "CO") return "border-violet-400/45 bg-violet-500/[0.12] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:bg-violet-500/[0.16]";
+    if (type === "CM") return "border-rose-400/45 bg-rose-500/[0.12] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:bg-rose-500/[0.16]";
+    if (isHoliday) return "border-rose-400/30 bg-rose-500/[0.08] hover:bg-rose-500/[0.12]";
+    if (isWeekend) return "border-amber-400/25 bg-amber-500/[0.06] hover:bg-amber-500/[0.10]";
+    return "border-cyan-400/15 bg-cyan-500/[0.035] hover:bg-cyan-500/[0.07]";
   }
 
   return (
     <SectionShell kicker={t.monthlyProgram} title={t.quickCalendar}>
-      <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
-        <div className="rounded-[24px] border border-white/10 bg-[#071326]/80 p-3">
-          <div className="grid gap-2 md:grid-cols-[44px_1fr_44px]">
+      <div className="grid items-start gap-5 2xl:grid-cols-[minmax(0,1.85fr)_minmax(360px,0.75fr)]">
+        <div className="rounded-[28px] border border-white/10 bg-[#061327]/92 p-3 shadow-[0_18px_60px_rgba(2,8,23,0.35),inset_0_1px_0_rgba(255,255,255,0.04)] md:p-4">
+          <div className="grid gap-2 md:grid-cols-[48px_1fr_48px]">
             <button
               onClick={prevMonth}
-              className="rounded-[12px] border border-white/10 bg-white/[0.04] px-2 py-2 text-base font-semibold transition hover:bg-white/[0.08]"
+              className="rounded-[14px] border border-white/10 bg-white/[0.04] px-2 py-2 text-lg font-semibold transition hover:-translate-y-0.5 hover:bg-white/[0.08]"
             >
               ‹
             </button>
-            <div className="rounded-[12px] border border-white/10 bg-white/[0.04] px-4 py-2 text-center text-sm font-semibold">
+            <div className="rounded-[14px] border border-white/10 bg-white/[0.04] px-4 py-2 text-center text-sm font-bold tracking-wide">
               {months[monthIndex]}
             </div>
             <button
               onClick={nextMonth}
-              className="rounded-[12px] border border-white/10 bg-white/[0.04] px-2 py-2 text-base font-semibold transition hover:bg-white/[0.08]"
+              className="rounded-[14px] border border-white/10 bg-white/[0.04] px-2 py-2 text-lg font-semibold transition hover:-translate-y-0.5 hover:bg-white/[0.08]"
             >
               ›
             </button>
           </div>
 
-          <div className="mt-2 rounded-[12px] border border-white/10 bg-white/[0.04] px-4 py-2 text-center text-sm font-semibold">
+          <div className="mt-2 rounded-[14px] border border-white/10 bg-white/[0.04] px-4 py-2 text-center text-sm font-bold tracking-wide">
             {year}
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              onClick={onToday}
-              className="rounded-[12px] border border-white/10 bg-blue-500 px-3 py-2 text-[11px] font-semibold shadow-[0_8px_20px_rgba(59,130,246,0.28)] transition hover:bg-blue-400"
-            >
-              {t.today}
-            </button>
-            <button
-              onClick={onReset}
-              className="rounded-[12px] border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] font-semibold transition hover:bg-white/[0.08]"
-            >
-              {t.reset}
-            </button>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={onToday}
+                className="rounded-[13px] border border-blue-300/30 bg-blue-500 px-3 py-2 text-[11px] font-bold shadow-[0_8px_20px_rgba(59,130,246,0.28)] transition hover:-translate-y-0.5 hover:bg-blue-400"
+              >
+                {t.today}
+              </button>
+              <button
+                onClick={onReset}
+                className="rounded-[13px] border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] font-bold transition hover:-translate-y-0.5 hover:bg-white/[0.08]"
+              >
+                {t.reset}
+              </button>
+            </div>
           </div>
 
-
-         <div className="mt-3 flex flex-wrap gap-2">
-           <LegendPill color="bg-emerald-400" label={TYPE_LABELS[lang as Lang].Morning} />
-           <LegendPill color="bg-amber-400" label={TYPE_LABELS[lang as Lang].After} />
-           <LegendPill color="bg-blue-400" label={TYPE_LABELS[lang as Lang].Night} />
-           <LegendPill color="bg-slate-500" label={TYPE_LABELS[lang as Lang].Liber} />
-           <LegendPill color="bg-violet-400" label={TYPE_LABELS[lang as Lang].CO} />
-           <LegendPill color="bg-rose-400" label={`${TYPE_LABELS[lang as Lang].CM} / ${t.holiday}`} />
-         </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <LegendPill color="bg-emerald-400" label={TYPE_LABELS[lang as Lang].Morning} />
+            <LegendPill color="bg-amber-400" label={TYPE_LABELS[lang as Lang].After} />
+            <LegendPill color="bg-blue-400" label={TYPE_LABELS[lang as Lang].Night} />
+            <LegendPill color="bg-slate-500" label={TYPE_LABELS[lang as Lang].Off} />
+            <LegendPill color="bg-violet-400" label={TYPE_LABELS[lang as Lang].CO} />
+            <LegendPill color="bg-rose-400" label={`${TYPE_LABELS[lang as Lang].CM} / ${t.holiday}`} />
+          </div>
 
           <div className="mt-4 grid grid-cols-7 gap-2">
             {weekdays.map((day: string) => (
               <div
                 key={day}
-                className="rounded-[10px] border border-white/10 bg-white/[0.03] px-2 py-2 text-center text-[10px] font-semibold text-white/70"
+                className="rounded-[12px] border border-white/10 bg-white/[0.035] px-2 py-2 text-center text-[10px] font-bold text-white/70"
               >
                 {day}
               </div>
@@ -1608,49 +1915,137 @@ function CalendarSection({
 
             {monthDays.map((item: any, idx: number) =>
               item.day ? (
-               <button
-  key={`${item.day}-${idx}`}
-  onClick={() => setSelectedDay(item.day)}
-  className={`h-[84px] overflow-hidden rounded-[14px] border px-2 py-2 text-left transition-all duration-200 transform-gpu hover:scale-[1.04] active:scale-[0.97] hover:border-white/20 ${getStyle(
-  item.day,
-  item.isWeekend,
-  item.isHoliday
-)}${selectedDay === item.day
-  ? " ring-2 ring-blue-400/70 bg-blue-500/10 shadow-[0_0_1px_rgba(96,165,250,0.3),0_8px_20px_rgba(59,130,246,0.2)] scale-[1.02]"
-  : ""}`}
->
-  <div className="text-2xl font-bold leading-none">{item.day}</div>
-  <div className="mt-1 text-[9px] font-medium leading-none text-white/75">
-    {weekdays[item.weekdayIndex]}
-  </div>
-  <div className="mt-2 text-[10px] font-semibold leading-3 break-words">
-    {TYPE_LABELS[lang as Lang][
-      ((daysData[item.day]?.type || "Liber") as keyof (typeof TYPE_LABELS)[Lang])
-    ]}
-  </div>
-  {item.holidayName && (
-    <div className="mt-1 rounded-full bg-white/10 px-1.5 py-1 text-[7px] leading-2 text-white/80 break-words">
-      {item.holidayName}
-    </div>
-  )}
-</button>
+                <button
+                  key={`${item.day}-${idx}`}
+                  onClick={() => setSelectedDay(item.day)}
+                  className={`min-h-[78px] overflow-hidden rounded-[18px] border px-2.5 py-2 text-left transition-all duration-200 transform-gpu hover:-translate-y-0.5 hover:scale-[1.03] active:scale-[0.98] hover:border-white/25 ${getStyle(
+                    item.day,
+                    item.isWeekend,
+                    item.isHoliday
+                  )}${selectedDay === item.day
+                    ? " ring-2 ring-blue-400/75 bg-blue-500/10 shadow-[0_0_28px_rgba(59,130,246,0.28)] scale-[1.02]"
+                    : ""}`}
+                >
+                  <div className="text-2xl font-black leading-none">{item.day}</div>
+                  <div className="mt-1 text-[9px] font-semibold leading-none text-white/70">
+                    {weekdays[item.weekdayIndex]}
+                  </div>
+                  <div className="mt-2 text-[10px] font-bold leading-3 break-words text-white/90">
+                    {TYPE_LABELS[lang as Lang][
+                      ((daysData[item.day]?.type || "Off") as keyof (typeof TYPE_LABELS)[Lang])
+                    ]}
+                  </div>
+                  {item.holidayName && (
+                    <div className="mt-1 rounded-full bg-white/10 px-1.5 py-1 text-[7px] leading-2 text-white/80 break-words">
+                      {item.holidayName}
+                    </div>
+                  )}
+                </button>
               ) : (
                 <div
                   key={`empty-${idx}`}
-                  className="h-[84px] rounded-[14px] border border-white/5 bg-white/[0.02]"
+                  className="min-h-[78px] rounded-[18px] border border-white/5 bg-white/[0.018]"
                 />
               ),
             )}
           </div>
         </div>
 
-        <div className="grid gap-3">
-          <MiniMetric title={t.shiftsSet} value={String(Object.keys(daysData).length || "0")} />
-          <MiniMetric title={TYPE_LABELS[lang as Lang].Morning} value={String(Object.values(daysData).filter((d: any) => d.type === "Morning").length || "0")} />
-          <MiniMetric title={TYPE_LABELS[lang as Lang].After} value={String(Object.values(daysData).filter((d: any) => d.type === "After").length || "0")} />
-          <MiniMetric title={TYPE_LABELS[lang as Lang].Night} value={String(Object.values(daysData).filter((d: any) => d.type === "Night").length || "0")} />
-          <MiniMetric title="OT" value={`${Object.values(daysData).reduce((sum: number, d: any) => sum + (d.overtimeHours || 0), 0)}h`} />
-          <MiniMetric title={t.monthHolidays} value={String(monthDays.filter((d: any) => d.day && d.isHoliday).length || "0")} />
+        <div className="rounded-[28px] border border-emerald-400/25 bg-gradient-to-br from-emerald-500/[0.13] to-cyan-500/[0.06] p-5 shadow-[0_0_45px_rgba(16,185,129,0.12)] 2xl:sticky 2xl:top-24 2xl:self-start">
+          <div className="text-[10px] uppercase tracking-[0.22em] text-emerald-100/70">
+            {lang === "ro" ? "Calcul live" : "Live calculation"}
+          </div>
+          <div className="mt-3 text-3xl font-black text-emerald-200 drop-shadow-[0_0_18px_rgba(110,231,183,0.22)] md:text-4xl">
+            {calculation?.totalEstimated ? `${calculation.totalEstimated.toFixed(2)} RON` : "—"}
+          </div>
+          <div className="mt-1 text-sm text-white/70">
+            {lang === "ro" ? "Total estimat net + bonuri de masă" : "Estimated total net + meal vouchers"}
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+            <div className="rounded-2xl border border-white/10 bg-[#071326]/70 p-3">
+              <div className="text-white/45">💰 Net</div>
+              <div className="mt-1 font-bold">{calculation?.netSalary ? `${calculation.netSalary.toFixed(2)} RON` : "—"}</div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-[#071326]/70 p-3">
+              <div className="text-white/45">🎟️ {lang === "ro" ? "Bonuri" : "Vouchers"}</div>
+              <div className="mt-1 font-bold">{calculation?.mealTickets ? `${calculation.mealTickets.toFixed(2)} RON` : "—"}</div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-[#071326]/70 p-3">
+              <div className="text-white/45">✨ {lang === "ro" ? "Sporuri" : "Bonuses"}</div>
+              <div className="mt-1 font-bold">{calculation ? `${(calculation.overtimeExtra + calculation.nightExtra + calculation.weekendExtra + calculation.holidayExtra).toFixed(2)} RON` : "—"}</div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-[#071326]/70 p-3">
+              <div className="text-white/45">⏱️ {lang === "ro" ? "Ore" : "Hours"}</div>
+              <div className="mt-1 font-bold">{calculation ? `${calculation.workedHours.toFixed(1)}h` : "0h"}</div>
+            </div>
+          </div>
+          <button
+            onClick={onCalculate}
+            disabled={usageLoading || !isOnline}
+            className="mt-4 w-full rounded-[18px] bg-gradient-to-r from-blue-600 to-cyan-500 px-5 py-3 text-sm font-black transition hover:-translate-y-0.5 hover:from-blue-500 hover:to-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {lang === "ro" ? "Vezi detaliile complete" : "View full details"}
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+        <div className="rounded-[28px] border border-cyan-400/25 bg-gradient-to-br from-cyan-500/[0.12] to-blue-500/[0.05] p-6 shadow-[0_0_45px_rgba(34,211,238,0.10)]">
+          <div className="text-cyan-300 text-xs uppercase tracking-[0.25em] mb-2">
+            {lang === "ro" ? "Setup rapid" : "Quick setup"}
+          </div>
+          <h3 className="text-white text-xl font-bold mb-2">
+            {lang === "ro" ? "Configurează salariul înainte de utilizare" : "Set up your salary before using the app"}
+          </h3>
+          <p className="text-slate-300 text-sm leading-6 mb-4 max-w-3xl">
+            {lang === "ro"
+              ? "Intră în Reguli pentru a introduce salariul brut, sporurile și bonurile de masă. După configurare, calendarul și calculul live se actualizează automat."
+              : "Go to Rules to enter your gross salary, bonuses and meal vouchers. After setup, the calendar and live calculation update automatically."}
+          </p>
+          <button
+            onClick={openRules}
+            className="rounded-xl bg-cyan-500 px-5 py-3 text-sm font-black text-black transition-all hover:-translate-y-0.5 hover:bg-cyan-400 sm:min-w-[220px]"
+          >
+            {lang === "ro" ? "Deschide Reguli" : "Open Rules"}
+          </button>
+        </div>
+
+        <div className="rounded-[28px] border border-white/10 bg-[#061327]/88 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
+          <div className="text-[10px] uppercase tracking-[0.22em] text-blue-100/60">
+            {lang === "ro" ? "Tutorial rapid" : "Quick tutorial"}
+          </div>
+          <ol className="mt-3 space-y-2.5 text-sm leading-6 text-white/75">
+            <li><b className="text-white">1.</b> {lang === "ro" ? "Apasă pe o zi din calendar." : "Click a day in the calendar."}</li>
+            <li><b className="text-white">2.</b> {lang === "ro" ? "Alege tura: Morning, After, Night, CO sau CM." : "Choose the shift: Morning, After, Night, Vacation or Sick."}</li>
+            <li><b className="text-white">3.</b> {lang === "ro" ? "Completează orele lucrate și orele suplimentare, dacă există." : "Fill in worked hours and overtime if any."}</li>
+            <li><b className="text-white">4.</b> {lang === "ro" ? "Calculul live se actualizează automat." : "The live calculation updates automatically."}</li>
+            <li><b className="text-white">5.</b> {lang === "ro" ? "Intră la Reguli doar când vrei să schimbi salariul, taxele sau procentele." : "Open Rules only when you want to change salary, taxes or percentages."}</li>
+          </ol>
+        </div>
+      </div>
+
+      <div className="mt-5 rounded-[28px] border border-white/10 bg-[#061327]/76 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] md:p-5">
+        <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.22em] text-cyan-100/55">
+              {lang === "ro" ? "Rezumat rapid" : "Quick stats"}
+            </div>
+            <h3 className="mt-1 text-xl font-black text-white">
+              {lang === "ro" ? "Turele lunii" : "Monthly shifts"}
+            </h3>
+          </div>
+          <div className="text-sm text-white/55">
+            {lang === "ro" ? "Detaliile complete rămân în tabul Estimate." : "Full breakdown stays in the Estimate tab."}
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+          <MiniMetric icon="☀️" tone="emerald" title={TYPE_LABELS[lang as Lang].Morning} value={String(morningCount)} />
+          <MiniMetric icon="🌆" tone="amber" title={TYPE_LABELS[lang as Lang].After} value={String(afternoonCount)} />
+          <MiniMetric icon="🌙" tone="blue" title={TYPE_LABELS[lang as Lang].Night} value={String(nightCount)} />
+          <MiniMetric icon="🏖️" tone="violet" title={TYPE_LABELS[lang as Lang].CO} value={String(vacationCount)} />
+          <MiniMetric icon="🏥" tone="rose" title={TYPE_LABELS[lang as Lang].CM} value={String(medicalCount)} />
+          <MiniMetric icon="⏱️" tone="cyan" title={lang === "ro" ? "Ore lucrate" : "Worked hours"} value={`${totalHours.toFixed(1)}h`} />
         </div>
       </div>
     </SectionShell>
@@ -1666,13 +2061,33 @@ function LegendPill({ color, label }: { color: string; label: string }) {
   );
 }
 
-function MiniMetric({ title, value }: { title: string; value: string }) {
+function MiniMetric({
+  title,
+  value,
+  icon = "•",
+  tone = "cyan",
+}: {
+  title: string;
+  value: string;
+  icon?: string;
+  tone?: "emerald" | "amber" | "blue" | "violet" | "rose" | "cyan";
+}) {
+  const toneClass: Record<string, string> = {
+    emerald: "border-emerald-400/20 bg-emerald-500/[0.06] text-emerald-200",
+    amber: "border-amber-400/20 bg-amber-500/[0.06] text-amber-200",
+    blue: "border-blue-400/20 bg-blue-500/[0.06] text-blue-200",
+    violet: "border-violet-400/20 bg-violet-500/[0.06] text-violet-200",
+    rose: "border-rose-400/20 bg-rose-500/[0.06] text-rose-200",
+    cyan: "border-cyan-400/20 bg-cyan-500/[0.06] text-cyan-200",
+  };
+
   return (
-    <div className="rounded-[20px] border border-white/10 bg-[#071326]/80 p-4 
-    hover:border-blue-400/20 hover:bg-[#0a1a33]/90 hover:scale-[1.04] hover:z-10
-    transition-all duration-200">
-      <div className="text-[10px] uppercase tracking-[0.18em] text-white/45">{title}</div>
-      <div className="mt-2 break-words text-2xl font-bold text-white/90">{value}</div>
+    <div className={`rounded-[24px] border p-4 shadow-[0_14px_35px_rgba(2,8,23,0.24)] transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.025] hover:bg-white/[0.06] ${toneClass[tone]}`}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-[10px] uppercase tracking-[0.18em] text-white/50">{title}</div>
+        <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-base">{icon}</div>
+      </div>
+      <div className="mt-3 break-words text-2xl font-black text-white md:text-3xl">{value}</div>
     </div>
   );
 }
@@ -1702,9 +2117,9 @@ function DayModal({
   onClose: () => void;
   onSave: (newData: DayData) => void;
 }) {
-  const [type, setType] = useState<DayType>(data?.type || "Liber");
+  const [type, setType] = useState<DayType>(data?.type || "Off");
   const maxShiftHours = 8;
-  const initialWorkedHours = typeof data?.workedHours === "number" ? data.workedHours : (data?.type && data.type !== "Liber" && data.type !== "CO" && data.type !== "CM" ? maxShiftHours : 0);
+  const initialWorkedHours = typeof data?.workedHours === "number" ? data.workedHours : (data?.type && data.type !== "Off" && data.type !== "CO" && data.type !== "CM" ? maxShiftHours : 0);
   const [workedHoursInput, setWorkedHoursInput] = useState<string>(String(initialWorkedHours));
   const [overtimeHours, setOvertimeHours] = useState<number>(data?.overtimeHours || 0);
   const [note, setNote] = useState<string>(data?.note || "");
@@ -1730,12 +2145,12 @@ function DayModal({
         </div>
 
         <div className="mt-5 grid gap-3 md:grid-cols-2">
-          {(["Liber","Morning","After","Night","CO","CM"] as DayType[]).map((dayType) => (
+          {(["Off","Morning","After","Night","CO","CM"] as DayType[]).map((dayType) => (
             <ShiftButton
               key={dayType}
               selected={type === dayType}
               color={
-                dayType === "Liber" ? "bg-slate-500/25 border-slate-300/25" :
+                dayType === "Off" ? "bg-slate-500/25 border-slate-300/25" :
                 dayType === "Morning" ? "bg-emerald-500/25 border-emerald-300/25" :
                 dayType === "After" ? "bg-amber-500/25 border-amber-300/25" :
                 dayType === "Night" ? "bg-blue-500/25 border-blue-300/25" :
@@ -2205,13 +2620,33 @@ function DetailCard({
   );
 }
 
-function HolidaysSection({ t, lang }: { t: Translation; lang: Lang }) {
+function HolidaysSection({
+  t,
+  lang,
+  year,
+  holidays,
+}: {
+  t: Translation;
+  lang: Lang;
+  year: number;
+  holidays: HolidayItem[];
+}) {
   return (
-    <SectionShell kicker={t.annualReference} title={`${t.holidays} 2026`}>
+    <SectionShell kicker={t.annualReference} title={`${t.holidays} ${year}`}>
+      <div className="mb-4 rounded-[18px] border border-white/10 bg-white/[0.03] px-4 py-3 text-sm leading-6 text-white/65">
+        {lang === "ro"
+          ? year === 2026
+            ? "Lista pentru 2026 este stabilă și nu amestecă date din alte surse. Pentru anii următori, aplicația calculează automat Paștele, Rusaliile și sărbătorile fixe."
+            : "Holidaysle sunt generate automat local pentru anul selectat. Dacă două sărbători cad în aceeași zi, aplicația afișează o singură zi curată în calendar."
+          : year === 2026
+            ? "The 2026 list is stable and does not mix external data. For future years, the app automatically calculates Easter, Pentecost and fixed holidays."
+            : "Holidays are generated locally for the selected year. If two holidays fall on the same date, the app displays one clean calendar day."}
+      </div>
+
       <div className="space-y-3">
-        {HOLIDAYS_2026.map((item) => (
+        {holidays.map((item) => (
           <div
-            key={`${item.date}-${item.name}`}
+            key={`${item.month}-${item.day}-${item.name}`}
             className="flex flex-col justify-between gap-2 rounded-[18px] border border-white/10 bg-[#071326]/80 px-5 py-4 md:flex-row md:items-center"
           >
             <div className="text-lg font-bold">{lang === "ro" ? item.date : item.enDate}</div>
@@ -2225,20 +2660,20 @@ function HolidaysSection({ t, lang }: { t: Translation; lang: Lang }) {
 
 function LogicSection({ t, lang }: { t: Translation; lang: Lang }) {
   const rows = lang === "ro" ? [
-    ["Bază orară / Hourly base", "salariul brut de referință se împarte la aproximativ 160 ore lunare"],
-    ["Morning / After / Night", "alegi tura direct din zi; Night primește sporul de noapte"],
-    ["Weekend automat", "sâmbăta și duminica sunt detectate automat din calendar"],
-    ["Sărbători automate", "zilele legale sunt marcate și primesc automat sporul de sărbătoare"],
-    ["Ore suplimentare", "+75% din baza orară pentru fiecare oră introdusă"],
-    ["Monetizare", "free: 30 calcule/lună, banner permanent + suprafețe de reclamă în aplicație și poartă de reclamă la fiecare 3 calcule; premium: doar bannerul discret de jos și fără limită"],
-    ["Online only", "calculele noi și salvarea sunt permise doar când browserul este online"],
+    ["Hourly base", "the reference gross salary is divided by approximately 160 monthly hours"],
+    ["Morning / After / Night", "choose the shift directly from the day; Night receives the night bonus"],
+    ["Automatic weekend", "sâmbăta și duminica sunt detectate automat din calendar"],
+    ["Holidays automate", "legal holidays are marked and receive the holiday bonus automatically"],
+    ["Overtime", "+75% of the hourly base for each entered hour"],
+    ["Monetization", "în perioada de review AdSense, aplicația rulează fără reclame, fără overlay-uri și fără porți de vizionare; după aprobare, reclamele trebuie activate doar în zone conforme"],
+    ["Online only", "new calculations and saving are allowed only when the browser is online"],
   ] : [
     ["Hourly base", "the reference gross salary is divided by roughly 160 monthly hours"],
     ["Morning / Afternoon / Night", "you choose the shift directly on the day; Night gets the night bonus"],
     ["Automatic weekend", "Saturday and Sunday are detected automatically from the calendar"],
     ["Automatic holidays", "legal holidays are marked and automatically receive the holiday bonus"],
     ["Overtime", "+75% of hourly base for each entered overtime hour"],
-    ["Monetization", "free: 30 calculations/month, permanent banner + in-app ad surfaces and an ad gate every 3 calculations; premium: only the discreet bottom banner and no limit"],
+    ["Monetization", "during the AdSense review period, the app runs without ads, overlays or view gates; after approval, ads must be enabled only in compliant areas"],
     ["Online only", "new calculations and saving are allowed only while the browser is online"],
   ];
 

@@ -1,0 +1,1 @@
+v18: Public guide pages opened from menu now render RO/EN content based on saved language preference.

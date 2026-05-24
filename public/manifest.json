@@ -1,0 +1,27 @@
+{
+  "name": "Salary Calculator",
+  "short_name": "SalaryCalc",
+  "description": "Salary calculator with shifts, bonuses and legal holidays.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#041026",
+  "theme_color": "#041026",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+Fixed quick button behavior for Deschide Regulile.

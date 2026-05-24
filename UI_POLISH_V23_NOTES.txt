@@ -1,0 +1,9 @@
+V23 UI redesign notes:
+- widened main app container from max-w-6xl to max-w-7xl
+- premium layered background glow
+- refreshed header/card styling
+- calendar focus layout: large calendar + sticky live calculation panel
+- Quick setup, Quick tutorial and stats are below the calendar area, not stacked in the right sidebar
+- improved tile sizing, hover, glow, card shadows and spacing
+- kept RO/EN i18n text and fixed Open Rules / Deschide Reguli behavior
+- app icons/favicon are included in /public

@@ -29,7 +29,7 @@ export default function RegisterPage() {
     <main className="app-shell flex min-h-screen items-center justify-center p-6">
       <section className="auth-card">
         <div className="text-sm uppercase tracking-[0.22em] text-white/45">Cont nou</div>
-        <h1 className="mt-2 text-4xl font-bold">Înregistrare</h1>
+        <h1 className="mt-2 text-4xl font-bold">Register</h1>
         <p className="mt-3 text-white/70">Creează un cont nou pentru a salva calculele și statusul premium.</p>
 
         <form onSubmit={handleRegister} className="mt-8 flex flex-col gap-4">

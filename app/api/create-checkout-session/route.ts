@@ -36,7 +36,7 @@ export async function POST(req: Request) {
         },
       ],
       success_url: `${appUrl}/premium/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${appUrl}/premium?canceled=1`,
+      cancel_url: `${appUrl}/premium/cancel`,
       client_reference_id: session.uid,
       customer_email: email || undefined,
       metadata: {

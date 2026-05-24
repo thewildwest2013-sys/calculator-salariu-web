@@ -1,0 +1,6 @@
+v24 adjustments:
+- Moved Logout out of the tab/navigation bar and placed it in the top-right header next to RO/EN.
+- Removed Logout from the main action tabs to keep navigation cleaner.
+- Replaced weak bottom stats with premium quick stats:
+  Morning, Afternoon, Night, Vacation, Medical, Worked hours.
+- Added icons, category tones and a clearer quick summary card.

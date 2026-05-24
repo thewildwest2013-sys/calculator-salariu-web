@@ -1,0 +1,5 @@
+v25 final polish:
+- premium favicon/icons added
+- app icon replaced
+- pwa/browser icons added
+- ready for deploy

@@ -1,14 +1,17 @@
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 
 export type UsageStatus = {
   allowed: boolean;
   remaining: number;
   limit: number;
   used: number;
+  shouldShowAd: boolean;
+  windowStart: number;
   resetAt: number;
+  isPremium: boolean;
 };
 
 type UsageDoc = {
@@ -16,78 +19,111 @@ type UsageDoc = {
   windowStart: number;
 };
 
-function normalizeUsage(data: Partial<UsageDoc> | undefined): UsageDoc {
-  const now = Date.now();
-  const count = typeof data?.count === "number" ? data.count : 0;
-  const windowStart =
-    typeof data?.windowStart === "number" ? data.windowStart : now;
-
-  if (now - windowStart > DAY_MS) {
-    return { count: 0, windowStart: now };
-  }
-
-  return { count, windowStart };
+function getLimit(isPremium: boolean) {
+  return isPremium ? 999999 : 15;
 }
 
-export async function checkUsage(
-  uid: string,
-  isPremium: boolean
-): Promise<UsageStatus> {
+async function readUsage(uid: string): Promise<UsageDoc> {
   const ref = doc(db, "users", uid, "usage", "main");
   const snap = await getDoc(ref);
 
-  const normalized = normalizeUsage(
-    snap.exists() ? (snap.data() as Partial<UsageDoc>) : undefined
-  );
-  const limit = isPremium ? 10 : 2;
-  const used = normalized.count;
-  const remaining = Math.max(0, limit - used);
+  if (!snap.exists()) {
+    return { count: 0, windowStart: Date.now() };
+  }
+
+  const data = snap.data() as Partial<UsageDoc>;
 
   return {
-    allowed: used < limit,
-    remaining,
-    limit,
-    used,
-    resetAt: normalized.windowStart + DAY_MS,
+    count: typeof data.count === "number" ? data.count : 0,
+    windowStart:
+      typeof data.windowStart === "number" ? data.windowStart : Date.now(),
   };
 }
 
-export async function increaseUsage(uid: string): Promise<void> {
+async function writeUsage(uid: string, data: UsageDoc) {
   const ref = doc(db, "users", uid, "usage", "main");
-  const snap = await getDoc(ref);
+  await setDoc(ref, data, { merge: true });
+}
 
-  const normalized = normalizeUsage(
-    snap.exists() ? (snap.data() as Partial<UsageDoc>) : undefined
-  );
+function normalizeWindow(data: UsageDoc): UsageDoc {
+  const now = Date.now();
 
-  await setDoc(
-    ref,
-    {
-      count: normalized.count + 1,
-      windowStart: normalized.windowStart,
-    },
-    { merge: true }
-  );
+  if (!data.windowStart || now - data.windowStart >= MONTH_MS) {
+    return { count: 0, windowStart: now };
+  }
+
+  return data;
 }
 
 export async function getUsageStatus(
   uid: string,
   isPremium: boolean
 ): Promise<UsageStatus> {
-  return checkUsage(uid, isPremium);
+  const raw = await readUsage(uid);
+  const data = normalizeWindow(raw);
+  const limit = getLimit(isPremium);
+  const used = data.count;
+  const remaining = isPremium ? 999999 : Math.max(0, limit - used);
+  const allowed = isPremium ? true : used < limit;
+  const shouldShowAd = !isPremium && used > 0 && used % 3 === 0;
+
+  return {
+    allowed,
+    remaining,
+    limit,
+    used,
+    shouldShowAd,
+    windowStart: data.windowStart,
+    resetAt: data.windowStart + MONTH_MS,
+    isPremium,
+  };
 }
 
 export async function consumeUsage(
   uid: string,
   isPremium: boolean
 ): Promise<UsageStatus> {
-  const status = await checkUsage(uid, isPremium);
+  const raw = await readUsage(uid);
+  const data = normalizeWindow(raw);
+  const limit = getLimit(isPremium);
 
-  if (!status.allowed) {
-    return status;
+  if (!isPremium && data.count >= limit) {
+    return {
+      allowed: false,
+      remaining: 0,
+      limit,
+      used: data.count,
+      shouldShowAd: false,
+      windowStart: data.windowStart,
+      resetAt: data.windowStart + MONTH_MS,
+      isPremium,
+    };
   }
 
-  await increaseUsage(uid);
+  data.count += 1;
+  await writeUsage(uid, data);
 
+  const used = data.count;
+  const remaining = isPremium ? 999999 : Math.max(0, limit - used);
+  const allowed = true;
+  const shouldShowAd = !isPremium && used % 3 === 0;
+
+  return {
+    allowed,
+    remaining,
+    limit,
+    used,
+    shouldShowAd,
+    windowStart: data.windowStart,
+    resetAt: data.windowStart + MONTH_MS,
+    isPremium,
+  };
+}
+
+export async function checkUsage(uid: string, isPremium: boolean) {
   return getUsageStatus(uid, isPremium);
+}
+
+export async function increaseUsage(uid: string, isPremium = false) {
+  return consumeUsage(uid, isPremium);
 }

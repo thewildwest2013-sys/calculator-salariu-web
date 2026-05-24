@@ -1,0 +1,1 @@
+v15: Added broader English translations for visible UI text and legal/delete pages. Some mixed shift names such as Morning/After/Night are kept intentionally.
