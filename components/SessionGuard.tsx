@@ -10,7 +10,22 @@ import {
   getSecurityStatus,
 } from "@/lib/security-client";
 
-const PUBLIC_PATHS = new Set(["/", "/login", "/register", "/premium/success", "/premium/cancel", "/privacy", "/terms", "/contact", "/delete-account"]);
+const PUBLIC_PATHS = new Set([
+  "/",
+  "/login",
+  "/register",
+  "/premium/success",
+  "/premium/cancel",
+  "/privacy",
+  "/terms",
+  "/contact",
+  "/delete-account",
+  "/calculator-salariu-2026",
+  "/calculator-brut-net",
+  "/spor-de-noapte",
+  "/concediu-medical",
+  "/sarbatori-legale-2026",
+]);
 
 export default function SessionGuard() {
   const pathname = usePathname();
