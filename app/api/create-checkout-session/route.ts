@@ -7,18 +7,27 @@ export async function POST(req: Request) {
     const session = await requireValidWebSession(req);
 
     if (!process.env.STRIPE_SECRET_KEY) {
-      return NextResponse.json({ error: "Lipsește STRIPE_SECRET_KEY" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Lipsește STRIPE_SECRET_KEY" },
+        { status: 500 }
+      );
     }
 
     const priceId = process.env.STRIPE_PRICE_ID;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 
     if (!priceId) {
-      return NextResponse.json({ error: "Lipsește STRIPE_PRICE_ID" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Lipsește STRIPE_PRICE_ID" },
+        { status: 500 }
+      );
     }
 
     if (!appUrl) {
-      return NextResponse.json({ error: "Lipsește NEXT_PUBLIC_APP_URL" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Lipsește NEXT_PUBLIC_APP_URL" },
+        { status: 500 }
+      );
     }
 
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -48,6 +57,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ url: checkoutSession.url });
   } catch (error: any) {
+    console.error("CREATE_CHECKOUT_SESSION_ERROR:", error);
+
     const code = String(error?.message || "SERVER_ERROR");
 
     if (code === "UNAUTHENTICATED" || code === "MISSING_SESSION_HEADERS") {
@@ -62,6 +73,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: code }, { status: 403 });
     }
 
-    return NextResponse.json({ error: "SERVER_ERROR" }, { status: 500 });
+    return NextResponse.json(
+      { error: error?.message || "SERVER_ERROR" },
+      { status: 500 }
+    );
   }
 }
