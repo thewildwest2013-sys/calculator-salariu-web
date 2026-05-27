@@ -21,7 +21,7 @@ export default function RegisterPage() {
       await registerWithEmail(email.trim(), password);
 
       alert(
-        "Cont creat. Ți-am trimis un email de verificare. Confirmă emailul înainte să te autentifici."
+        "Cont creat cu succes.\n\nAm trimis emailul de verificare.\n\nDacă nu îl găsești în Inbox, verifică și folderul Spam/Junk."
       );
 
       router.push("/login");
