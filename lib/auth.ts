@@ -1,5 +1,6 @@
 import {
   createUserWithEmailAndPassword,
+  sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
@@ -18,6 +19,7 @@ export async function registerWithEmail(email: string, password: string) {
       email: user.email,
       isPremium: false,
       plan: "free",
+      emailVerified: user.emailVerified,
       createdAt,
     },
     { merge: true }
@@ -29,6 +31,7 @@ export async function registerWithEmail(email: string, password: string) {
       email: user.email,
       isPremium: false,
       plan: "free",
+      emailVerified: user.emailVerified,
       createdAt,
       premiumSince: null,
       premiumSource: null,
@@ -36,11 +39,42 @@ export async function registerWithEmail(email: string, password: string) {
     { merge: true }
   );
 
+  await sendEmailVerification(user);
+  await signOut(auth);
+
   return userCredential;
 }
 
 export async function loginWithEmail(email: string, password: string) {
-  return signInWithEmailAndPassword(auth, email, password);
+  const userCredential = await signInWithEmailAndPassword(auth, email, password);
+  const user = userCredential.user;
+
+  await user.reload();
+
+  if (!auth.currentUser?.emailVerified) {
+    await signOut(auth);
+    throw new Error("EMAIL_NOT_VERIFIED");
+  }
+
+  await setDoc(
+    doc(db, "users", user.uid),
+    {
+      emailVerified: true,
+      lastLoginAt: new Date().toISOString(),
+    },
+    { merge: true }
+  );
+
+  await setDoc(
+    doc(db, "users", user.uid, "profile", "main"),
+    {
+      emailVerified: true,
+      lastLoginAt: new Date().toISOString(),
+    },
+    { merge: true }
+  );
+
+  return userCredential;
 }
 
 export async function sendResetPasswordEmail(email: string) {
@@ -58,6 +92,10 @@ export function mapAuthError(error: unknown) {
       : "";
 
   const message = error instanceof Error ? error.message : "";
+
+  if (message.includes("EMAIL_NOT_VERIFIED")) {
+    return "Trebuie să confirmi adresa de email înainte să intri în aplicație. Verifică inbox/spam și apasă linkul primit.";
+  }
 
   if (message.includes("DEVICE_LOCKED")) {
     return "Contul este deja activ pe alt browser sau dispozitiv. Îl poți muta după expirarea ferestrei de 48 de ore sau din pagina Security de pe dispozitivul actual.";

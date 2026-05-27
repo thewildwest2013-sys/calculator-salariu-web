@@ -7,18 +7,28 @@ import { registerWithEmail } from "@/lib/auth";
 
 export default function RegisterPage() {
   const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
+
     try {
       setLoading(true);
-      await registerWithEmail(email, password);
+
+      await registerWithEmail(email.trim(), password);
+
+      alert(
+        "Cont creat. Ți-am trimis un email de verificare. Confirmă emailul înainte să te autentifici."
+      );
+
       router.push("/login");
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Eroare la înregistrare";
+      const message =
+        error instanceof Error ? error.message : "Eroare la înregistrare";
+
       alert(message);
     } finally {
       setLoading(false);
@@ -28,19 +38,60 @@ export default function RegisterPage() {
   return (
     <main className="app-shell flex min-h-screen items-center justify-center p-6">
       <section className="auth-card">
-        <div className="text-sm uppercase tracking-[0.22em] text-white/45">Cont nou</div>
+        <div className="text-sm uppercase tracking-[0.22em] text-white/45">
+          Cont nou
+        </div>
+
         <h1 className="mt-2 text-4xl font-bold">Register</h1>
-        <p className="mt-3 text-white/70">Creează un cont nou pentru a salva calculele și statusul premium.</p>
+
+        <p className="mt-3 text-white/70">
+          Creează un cont nou pentru a salva calculele și statusul premium.
+        </p>
+
+        <p className="mt-2 text-sm text-white/55">
+          După creare, trebuie să confirmi adresa de email. Fără confirmare nu
+          vei putea intra în aplicație.
+        </p>
 
         <form onSubmit={handleRegister} className="mt-8 flex flex-col gap-4">
-          <input className="auth-input" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <input className="auth-input" type="password" placeholder="Parolă" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          <button className="primary-btn" type="submit" disabled={loading}>{loading ? "Se creează contul..." : "Creează cont"}</button>
+          <div>
+            <label className="mb-2 block text-sm text-white/75">Email</label>
+            <input
+              className="auth-input"
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm text-white/75">Parolă</label>
+            <input
+              className="auth-input"
+              type="password"
+              placeholder="Parolă"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+            />
+          </div>
+
+          <button className="primary-btn" type="submit" disabled={loading}>
+            {loading ? "Se creează contul..." : "Creează cont"}
+          </button>
         </form>
 
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link href="/" className="secondary-btn">Înapoi la Home</Link>
-          <Link href="/login" className="secondary-btn">Am deja cont</Link>
+          <Link href="/" className="secondary-btn">
+            Înapoi la Home
+          </Link>
+
+          <Link href="/login" className="secondary-btn">
+            Am deja cont
+          </Link>
         </div>
       </section>
     </main>
