@@ -480,7 +480,7 @@ const T: Record<Lang, Translation> = {
     summary: "Quick summary",
     monthlyEstimate: "Monthly estimate",
     estimatedNet: "Estimated net salary",
-    mealTickets: "Meal tickets",
+    mealTickets: "Meal Vouchers",
     totalExtras: "Total extras",
     totalEstimated: "Estimated total",
     workedDays: "Worked days",
@@ -492,7 +492,7 @@ const T: Record<Lang, Translation> = {
     personalSettings: "Personal settings",
     salaryRules: "Salary rules",
     grossSalary: "Reference gross salary",
-    ticketValue: "Meal ticket / day",
+    ticketValue: "Meal voucher / day",
     nightPercent: "Night bonus (%)",
     overtimePercent: "Overtime bonus (%)",
     weekendPercent: "Weekend bonus (%)",
@@ -2114,7 +2114,7 @@ function GuideAccordionGrid({ lang }: { lang: Lang }) {
     },
     {
       icon: "🍽️",
-      title: lang === "ro" ? "Bonuri de masă" : "Meal vouchers",
+      title: lang === "ro" ? "Bonuri de masă" : "Meal Vouchers",
       href: "/bonuri-de-masa",
     },
     {
