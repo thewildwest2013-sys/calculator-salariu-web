@@ -2093,66 +2093,138 @@ function CalendarSection({
         </div>
       </div>
 
-      <div className="mt-6 grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="rounded-[28px] border border-cyan-400/25 bg-gradient-to-br from-cyan-500/[0.12] to-blue-500/[0.05] p-6 shadow-[0_0_45px_rgba(34,211,238,0.10)]">
-          <div className="text-cyan-300 text-xs uppercase tracking-[0.25em] mb-2">
-            {lang === "ro" ? "Setup rapid" : "Quick setup"}
-          </div>
-          <h3 className="text-white text-xl font-bold mb-2">
-            {lang === "ro" ? "Configurează salariul înainte de utilizare" : "Set up your salary before using the app"}
-          </h3>
-          <p className="text-slate-300 text-sm leading-6 mb-4 max-w-3xl">
-            {lang === "ro"
-              ? "Intră în Reguli pentru a introduce salariul brut, sporurile și bonurile de masă. După configurare, calendarul și calculul live se actualizează automat."
-              : "Go to Rules to enter your gross salary, bonuses and meal vouchers. After setup, the calendar and live calculation update automatically."}
-          </p>
-          <button
-            onClick={openRules}
-            className="rounded-xl bg-cyan-500 px-5 py-3 text-sm font-black text-black transition-all hover:-translate-y-0.5 hover:bg-cyan-400 sm:min-w-[220px]"
-          >
-            {lang === "ro" ? "Deschide Reguli" : "Open Rules"}
-          </button>
-        </div>
-
-        <div className="rounded-[28px] border border-white/10 bg-[#061327]/88 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
-          <div className="text-[10px] uppercase tracking-[0.22em] text-blue-100/60">
-            {lang === "ro" ? "Tutorial rapid" : "Quick tutorial"}
-          </div>
-          <ol className="mt-3 space-y-2.5 text-sm leading-6 text-white/75">
-            <li><b className="text-white">1.</b> {lang === "ro" ? "Apasă pe o zi din calendar." : "Click a day in the calendar."}</li>
-            <li><b className="text-white">2.</b> {lang === "ro" ? "Alege tura: Morning, After, Night, CO sau CM." : "Choose the shift: Morning, After, Night, Vacation or Sick."}</li>
-            <li><b className="text-white">3.</b> {lang === "ro" ? "Completează orele lucrate și orele suplimentare, dacă există." : "Fill in worked hours and overtime if any."}</li>
-            <li><b className="text-white">4.</b> {lang === "ro" ? "Calculul live se actualizează automat." : "The live calculation updates automatically."}</li>
-            <li><b className="text-white">5.</b> {lang === "ro" ? "Intră la Reguli doar când vrei să schimbi salariul, taxele sau procentele." : "Open Rules only when you want to change salary, taxes or percentages."}</li>
-          </ol>
-        </div>
-      </div>
-
-      <div className="mt-5 rounded-[28px] border border-white/10 bg-[#061327]/76 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] md:p-5">
-        <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <div className="text-[10px] uppercase tracking-[0.22em] text-cyan-100/55">
-              {lang === "ro" ? "Rezumat rapid" : "Quick stats"}
-            </div>
-            <h3 className="mt-1 text-xl font-black text-white">
-              {lang === "ro" ? "Turele lunii" : "Monthly shifts"}
-            </h3>
-          </div>
-          <div className="text-sm text-white/55">
-            {lang === "ro" ? "Detaliile complete rămân în tabul Estimate." : "Full breakdown stays in the Estimate tab."}
-          </div>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
-          <MiniMetric icon="☀️" tone="emerald" title={TYPE_LABELS[lang as Lang].Morning} value={String(morningCount)} />
-          <MiniMetric icon="🌆" tone="amber" title={TYPE_LABELS[lang as Lang].After} value={String(afternoonCount)} />
-          <MiniMetric icon="🌙" tone="blue" title={TYPE_LABELS[lang as Lang].Night} value={String(nightCount)} />
-          <MiniMetric icon="🏖️" tone="violet" title={TYPE_LABELS[lang as Lang].CO} value={String(vacationCount)} />
-          <MiniMetric icon="🏥" tone="rose" title={TYPE_LABELS[lang as Lang].CM} value={String(medicalCount)} />
-          <MiniMetric icon="⏱️" tone="cyan" title={lang === "ro" ? "Ore lucrate" : "Worked hours"} value={`${totalHours.toFixed(1)}h`} />
-        </div>
-      </div>
+      <GuideAccordionGrid lang={lang} />
     </SectionShell>
+  );
+}
+
+function GuideAccordionGrid({ lang }: { lang: Lang }) {
+  const cards = [
+    {
+      icon: "📘",
+      title: lang === "ro" ? "Ghid salariu 2026" : "Salary guide 2026",
+      body:
+        lang === "ro"
+          ? [
+              "Setează salariul brut, bonurile de masă și procentele din Reguli înainte de calcul.",
+              "Calculul live se actualizează după fiecare zi selectată în calendar.",
+              "Pentru verificarea completă, folosește tabul Estimare după ce ai completat luna.",
+            ]
+          : [
+              "Set your gross salary, meal vouchers and percentages in Rules before calculating.",
+              "The live calculation updates after each selected day in the calendar.",
+              "For the full breakdown, use the Estimate tab after filling the month.",
+            ],
+    },
+    {
+      icon: "⚡",
+      title: lang === "ro" ? "Sporuri și beneficii" : "Bonuses and benefits",
+      body:
+        lang === "ro"
+          ? [
+              "Sporul de noapte se aplică turelor de noapte și orelor suplimentare marcate ca noapte.",
+              "Weekendul și orele suplimentare pot fi calculate separat, în funcție de procentele setate.",
+              "Valorile sunt estimative și trebuie comparate cu fluturașul sau contractul de muncă.",
+            ]
+          : [
+              "Night bonus applies to night shifts and overtime marked as night work.",
+              "Weekend and overtime can be calculated separately based on your configured percentages.",
+              "Values are estimates and should be compared with your payslip or employment contract.",
+            ],
+    },
+    {
+      icon: "🍽️",
+      title: lang === "ro" ? "Bonuri de masă" : "Meal vouchers",
+      body:
+        lang === "ro"
+          ? [
+              "Bonurile se calculează pentru zilele lucrate marcate în calendar.",
+              "Poți modifica valoarea bonului în Reguli, în funcție de angajator.",
+              "Concediul și zilele medicale nu sunt tratate ca zile cu bonuri în estimarea standard.",
+            ]
+          : [
+              "Meal vouchers are calculated for worked days selected in the calendar.",
+              "You can change the voucher value in Rules, depending on your employer.",
+              "Vacation and sick days are not treated as voucher days in the standard estimate.",
+            ],
+    },
+    {
+      icon: "🏥",
+      title: lang === "ro" ? "Concediu medical" : "Sick leave",
+      body:
+        lang === "ro"
+          ? [
+              "Zilele CM pot reduce estimarea dacă ai setat zile medicale neplătite în Reguli.",
+              "Formula este orientativă și nu înlocuiește calculul oficial de la angajator.",
+              "Pentru situații speciale, verifică mereu documentele medicale și legislația aplicabilă.",
+            ]
+          : [
+              "Sick days can reduce the estimate if unpaid sick days are configured in Rules.",
+              "The formula is indicative and does not replace the employer's official calculation.",
+              "For special cases, always check medical documents and applicable legislation.",
+            ],
+    },
+    {
+      icon: "⚖️",
+      title: lang === "ro" ? "Diferența brut / net" : "Gross / net difference",
+      body:
+        lang === "ro"
+          ? [
+              "Salariul brut este baza din care se scad contribuțiile și impozitul.",
+              "Salariul net este suma estimată care rămâne după taxe, înainte de bonuri.",
+              "Totalul final combină netul estimat cu bonurile și sporurile calculate.",
+            ]
+          : [
+              "Gross salary is the base amount from which contributions and tax are deducted.",
+              "Net salary is the estimated amount left after taxes, before meal vouchers.",
+              "The final total combines estimated net salary with vouchers and calculated bonuses.",
+            ],
+    },
+    {
+      icon: "❓",
+      title: lang === "ro" ? "FAQ salarii" : "Salary FAQ",
+      body:
+        lang === "ro"
+          ? [
+              "Estimarea se schimbă automat când modifici luna, tura, orele sau procentele.",
+              "Premium păstrează accesul extins, istoricul și experiența fără pași inutili.",
+              "Datele salvate sunt asociate contului tău și pot fi consultate în Istoric.",
+            ]
+          : [
+              "The estimate updates automatically when you change the month, shift, hours or percentages.",
+              "Premium keeps extended access, history and a cleaner experience without extra steps.",
+              "Saved data is linked to your account and can be reviewed in History.",
+            ],
+    },
+  ];
+
+  return (
+    <div className="mx-auto mt-5 grid max-w-5xl gap-2.5 md:grid-cols-3">
+      {cards.map((card) => (
+        <details
+          key={card.title}
+          className="group rounded-[16px] border border-white/10 bg-[#061327]/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] transition hover:border-cyan-300/20 hover:bg-white/[0.045]"
+        >
+          <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 text-white marker:hidden">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.055] text-sm">
+              {card.icon}
+            </span>
+            <span className="min-w-0 flex-1 text-sm font-black leading-tight">{card.title}</span>
+            <span className="text-xs text-white/55 transition group-open:rotate-180">⌄</span>
+          </summary>
+          <div className="border-t border-white/10 px-3 pb-3 pt-2 text-[12px] leading-5 text-white/68">
+            <ul className="space-y-1.5">
+              {card.body.map((line) => (
+                <li key={line} className="flex gap-2">
+                  <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-cyan-300/70" />
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </details>
+      ))}
+    </div>
   );
 }
 
@@ -2764,23 +2836,21 @@ function HolidaysSection({
 
 function LogicSection({ t, lang }: { t: Translation; lang: Lang }) {
   const rows = lang === "ro" ? [
-    ["Bază orară", "Salariul brut de referință este împărțit aproximativ la 160 de ore lunare pentru a estima valoarea unei ore lucrate."],
-    ["Ture dimineață / după-amiază / noapte", "Alegi tura direct din ziua calendarului. Tura de noapte primește automat sporul de noapte configurat în Reguli."],
-    ["Weekend automat", "Sâmbăta și duminica sunt detectate automat din calendar și pot primi sporul de weekend, dacă ziua este lucrată."],
-    ["Sărbători legale", "Sărbătorile legale sunt marcate automat, iar zilele lucrate în aceste date pot primi sporul de sărbătoare."],
-    ["Ore suplimentare", "Orele suplimentare sunt calculate separat, folosind procentul setat în Reguli pentru fiecare oră introdusă."],
-    ["Concediu medical", "Zilele medicale pot fi marcate în calendar, iar ajustarea se aplică în funcție de setarea lunară introdusă la Reguli."],
-    ["Monetizare", "În perioada de review AdSense, aplicația rulează fără reclame, fără overlay-uri și fără porți de vizionare. După aprobare, reclamele trebuie activate doar în zone conforme."],
-    ["Doar online", "Calculele noi și salvarea istoricului sunt permise doar când browserul este conectat la internet."],
+    ["Hourly base", "the reference gross salary is divided by approximately 160 monthly hours"],
+    ["Morning / After / Night", "choose the shift directly from the day; Night receives the night bonus"],
+    ["Automatic weekend", "sâmbăta și duminica sunt detectate automat din calendar"],
+    ["Holidays automate", "legal holidays are marked and receive the holiday bonus automatically"],
+    ["Overtime", "+75% of the hourly base for each entered hour"],
+    ["Monetization", "în perioada de review AdSense, aplicația rulează fără reclame, fără overlay-uri și fără porți de vizionare; după aprobare, reclamele trebuie activate doar în zone conforme"],
+    ["Online only", "new calculations and saving are allowed only when the browser is online"],
   ] : [
-    ["Hourly base", "The reference gross salary is divided by roughly 160 monthly hours to estimate the value of one worked hour."],
-    ["Morning / Afternoon / Night shifts", "You choose the shift directly on the calendar day. Night shifts automatically receive the night bonus configured in Rules."],
-    ["Automatic weekend", "Saturday and Sunday are detected automatically from the calendar and can receive the weekend bonus when the day is worked."],
-    ["Legal holidays", "Legal holidays are marked automatically, and worked days on those dates can receive the holiday bonus."],
-    ["Overtime", "Overtime hours are calculated separately using the percentage set in Rules for each entered hour."],
-    ["Medical leave", "Medical days can be marked in the calendar, and the adjustment is applied based on the monthly setting entered in Rules."],
-    ["Monetization", "During the AdSense review period, the app runs without ads, overlays or view gates. After approval, ads must be enabled only in compliant areas."],
-    ["Online only", "New calculations and history saving are allowed only while the browser is connected to the internet."],
+    ["Hourly base", "the reference gross salary is divided by roughly 160 monthly hours"],
+    ["Morning / Afternoon / Night", "you choose the shift directly on the day; Night gets the night bonus"],
+    ["Automatic weekend", "Saturday and Sunday are detected automatically from the calendar"],
+    ["Automatic holidays", "legal holidays are marked and automatically receive the holiday bonus"],
+    ["Overtime", "+75% of hourly base for each entered overtime hour"],
+    ["Monetization", "during the AdSense review period, the app runs without ads, overlays or view gates; after approval, ads must be enabled only in compliant areas"],
+    ["Online only", "new calculations and saving are allowed only while the browser is online"],
   ];
 
   return (
@@ -2789,10 +2859,10 @@ function LogicSection({ t, lang }: { t: Translation; lang: Lang }) {
         {rows.map(([left, right]) => (
           <div
             key={left}
-            className="grid gap-4 rounded-[18px] border border-white/10 bg-[#071326]/80 px-5 py-4 md:grid-cols-[230px_1fr]"
+            className="grid gap-4 rounded-[18px] border border-white/10 bg-[#071326]/80 px-5 py-4 md:grid-cols-[220px_1fr]"
           >
-            <div className="text-base font-semibold text-white/65">{left}</div>
-            <div className="text-base leading-relaxed break-words text-white/90">{right}</div>
+            <div className="text-base text-white/60">{left}</div>
+            <div className="text-base leading-tight break-words">{right}</div>
           </div>
         ))}
       </div>
