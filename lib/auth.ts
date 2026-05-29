@@ -13,31 +13,23 @@ export async function registerWithEmail(email: string, password: string) {
   const user = userCredential.user;
   const createdAt = new Date().toISOString();
 
-  await setDoc(
-    doc(db, "users", user.uid),
-    {
-      email: user.email,
-      isPremium: false,
-      plan: "free",
-      emailVerified: user.emailVerified,
-      createdAt,
-    },
-    { merge: true }
-  );
+  await setDoc(doc(db, "users", user.uid), {
+    email: user.email,
+    isPremium: false,
+    plan: "free",
+    emailVerified: user.emailVerified,
+    createdAt,
+  }, { merge: true });
 
-  await setDoc(
-    doc(db, "users", user.uid, "profile", "main"),
-    {
-      email: user.email,
-      isPremium: false,
-      plan: "free",
-      emailVerified: user.emailVerified,
-      createdAt,
-      premiumSince: null,
-      premiumSource: null,
-    },
-    { merge: true }
-  );
+  await setDoc(doc(db, "users", user.uid, "profile", "main"), {
+    email: user.email,
+    isPremium: false,
+    plan: "free",
+    emailVerified: user.emailVerified,
+    createdAt,
+    premiumSince: null,
+    premiumSource: null,
+  }, { merge: true });
 
   await sendEmailVerification(user);
   await signOut(auth);
@@ -56,23 +48,17 @@ export async function loginWithEmail(email: string, password: string) {
     throw new Error("EMAIL_NOT_VERIFIED");
   }
 
-  await setDoc(
-    doc(db, "users", user.uid),
-    {
-      emailVerified: true,
-      lastLoginAt: new Date().toISOString(),
-    },
-    { merge: true }
-  );
+  const lastLoginAt = new Date().toISOString();
 
-  await setDoc(
-    doc(db, "users", user.uid, "profile", "main"),
-    {
-      emailVerified: true,
-      lastLoginAt: new Date().toISOString(),
-    },
-    { merge: true }
-  );
+  await setDoc(doc(db, "users", user.uid), {
+    emailVerified: true,
+    lastLoginAt,
+  }, { merge: true });
+
+  await setDoc(doc(db, "users", user.uid, "profile", "main"), {
+    emailVerified: true,
+    lastLoginAt,
+  }, { merge: true });
 
   return userCredential;
 }
@@ -94,11 +80,11 @@ export function mapAuthError(error: unknown) {
   const message = error instanceof Error ? error.message : "";
 
   if (message.includes("EMAIL_NOT_VERIFIED")) {
-    return "Trebuie să confirmi adresa de email înainte să intri în aplicație. Verifică inbox/spam și apasă linkul primit.";
+    return "Trebuie să confirmi adresa de email înainte să intri în aplicație. Verifică Inbox și Spam/Junk.";
   }
 
   if (message.includes("DEVICE_LOCKED")) {
-    return "Contul este deja activ pe alt browser sau dispozitiv. Îl poți muta după expirarea ferestrei de 48 de ore sau din pagina Security de pe dispozitivul actual.";
+    return "Sesiunea a fost blocată temporar. Reîncearcă după refresh sau folosește pagina Security pentru resetarea dispozitivului.";
   }
 
   switch (code) {

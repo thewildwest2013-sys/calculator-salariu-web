@@ -23,7 +23,6 @@ export async function POST(req: Request) {
 
     const deviceId = String(body?.deviceId || "").trim();
     const deviceLabel = String(body?.deviceLabel || "Browser web").trim();
-    const forceTransfer = body?.forceTransfer === true;
 
     if (!deviceId) {
       return NextResponse.json({ error: "Missing uid or deviceId" }, { status: 400 });
@@ -35,12 +34,10 @@ export async function POST(req: Request) {
     const now = Date.now();
 
     const activeDeviceId = current?.activeDeviceId ?? null;
-    const deviceChangeAvailableAt = current?.deviceChangeAvailableAt ?? null;
-
     const sessionNonce = crypto.randomUUID();
     const nextDeviceChangeAvailableAt = now + DEVICE_CHANGE_LOCK_MS;
 
-    if (!activeDeviceId) {
+    if (!activeDeviceId || activeDeviceId !== deviceId) {
       await ref.set(
         {
           activeDeviceId: deviceId,
@@ -50,13 +47,14 @@ export async function POST(req: Request) {
           updatedAt: now,
           lastSeenAt: now,
           lastLoginAt: now,
+          lastTransferAt: activeDeviceId ? now : null,
         },
         { merge: true }
       );
 
       return NextResponse.json({
         ok: true,
-        status: "created",
+        status: activeDeviceId ? "web_transferred" : "created",
         sessionNonce,
         activeDeviceId: deviceId,
         activeDeviceLabel: deviceLabel,
@@ -64,65 +62,28 @@ export async function POST(req: Request) {
       });
     }
 
-    if (activeDeviceId === deviceId) {
-      const nonce = current?.sessionNonce ?? sessionNonce;
-      const availableAt = current?.deviceChangeAvailableAt ?? nextDeviceChangeAvailableAt;
-
-      await ref.set(
-        {
-          activeDeviceId,
-          activeDeviceLabel: current?.activeDeviceLabel ?? deviceLabel,
-          sessionNonce: nonce,
-          deviceChangeAvailableAt: availableAt,
-          updatedAt: now,
-          lastSeenAt: now,
-        },
-        { merge: true }
-      );
-
-      return NextResponse.json({
-        ok: true,
-        status: "same_device",
-        sessionNonce: nonce,
-        activeDeviceId: activeDeviceId,
-        activeDeviceLabel: current?.activeDeviceLabel ?? deviceLabel,
-        deviceChangeAvailableAt: availableAt,
-      });
-    }
-
-    if (!forceTransfer && deviceChangeAvailableAt && now < deviceChangeAvailableAt) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "DEVICE_LOCKED",
-          activeDeviceId,
-          activeDeviceLabel: current?.activeDeviceLabel ?? null,
-          deviceChangeAvailableAt,
-        },
-        { status: 403 }
-      );
-    }
+    const nonce = current?.sessionNonce ?? sessionNonce;
+    const availableAt = current?.deviceChangeAvailableAt ?? nextDeviceChangeAvailableAt;
 
     await ref.set(
       {
-        activeDeviceId: deviceId,
-        activeDeviceLabel: deviceLabel,
-        sessionNonce,
-        deviceChangeAvailableAt: nextDeviceChangeAvailableAt,
+        activeDeviceId,
+        activeDeviceLabel: current?.activeDeviceLabel ?? deviceLabel,
+        sessionNonce: nonce,
+        deviceChangeAvailableAt: availableAt,
         updatedAt: now,
         lastSeenAt: now,
-        lastLoginAt: now,
       },
       { merge: true }
     );
 
     return NextResponse.json({
       ok: true,
-      status: "transferred",
-      sessionNonce,
-      activeDeviceId: deviceId,
-      activeDeviceLabel: deviceLabel,
-      deviceChangeAvailableAt: nextDeviceChangeAvailableAt,
+      status: "same_device",
+      sessionNonce: nonce,
+      activeDeviceId,
+      activeDeviceLabel: current?.activeDeviceLabel ?? deviceLabel,
+      deviceChangeAvailableAt: availableAt,
     });
   } catch (error) {
     if (error instanceof Error && error.message === "Missing auth token") {
