@@ -1,0 +1,8 @@
+V54 auth workflow fix
+
+- Dezactivat Firebase Auth LOCAL persistence: nu mai face auto-login agresiv pe ultimul cont la repornire.
+- onAuthStateChanged nu mai deschide automat aplicația pe userul vechi; loginul se face doar manual din buton.
+- Login/Register afișează popup clar pentru email/parolă greșită, cont inexistent, email invalid, parolă slabă, prea multe încercări.
+- Forgot password funcțional cu buton dedicat și popup: cere email, trimite reset, spune să verifice Inbox + Spam/Junk.
+- După creare cont apare mesaj clar: verifică Inbox și Spam/Junk pentru emailul de confirmare.
+- Versiune: 5.4 / versionCode 54.

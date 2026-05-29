@@ -1,0 +1,20 @@
+V57 Premium Firebase Sync Fix
+
+Ce s-a reparat:
+- Premium nu mai este declarat activ doar din status local Google Play/Billing.
+- Dupa abonare, aplicatia scrie obligatoriu in Firebase users/{uid}/profile/main:
+  isPremium=true, plan=premium_monthly, premiumSource=google_play, playPurchaseTokenHash.
+- Dupa scriere, aplicatia reciteste profilul din Firebase si abia apoi schimba UI-ul pe Premium activ.
+- Native Android nu mai are voie sa retrogradeze automat contul la FREE cand Google Play intoarce temporar lista goala.
+- Ecranul Premium nu mai afiseaza simultan mesaje contradictorii Free + Premium.
+- Cand userul este premium, se ascund butonul Activeaza Premium, Restore Premium si comparatia Free/Premium.
+- Starea finala afisata in UI este bazata pe Firebase, nu pe cache local.
+
+Test recomandat:
+1. Urca AAB 5.7 in Internal Testing.
+2. Dezinstaleaza vechea aplicatie.
+3. Instaleaza din linkul de tester.
+4. Login cu cont nou.
+5. Activeaza Premium.
+6. Verifica Firestore: users/{uid}/profile/main trebuie sa aiba isPremium=true si plan=premium_monthly.
+7. Redeschide aplicatia si verifica steluta Premium.

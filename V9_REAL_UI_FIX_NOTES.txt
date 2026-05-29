@@ -1,0 +1,1 @@
+V9: cache busting, free users can edit salary/rules and calculate with 15/month limit + ad every 3, stronger premium dashboard CSS for Monthly Estimate.

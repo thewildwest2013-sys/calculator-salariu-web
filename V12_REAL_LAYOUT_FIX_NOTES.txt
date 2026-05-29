@@ -1,0 +1,1 @@
+V12: bottom navigation fixed to bottom, one-section tab mode, visible content, removed broken V11 injection. Uninstall old app before testing.

@@ -1,0 +1,9 @@
+{
+  "name": "Calculator salariu în ture",
+  "short_name": "Salariu Ture",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#071322",
+  "theme_color": "#071322",
+  "icons": []
+}

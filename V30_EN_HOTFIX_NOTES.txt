@@ -1,0 +1,1 @@
+V30: fixes remaining English translation issues: header subtitle, calculate/apply/clear buttons, month names in selectors and holidays, bottom quick-menu pseudo labels, and dynamic bulk toolbar text.

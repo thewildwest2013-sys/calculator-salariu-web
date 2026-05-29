@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "60185089263",
+    "project_id": "calculator-salariu-60957",
+    "storage_bucket": "calculator-salariu-60957.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:60185089263:android:a2eac09d3ccefa8113f71a",
+        "android_client_info": {
+          "package_name": "ro.calculatorsalariu.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBXPDyeKhybf7mPqPU3rSQQ5G2pIPgZHYg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

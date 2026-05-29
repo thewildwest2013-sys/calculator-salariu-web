@@ -1,0 +1,1 @@
+V16: Login/auth fix. Free users are no longer blocked by device mismatch on emulator/device changes. Premium accounts still keep explicit transfer protection. Login errors are now Romanian/user-friendly.

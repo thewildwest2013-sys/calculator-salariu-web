@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Calculator Salariu Android
 
-## Getting Started
+Pachet Android Studio pregătit pentru upload în Google Play Console.
 
-First, run the development server:
+## Ce conține
+- aplicație Android nativă (Kotlin)
+- încărcare locală a calculatorului salarial din asseturi web
+- blocare screenshot pe Android prin FLAG_SECURE
+- iconuri incluse
+- orientare portret
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Ce NU conține încă
+- backend real
+- bază de date cloud
+- autentificare reală pe server
+- abonament Google Play Billing
+- resetare parolă pe email
+- sincronizare între dispozitive
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Asta înseamnă că proiectul este bun pentru:
+- testare pe telefon
+- build APK / AAB
+- closed testing în Google Play
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Dar pentru producție completă cu abonament lunar și conturi reale, mai trebuie etapa Flutter + Supabase/Billing.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Cum îl deschizi
+1. Deschide folderul `CalculatorSalariuAndroid` în Android Studio.
+2. Lasă proiectul să facă Gradle Sync.
+3. Rulează pe emulator sau telefon.
+4. Pentru upload:
+   - Build > Generate Signed Bundle / APK
+   - alege Android App Bundle (AAB)
 
-## Learn More
+## Informații listing
+Nume aplicație: Calculator Salariu
+Email suport: helpcalculatorsalariu@gmail.com
+Preț abonament dorit: 9.9 lei / lună (încă neimplementat în buildul actual)
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Observație
+Dacă vrei aplicația finală pentru Play Store cu:
+- login real
+- cloud save
+- forgot password pe email
+- abonament lunar în aplicație
+atunci următorul pas este să construim varianta mobilă completă, nu doar shell-ul Android.

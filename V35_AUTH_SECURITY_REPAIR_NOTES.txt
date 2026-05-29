@@ -1,0 +1,8 @@
+V35 auth/security repair
+- Removed V33/V34 injected <script> blocks that were accidentally placed inside the export HTML template and prematurely closed the main app script in WebView.
+- Restored execution of the real auth/login/register JavaScript section.
+- Rebound Login, Register and Move device buttons safely after full app load.
+- Kept auto-login via Firebase auth state listener.
+- Kept single-device lock for premium accounts.
+- Changed device transfer cooldown from 24h to 3 days.
+- Improved Move account to this device flow to sign in, check profile, transfer deviceId, then open app.

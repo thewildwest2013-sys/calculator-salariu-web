@@ -1,0 +1,1 @@
+V11: Fix meniu/nav blocat in WebView, elimina path-uri locale .gradle/local.properties din arhiva, pastreaza UI premium V10 si free input fix. Dezinstaleaza aplicatia veche inainte de test.

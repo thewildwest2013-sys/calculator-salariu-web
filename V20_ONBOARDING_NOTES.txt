@@ -1,0 +1,6 @@
+V20 - Onboarding Wizard
+- Tutorial/onboarding premium în 3 pași la primul start după login.
+- Buton flotant ? pentru redeschiderea tutorialului oricând.
+- Checkbox „Nu mai arăta automat” + salvare în localStorage.
+- Tutorialul nu mai schimbă limba, nu face reload și nu afectează sesiunea/autologin.
+- Păstrează V19: Home curat, calendar sus, Premium în tab separat, bottom nav peste reclamă.

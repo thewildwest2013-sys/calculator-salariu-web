@@ -1,0 +1,21 @@
+V23 UX Premium/Nav cleanup
+
+Implementat:
+- Bottom navigation refăcut: Acasă / Istoric / Premium / Cont.
+- Detalii și Reguli scoase din bara principală; mutate în Unelte și ajutor.
+- Tab Premium în aplicație cu status FREE/PREMIUM, Activează Premium și Restore Premium.
+- Tab Cont cu email, plan, Restore Premium și Logout.
+- Quick Result simplificat vizual: salariu net + bonuri. Restul rămâne la Detaliu calcul.
+- Butoane rapide pentru Reguli calcul, Detaliu calcul, Sărbători, FAQ/logică.
+- Editor zi îmbunătățit: sticky header cu ← Calendar și X, plus Înapoi la calendar.
+- La închiderea editorului zilei face scroll automat la calendar.
+- Fix robust pentru show/hide/collapse.
+- versionCode 23 / versionName 2.0.3.
+
+De verificat în emulator/telefon:
+- Login/autologin
+- Tab Premium / buton Activează Premium
+- Tab Cont / logout
+- Editor zi: buton Calendar și X
+- Reguli calcul show/hide
+- Reclama să nu acopere bottom nav

@@ -1,0 +1,8 @@
+V13 polish
+- bottom navigation ridicat deasupra bannerului AdMob
+- padding WebView crescut pentru reclamă + meniu
+- calendar colorat pe ture: M verde, A galben, N albastru/mov, CO turcoaz, CM roșu
+- accent principal verde/galben, mai apropiat de mockup
+- păstrată logica existentă: free/premium, reclame, calendar, reguli, istoric
+
+Notă: features mari (PDF/Excel real, charts, simulator CM, comparare joburi) sunt planificate pentru etape separate.

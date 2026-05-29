@@ -1,0 +1,8 @@
+V10_REAL_MOCKUP_UI
+- Refacut vizual spre mockup-ul aprobat: dark premium, carduri, gradient, bottom navigation.
+- Adaugat dashboard rapid sus: salariu brut lunar, slider, calculeaza salariul, rezultat rapid.
+- Estimare lunara refacuta pe carduri compacte + total mare evidențiat.
+- Reguli salariu curățate, inputuri editabile pentru free user.
+- Cache/service worker schimbat pe v10 si goleste cache-urile vechi.
+- Logica free ramane: 15 calcule/luna + reclama la fiecare 3 calcule.
+- Pentru test sigur: dezinstaleaza aplicatia veche din emulator/telefon si ruleaza proiectul din nou.

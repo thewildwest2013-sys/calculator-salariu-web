@@ -1,0 +1,1 @@
+V28 hotfix: repaired index.html malformed late script/style placement; based on V26 stable UI. versionCode 28 / versionName 2.0.8.

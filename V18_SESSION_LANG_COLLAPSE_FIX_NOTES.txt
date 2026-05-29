@@ -1,0 +1,5 @@
+V18 fixes:
+- Collapse/expand buttons repaired with robust binding and arrow update.
+- Firebase Auth persistence forced to LOCAL for auto-login on same device/emulator.
+- Language switch no longer reloads the WebView, so it does not kick the user to login.
+- Existing V17 UI/features preserved.

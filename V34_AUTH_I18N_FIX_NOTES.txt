@@ -1,0 +1,1 @@
+V34: fixed login/register click handling after V33, restored auth tab switching, and added final English cleanup for Salary Rules, Calculation Details, Salary FAQ and meal tickets wording.

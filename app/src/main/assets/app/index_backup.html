@@ -1,0 +1,1371 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculator salariu în ture</title>
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="manifest" href="manifest.json" />
+  <style>
+:root{
+  --bg:#07111f;--bg2:#0b1325;--card:#0f172a;--card2:#111c31;--soft:#17243d;--line:#26354f;
+  --text:#e5eefc;--muted:#94a3b8;--accent:#22c55e;--cyan:#38bdf8;--violet:#8b5cf6;--amber:#f59e0b;
+  --night:#60a5fa;--morning:#34d399;--after:#fbbf24;--weekend:#fb923c;--holiday:#fb7185;
+}
+*{box-sizing:border-box} html,body{height:100%}
+body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:radial-gradient(circle at top left,#0f1e35 0%,#07111f 42%,#050b14 100%);color:var(--text);min-height:100vh}
+.wrap{max-width:1380px;margin:0 auto;padding:20px}.screen-shell{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+h1,h2,h3,p{margin:0}.hidden{display:none}.muted{color:var(--muted)}
+.card{background:linear-gradient(180deg,rgba(17,28,49,.96),rgba(12,20,36,.96));border:1px solid rgba(148,163,184,.12);border-radius:24px;padding:18px;box-shadow:0 16px 40px rgba(0,0,0,.28);backdrop-filter:blur(10px)}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px;flex-wrap:wrap}.brand{display:flex;align-items:center;gap:12px}.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#f59e0b,#22c55e 70%,#38bdf8);display:grid;place-items:center;color:#08111d;font-weight:800}.brand h1{font-size:28px}.brand p{color:var(--muted);margin-top:4px}
+.chip{padding:10px 14px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(148,163,184,.14);font-size:13px;color:var(--muted)}
+.summary-hero{display:grid;grid-template-columns:1.25fr .8fr .8fr .9fr;gap:14px;margin-bottom:18px}.hero-card{padding:22px}.hero-card.primary{background:linear-gradient(135deg,#05111f,#071728 50%,#0a2031);border:1px solid rgba(56,189,248,.15)}
+.hero-card .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.hero-card .big{font-size:56px;line-height:1;font-weight:800;margin-top:8px;color:#2ee6a6}.hero-card .unit{font-size:18px;color:var(--muted);margin-top:6px}.mini-stat .label{font-size:13px;color:var(--muted)} .mini-stat .value{font-size:34px;font-weight:800;margin-top:10px}
+.grid{display:grid;gap:18px}.main-layout{grid-template-columns:minmax(0,1.55fr) minmax(320px,.85fr)}
+.app-panel{padding:20px}.section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}.section-head h2{font-size:28px}.section-head p{color:var(--muted);margin-top:4px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.toolbar select,.toolbar button,.field input,.field select{font:inherit}
+select,input{width:100%;padding:12px 14px;border-radius:16px;border:1px solid var(--line);background:#0a1528;color:var(--text)} select:focus,input:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 4px rgba(59,130,246,.12)}
+button{border:none;background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;padding:12px 16px;border-radius:16px;font:inherit;font-weight:600;cursor:pointer} button.secondary{background:#0a1528;color:var(--text);border:1px solid var(--line)} button.ghost{background:rgba(255,255,255,.06);color:var(--text);border:1px solid rgba(148,163,184,.14)}
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 16px}.pill{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:#0a1528;border:1px solid var(--line);font-size:13px;color:var(--muted)} .sw{width:12px;height:12px;border-radius:4px;display:inline-block}
+.weekdays{display:none}.weekday{display:none}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;max-height:none;overflow:visible;padding-right:0}.day{min-height:112px;border:1px solid var(--line);border-radius:20px;padding:12px;background:linear-gradient(180deg,#0b172c,#0b1324);display:flex;flex-direction:column;gap:8px;cursor:pointer;transition:transform .08s ease,border-color .2s, box-shadow .2s}.day:hover{transform:translateY(-1px);border-color:#35507c}.day.selected{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(96,165,250,.12)}.day.weekend{background:linear-gradient(180deg,#231709,#16131d)}.day.holiday{background:linear-gradient(180deg,#28131a,#15111b)}
+.day-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.num{font-size:25px;font-weight:800}.meta{font-size:11px;color:var(--muted);text-transform:capitalize}.day-code{min-width:34px;height:34px;border-radius:12px;display:grid;place-items:center;font-weight:800;color:#08111d}.code-OFF{background:#334155;color:#dbe7fb}.code-M{background:var(--morning)}.code-A{background:var(--after)}.code-N{background:var(--night)}.code-CO{background:#c4b5fd}.code-CM{background:#f472b6}
+.tags{display:flex;gap:6px;flex-wrap:wrap}.tag{font-size:11px;padding:4px 8px;border-radius:999px;background:#13233f;color:#bfd7ff}.tag.weekend{background:rgba(251,146,60,.14);color:#fdba74}.tag.holiday{background:rgba(251,113,133,.14);color:#fda4af}.day-sub{margin-top:auto;font-size:12px;color:var(--muted)}.day.expanded{grid-column:span 2;min-height:330px}.inline-editor{margin-top:10px;padding-top:10px;border-top:1px solid rgba(148,163,184,.12)}.inline-editor-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}.inline-editor-title{font-size:12px;color:var(--text);font-weight:700}.inline-grid-two{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tiny-shift-btn{padding:10px 8px;border-radius:14px;border:1px solid var(--line);background:#0b172c;color:var(--text);font-weight:700;text-align:center;cursor:pointer;font-size:12px}.tiny-shift-btn.active{border-color:#60a5fa;box-shadow:0 0 0 2px rgba(96,165,250,.12)}.tiny-shift-btn.code-OFF.active{background:#334155;color:#fff}.tiny-shift-btn.code-M.active{background:rgba(52,211,153,.22)}.tiny-shift-btn.code-A.active{background:rgba(251,191,36,.22)}.tiny-shift-btn.code-N.active{background:rgba(96,165,250,.22)}.tiny-field{display:flex;flex-direction:column;gap:6px;margin-top:8px}.tiny-field label{font-size:12px;color:var(--muted)}.tiny-field input{padding:10px 12px;border-radius:14px}.tiny-checks{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.tiny-check{display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--line);border-radius:14px;background:#0b172c;font-size:12px}.tiny-check input{width:auto;margin:0}
+.editor{margin-top:18px;padding:18px;border-radius:22px;background:linear-gradient(180deg,#0a1528,#0a1323);border:1px solid var(--line)}.editor-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px}.editor-title{font-size:22px;font-weight:700}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{display:flex;flex-direction:column;gap:6px}.field label{font-size:13px;color:var(--muted)}.mini-hint{font-size:12px;color:var(--muted);line-height:1.45;margin-top:8px}.check-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}.check-chip{display:flex;align-items:center;gap:8px;padding:11px 12px;border:1px solid var(--line);border-radius:14px;background:#0b172c;font-size:13px;color:var(--text)}.check-chip input{width:auto;margin:0}.editor-block-title{font-size:13px;color:var(--muted);margin:14px 0 8px}.shift-picker{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px}.shift-btn{padding:12px 10px;border-radius:16px;border:1px solid var(--line);background:#0b172c;color:var(--text);font-weight:700;text-align:center;cursor:pointer;transition:transform .08s ease,border-color .2s,box-shadow .2s}.shift-btn:hover{transform:translateY(-1px)}.shift-btn.active{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(96,165,250,.12)}.shift-btn.code-OFF.active{background:#334155;color:#fff}.shift-btn.code-M.active{background:rgba(52,211,153,.22)}.shift-btn.code-A.active{background:rgba(251,191,36,.22)}.shift-btn.code-N.active{background:rgba(96,165,250,.22)}.secondary-shifts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px}.muted-note{font-size:12px;color:var(--muted);margin-top:2px}@media (max-width:700px){.shift-picker{grid-template-columns:repeat(2,1fr)}.secondary-shifts,.check-grid,.row,.tiny-checks,.inline-grid-two{grid-template-columns:1fr}}
+.settings-card .stack{display:grid;gap:14px}.detail{display:grid;grid-template-columns:1fr;gap:18px}.list{display:flex;flex-direction:column;gap:10px}.item{display:flex;justify-content:space-between;gap:16px;border:1px solid var(--line);border-radius:16px;padding:12px 14px;font-size:14px;background:#0a1528}
+.auth-wrap{max-width:560px;margin:40px auto;width:100%}.brand-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:rgba(79,70,229,.14);color:#c7d2fe;font-size:13px;font-weight:700;margin-bottom:14px}.tabs{display:flex;gap:8px;margin-bottom:12px}.tabs button{flex:1}.premium-benefits{display:grid;gap:10px;margin:16px 0}.premium-benefit,.auth-note{padding:12px 14px;border-radius:14px;background:#0a1528;border:1px solid var(--line);font-size:13px;color:var(--muted)}
+.free-banner{margin:0 0 16px;padding:14px 16px;border:1px solid rgba(245,158,11,.25);background:rgba(245,158,11,.09);border-radius:18px;display:none;align-items:center;justify-content:space-between;gap:12px}.inline-actions{display:flex;gap:10px;flex-wrap:wrap}.disabled-block{opacity:.6}.pin-modal-backdrop{position:fixed;inset:0;background:rgba(5,11,20,.78);display:none;align-items:center;justify-content:center;padding:18px;z-index:9999}.pin-modal{width:min(100%,420px);background:#0d172a;border-radius:22px;padding:22px;border:1px solid var(--line);box-shadow:0 20px 60px rgba(0,0,0,.45)}.pin-status{min-height:18px;color:#fda4af;font-size:13px;margin-top:10px}
+.footer-note{font-size:13px;color:var(--muted);margin-top:12px;line-height:1.5}
+@media (max-width:1100px){.main-layout,.summary-hero{grid-template-columns:1fr}.days,.weekdays{grid-template-columns:repeat(7,1fr)}.hero-card .big{font-size:48px}}
+@media (max-width:860px){.days,.weekdays{grid-template-columns:repeat(4,1fr)}.check-grid{grid-template-columns:1fr 1fr}.row{grid-template-columns:1fr}}
+@media (max-width:640px){.wrap{padding:14px}.brand h1{font-size:24px}.summary-hero{grid-template-columns:1fr 1fr}.hero-card.primary{grid-column:1/-1}.hero-card .big{font-size:42px}.days,.weekdays{grid-template-columns:repeat(2,1fr)}.check-grid,.summary-hero{grid-template-columns:1fr}.weekday{text-align:left}.day.expanded{grid-column:1/-1}}
+
+/* compact redesign */
+.compact-topbar{align-items:flex-start;margin-bottom:14px}.compact-topbar .brand p{display:none}
+.top-account-strip{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+.mini-account-box{min-width:160px;padding:10px 14px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(148,163,184,.12);display:flex;flex-direction:column;gap:4px}
+.mini-label,.section-kicker{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.compact-logout{height:44px}.compact-pin-actions button{padding:10px 12px}
+.quick-menu{display:flex;gap:10px;overflow:auto;padding:10px 12px;margin-bottom:14px}.menu-tab{white-space:nowrap;background:#0a1528;border:1px solid var(--line)}.menu-tab.active{background:linear-gradient(135deg,#1d4ed8,#2563eb)}
+.compact-layout{grid-template-columns:minmax(0,1.45fr) minmax(320px,.85fr);align-items:start}.left-column,.right-column{display:grid;gap:16px}
+.calendar-panel-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px}.compact-toolbar{gap:8px;align-items:center;flex-wrap:wrap}.month-nav-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#0a1528;border:1px solid var(--line);padding:8px 10px;border-radius:16px}.month-nav-group select{min-width:132px}.nav-month{padding:12px 14px;min-width:46px}.calendar-legend-title{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.compact-legend{margin:0}.estimate-card{padding:0;overflow:hidden}.estimate-head{width:100%;padding:18px;background:transparent;border:none;display:flex;justify-content:space-between;align-items:center;text-align:left}.estimate-head h2{font-size:22px}.estimate-body{display:none;padding:0 0 6px}.estimate-body.open{display:block}
+.show-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:10px}.show-weekdays .weekday{display:flex;justify-content:center;align-items:center;padding:10px 0;border-radius:14px;background:#0a1528;border:1px solid var(--line);color:var(--muted);font-size:12px}
+.calendar-grid{grid-template-columns:repeat(7,minmax(0,1fr));gap:10px}.day{min-height:104px;border:1px solid var(--line);border-radius:20px;padding:12px;background:linear-gradient(180deg,#0d1830,#0a1427);position:relative;cursor:pointer;transition:.18s transform,.18s border-color}.day:hover{transform:translateY(-2px);border-color:#3b82f6}.day.empty{min-height:80px;background:transparent;border:1px dashed rgba(148,163,184,.08);cursor:default}.day.empty:hover{transform:none;border-color:rgba(148,163,184,.08)}
+.day-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.day .num{font-size:20px;font-weight:800}.day .meta{font-size:11px;color:var(--muted);margin-top:2px}.day-code{padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700;background:#16233a;color:#dbeafe;border:1px solid rgba(148,163,184,.16)}.code-M,.tiny-shift-btn.code-M{background:rgba(52,211,153,.18)!important;color:#d1fae5!important}.code-A,.tiny-shift-btn.code-A{background:rgba(251,191,36,.18)!important;color:#fef3c7!important}.code-N,.tiny-shift-btn.code-N{background:rgba(96,165,250,.18)!important;color:#dbeafe!important}.code-OFF,.tiny-shift-btn.code-OFF{background:rgba(71,85,105,.25)!important;color:#cbd5e1!important}.code-CO,.tiny-shift-btn.code-CO{background:rgba(139,92,246,.18)!important;color:#ede9fe!important}.code-CM,.tiny-shift-btn.code-CM{background:rgba(251,113,133,.18)!important;color:#ffe4e6!important}
+.day-sub{margin-top:12px;font-size:13px;color:#dbeafe}.day-note-line{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px}.mini-badge{padding:5px 8px;border-radius:999px;font-size:11px;border:1px solid rgba(148,163,184,.16);background:#0a1528;color:var(--muted)}.mini-badge.holiday{border-color:rgba(251,113,133,.38);color:#fecdd3}.mini-badge.weekend{border-color:rgba(251,146,60,.38);color:#fed7aa}.mini-badge.ot{border-color:rgba(56,189,248,.38);color:#bae6fd}.mini-badge.note{border-color:rgba(250,204,21,.34);color:#fde68a}.note-preview{margin-top:6px;font-size:12px;color:#cbd5e1;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.day.selected{outline:2px solid rgba(59,130,246,.55)}.holiday-dot{position:absolute;top:10px;left:10px;width:8px;height:8px;border-radius:50%;background:var(--holiday);box-shadow:0 0 0 4px rgba(251,113,133,.12)}
+.compact-summary{margin:0}.compact-summary .hero-card .big{font-size:48px}.compact-summary .mini-stat .value{font-size:28px}
+.collapsible-card{padding:0;overflow:hidden}.collapse-head{width:100%;padding:18px;background:transparent;border:none;display:flex;justify-content:space-between;align-items:center;text-align:left}.collapse-head h2{font-size:22px}.collapse-arrow{font-size:20px;color:var(--muted);transition:transform .2s ease}.collapse-head.active .collapse-arrow{transform:rotate(180deg)}.collapse-body{display:none;padding:0 18px 18px}.collapse-body.open{display:block}
+.compact-fields-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.compact-actions-row{display:flex;gap:10px;flex-wrap:wrap}.holiday-year-list{display:grid;gap:8px}.holiday-item{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:16px;background:#0a1528;border:1px solid var(--line)}
+.day-modal{max-width:760px;width:min(96vw,760px)}.day-modal-grid{display:grid;gap:12px}.shift-quick-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.shift-secondary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.tiny-shift-btn{padding:14px 10px;border-radius:16px;background:#0a1528;border:1px solid var(--line);font-weight:700}.tiny-shift-btn.active{outline:2px solid rgba(59,130,246,.55)}.modal-meta-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}.tiny-checks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.tiny-check{padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:#0a1528;display:flex;align-items:center;gap:8px;cursor:pointer}.tiny-check input{width:auto}.day-note-box textarea{width:100%;min-height:90px;padding:12px 14px;border-radius:16px;border:1px solid var(--line);background:#0a1528;color:var(--text);font:inherit;resize:vertical}.day-note-box textarea:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 4px rgba(59,130,246,.12)}.muted-note{color:var(--muted);font-size:13px}
+@media (max-width: 1100px){.compact-layout{grid-template-columns:1fr}.right-column{grid-template-columns:1fr}.top-account-strip{justify-content:flex-start}}
+@media (max-width: 760px){.compact-fields-grid,.shift-quick-grid,.tiny-checks{grid-template-columns:repeat(2,minmax(0,1fr))}.calendar-grid,.show-weekdays{gap:8px}.day{min-height:94px;padding:10px}.compact-toolbar{width:100%}.compact-toolbar select{flex:1;min-width:120px}.top-account-strip .mini-account-box{min-width:unset;flex:1 1 180px}}
+
+
+.top-account-strip{align-items:center}
+.mini-account-box{min-width:170px;background:linear-gradient(180deg,rgba(15,26,45,.95),rgba(8,17,31,.92));border:1px solid rgba(148,163,184,.16);box-shadow:0 10px 24px rgba(0,0,0,.18)}
+.quick-menu{position:sticky;top:8px;z-index:5;background:linear-gradient(180deg,rgba(10,21,40,.94),rgba(8,16,30,.94));display:flex;gap:10px;flex-wrap:wrap}
+.menu-tab{background:rgba(255,255,255,.03);border:1px solid rgba(148,163,184,.14);color:var(--text);padding:12px 14px;border-radius:14px}
+.menu-tab.active{background:linear-gradient(135deg,#163a77,#1d4ed8);box-shadow:0 10px 24px rgba(29,78,216,.22)}
+.days{gap:12px}
+.day{background:linear-gradient(180deg,rgba(10,20,36,.94),rgba(8,16,30,.94));border:1px solid rgba(148,163,184,.14);box-shadow:0 8px 18px rgba(0,0,0,.16)}
+.day:hover{transform:translateY(-2px);box-shadow:0 14px 24px rgba(0,0,0,.22)}
+.day.selected{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(96,165,250,.12),0 16px 28px rgba(0,0,0,.25)}
+.day.weekend{background:linear-gradient(180deg,rgba(35,24,12,.92),rgba(22,16,9,.92))}
+.day.holiday{background:linear-gradient(180deg,rgba(55,16,28,.92),rgba(28,10,18,.92));border-color:rgba(251,113,133,.45)}
+.day-num{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:34px;border-radius:12px;background:rgba(255,255,255,.04);font-weight:800}
+.holiday .day-num{background:rgba(251,113,133,.18);color:#ffd0dc}
+.weekend .day-num{background:rgba(251,146,60,.14)}
+.note-preview{line-height:1.35;max-height:2.8em}
+.estimate-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.stats-strip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-top:14px}
+.stat-chip{padding:14px 12px;border-radius:18px;border:1px solid rgba(148,163,184,.12);background:rgba(255,255,255,.03);display:flex;flex-direction:column;gap:8px}
+.stat-chip .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.stat-chip strong{font-size:22px}
+.quick-report-note{margin-top:10px;color:var(--muted);font-size:13px}
+@media (max-width: 980px){
+  .stats-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .quick-menu{position:static}
+}
+
+</style>
+</head>
+<body>
+  <div id="authScreen" class="wrap screen-shell">
+    <div class="card auth-wrap auth-card">
+      <div class="brand-chip">🔒 Autentificare securizată</div>
+      <h2>Calculator Salariu</h2>
+      <p class="desc">Intră în cont sau creează unul nou ca să folosești aplicația. Datele tale sunt salvate în cloud pe contul tău.</p>
+
+      <div class="tabs" style="margin-bottom:12px;">
+        <button id="tabRegisterMain" class="ghost" onclick="setMainAuthView('register')">Înregistrare</button>
+        <button id="tabLoginMain" class="secondary" onclick="setMainAuthView('login')">Login</button>
+      </div>
+
+      <div id="registerMainPanel">
+        <div class="field">
+          <label>Email</label>
+          <input id="mainRegEmail" type="email" placeholder="nume@email.com" />
+        </div>
+        <div class="field">
+          <label>Parolă</label>
+          <input id="mainRegPass" type="password" placeholder="minimum 6 caractere" />
+        </div>
+        <button id="mainRegisterBtn">Creează cont</button>
+      </div>
+
+      <div id="loginMainPanel" class="hidden">
+        <div class="field">
+          <label>Email</label>
+          <input id="mainLoginEmail" type="email" placeholder="nume@email.com" />
+        </div>
+        <div class="field">
+          <label>Parolă</label>
+          <input id="mainLoginPass" type="password" placeholder="parola" />
+        </div>
+        <button id="mainLoginBtn">Intră în cont</button>
+      </div>
+
+      <div style="margin-top:12px;">
+        <button class="ghost" onclick="resetMainPassword()">Forgot password</button>
+      </div>
+
+      <div class="auth-note">Plata pentru Premium este procesată securizat prin Google Play. Abonamentul tău poate fi restaurat pe același cont.</div>
+      <p class="footer-note" id="mainAuthMsg"></p>
+    </div>
+  </div>
+
+  <div id="premiumScreen" class="wrap screen-shell" style="display:none;">
+    <div class="card auth-wrap premium-card">
+      <div class="brand-chip">⭐ Premium</div>
+      <div id="premiumStateChip" class="status-chip" data-state="checking">Se verifică Google Play Billing...</div>
+      <h2>Activează Premium</h2>
+      <p class="desc">Contul tău este pe plan free. Pentru acces complet la calculator și sincronizare avansată, ai nevoie de Premium.</p>
+      <div class="premium-benefits">
+        <div class="premium-benefit">✔ acces complet la calculator</div>
+        <div class="premium-benefit">✔ salvare date în cloud</div>
+        <div class="premium-benefit">✔ actualizări și funcții noi</div>
+      </div>
+      <div class="list">
+        <div class="item"><span class="muted">Plan curent</span><strong id="premiumPlanLabel">free</strong></div>
+        <div class="item"><span class="muted">Cont</span><strong id="premiumUserEmail">-</strong></div>
+      </div>
+      <div style="margin-top:12px;display:grid;gap:10px;">
+        <button id="goToPlayBtn">Se verifică...</button>
+        <button id="restorePremiumBtn" class="ghost">Restore Premium</button>
+        <button id="premiumBackBtn" class="ghost">Înapoi în aplicație</button>
+        <button id="premiumLogoutBtn" class="secondary">Logout</button>
+      </div>
+      <div class="hint-box">Abonamentul premium se verifică automat din Google Play pe acest cont. Dacă schimbi telefonul sau reinstalezi aplicația, folosește butonul Restore Premium.</div>
+      <p id="premiumMsg" class="footer-note"></p>
+      <div class="hint-box">Plata abonamentului este procesată securizat prin Google Play. Poți restaura premium oricând pe același cont Google Play.</div>
+    </div>
+  </div>
+
+  <div id="appScreen" class="wrap" style="display:none;">
+    <div class="topbar compact-topbar">
+      <div class="brand">
+        <div class="logo">SC</div>
+        <div>
+          <h1>SalaryCalc</h1>
+        </div>
+      </div>
+      <div class="top-account-strip">
+        <div class="mini-account-box">
+          <span class="mini-label">Cont</span>
+          <strong id="currentUserEmail">-</strong>
+        </div>
+        <div class="mini-account-box">
+          <span class="mini-label">Plan</span>
+          <strong id="currentPlanLabel">free</strong>
+        </div>
+        <div id="premiumQuickActions" class="inline-actions compact-pin-actions" style="display:none;">
+          <button id="restorePremiumTopBtn" class="ghost">Restore Premium</button>
+        </div>
+        <button id="logoutBtn" class="secondary compact-logout">Logout</button>
+      </div>
+    </div>
+
+    <div class="quick-menu card">
+      <button class="menu-tab active" data-target="calendarSection">Calendar</button>
+      <button class="menu-tab" data-target="estimateSection">Estimare</button>
+      <button class="menu-tab" data-target="rulesSection">Reguli</button>
+      <button class="menu-tab" data-target="detailSection">Detalii</button>
+      <button class="menu-tab" data-target="holidaysSection">Sărbători</button>
+      <button class="menu-tab" data-target="logicSection">Logică</button>
+    </div>
+
+    <div id="freeModeBanner" class="free-banner">
+      <div>
+        <strong>Cont Free: modul preview este activ</strong>
+        <span>Poți vedea calculatorul, dar editarea și calculele reale sunt disponibile doar în Premium.</span>
+      </div>
+      <div class="inline-actions">
+        <button id="openPremiumFromBanner">Vezi Premium</button>
+      </div>
+    </div>
+
+    <div class="grid compact-layout">
+      <div class="left-column">
+        <div class="card app-panel" id="calendarSection">
+          <div class="calendar-panel-top">
+            <div>
+              <div class="section-kicker">Programul tău lunar</div>
+              <h2>Calendar rapid</h2>
+            </div>
+            <div class="toolbar compact-toolbar">
+              <div class="month-nav-group">
+                <button id="prevMonthBtn" class="secondary nav-month" aria-label="Luna anterioară">‹</button>
+                <select id="monthSelect"></select>
+                <button id="nextMonthBtn" class="secondary nav-month" aria-label="Luna următoare">›</button>
+                <select id="yearSelect"></select>
+              </div>
+              <button id="todayBtn" class="ghost">Azi</button>
+              <button id="resetMonth" class="secondary">Reset</button>
+              <button id="tutorialBtn" class="ghost">Tutorial</button>
+            </div>
+          </div>
+
+          <div class="calendar-legend-title">
+            <strong>Calendar</strong>
+            <div class="legend compact-legend">
+              <div class="pill"><span class="sw" style="background:var(--morning)"></span>Morning</div>
+              <div class="pill"><span class="sw" style="background:var(--after)"></span>After</div>
+              <div class="pill"><span class="sw" style="background:var(--night)"></span>Night</div>
+              <div class="pill"><span class="sw" style="background:#31425f"></span>Liber</div>
+              <div class="pill"><span class="sw" style="background:var(--holiday)"></span>Sărbătoare</div>
+            </div>
+          </div>
+
+          <div class="weekdays show-weekdays" id="weekdays"></div>
+          <div id="days" class="days calendar-grid"></div>
+        </div>
+
+        <div class="card estimate-card" id="estimateSection">
+          <button class="estimate-head collapse-head" data-collapse="estimateBody">
+            <div>
+              <span class="section-kicker">Rezumat rapid</span>
+              <h2>Estimare lunară</h2>
+            </div>
+            <span class="collapse-arrow">▾</span>
+          </button>
+          <div id="estimateBody" class="estimate-body open">
+            <div class="summary-hero compact-summary">
+              <div class="card hero-card primary">
+                <div class="eyebrow">Estimare lunară</div>
+                <div id="sumNet" class="big">—</div>
+                <div class="unit">Salariu net</div>
+              </div>
+              <div class="card hero-card mini-stat">
+                <div class="label">Tichete masă</div>
+                <div id="sumMeals" class="value">—</div>
+              </div>
+              <div class="card hero-card mini-stat">
+                <div class="label">Sporuri + overtime</div>
+                <div id="sumExtras" class="value">—</div>
+              </div>
+              <div class="card hero-card mini-stat">
+                <div class="label">Total încasat</div>
+                <div id="sumTotal" class="value">—</div>
+              </div>
+            </div>
+
+            <div class="estimate-actions">
+              <button id="exportPdfBtn" class="ghost">Export PDF</button>
+              <button id="restorePremiumEstimateBtn" class="secondary">Restore Premium</button>
+            </div>
+
+            <div class="stats-strip">
+              <div class="stat-chip"><span class="k">Ture</span><strong id="statWorkedDays">—</strong></div>
+              <div class="stat-chip"><span class="k">Morning</span><strong id="statMorning">—</strong></div>
+              <div class="stat-chip"><span class="k">After</span><strong id="statAfter">—</strong></div>
+              <div class="stat-chip"><span class="k">Night</span><strong id="statNight">—</strong></div>
+              <div class="stat-chip"><span class="k">OT</span><strong id="statOvertime">—</strong></div>
+              <div class="stat-chip"><span class="k">Sărbători</span><strong id="statHoliday">—</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card collapsible-card" id="rulesSection">
+          <button class="collapse-head" data-collapse="rulesBody">
+            <div>
+              <span class="section-kicker">Setări personale</span>
+              <h2>Reguli salariale</h2>
+            </div>
+            <span class="collapse-arrow">▾</span>
+          </button>
+          <div id="rulesBody" class="collapse-body open">
+            <div class="compact-fields-grid">
+              <div class="field"><label>Salariu brut de referință</label><input id="baseSalary" type="number" placeholder="Introdu suma" /></div>
+              <div class="field"><label>Bon masă / zi</label><input id="mealValue" type="number" placeholder="40" /></div>
+              <div class="field"><label>Spor noapte (%)</label><input id="nightRate" type="number" step="0.01" placeholder="25" /></div>
+              <div class="field"><label>Spor overtime (%)</label><input id="overtimeRate" type="number" step="0.01" placeholder="75" /></div>
+              <div class="field"><label>Spor weekend (%)</label><input id="weekendRate" type="number" step="0.01" placeholder="0" /></div>
+              <div class="field"><label>Spor sărbătoare (%)</label><input id="holidayRate" type="number" step="0.01" placeholder="100" /></div>
+              <div class="field"><label>CAS (%)</label><input id="casRate" type="number" step="0.01" placeholder="25" /></div>
+              <div class="field"><label>CASS (%)</label><input id="cassRate" type="number" step="0.01" placeholder="10" /></div>
+              <div class="field"><label>Impozit (%)</label><input id="taxRate" type="number" step="0.01" placeholder="10" /></div>
+              <div class="field"><label>Ore / tură</label><input id="shiftHours" type="number" step="0.25" placeholder="8" /></div>
+              <div class="field"><label>Zile CM neplătite / lună</label><input id="unpaidMedicalDays" type="number" step="1" placeholder="1" /></div>
+            </div>
+            <div class="inline-actions compact-actions-row">
+              <button id="saveSettings">Salvează setările</button>
+              <button id="demoBtn" class="secondary">Încarcă exemplu</button>
+            </div>
+            <p class="footer-note">Weekendul și sărbătorile se detectează automat din calendar. Tura Night se alege direct sus, fără bifă separată.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="right-column">
+        <div class="card collapsible-card" id="detailSection">
+          <button class="collapse-head" data-collapse="detailBody">
+            <div>
+              <span class="section-kicker">Verificare rapidă</span>
+              <h2>Detaliu calcul</h2>
+            </div>
+            <span class="collapse-arrow">▾</span>
+          </button>
+          <div id="detailBody" class="collapse-body open">
+            <div id="detailList" class="list"></div>
+            <div id="sumGross" class="hidden">—</div>
+          </div>
+        </div>
+
+        <div class="card collapsible-card" id="holidaysSection">
+          <button class="collapse-head" data-collapse="holidayBody">
+            <div>
+              <span class="section-kicker">Referință anuală</span>
+              <h2>Sărbători</h2>
+            </div>
+            <span class="collapse-arrow">▾</span>
+          </button>
+          <div id="holidayBody" class="collapse-body">
+            <div id="holidayYearList" class="holiday-year-list"></div>
+          </div>
+        </div>
+
+        <div class="card collapsible-card" id="logicSection">
+          <button class="collapse-head" data-collapse="logicBody">
+            <div>
+              <span class="section-kicker">Cum calculează aplicația</span>
+              <h2>Logica implementată</h2>
+            </div>
+            <span class="collapse-arrow">▾</span>
+          </button>
+          <div id="logicBody" class="collapse-body">
+            <div id="logicList" class="list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="dayModalBackdrop" class="pin-modal-backdrop" style="display:none;">
+    <div class="pin-modal day-modal">
+      <div class="brand-chip">📅 Zi selectată</div>
+      <div id="dayModalContent"></div>
+      <div class="inline-actions compact-actions-row" style="margin-top:12px;">
+        <button id="dayModalCloseBtn" class="secondary">Închide</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="tutorialOverlay" class="pin-modal-backdrop" style="display:none;">
+    <div class="pin-modal">
+      <div class="brand-chip">✨ Tutorial rapid</div>
+      <h3 id="tutorialTitle">Bine ai venit</h3>
+      <p id="tutorialText">Atinge o zi din calendar ca să o editezi.</p>
+      <div class="inline-actions" style="margin-top:12px;justify-content:space-between;">
+        <button id="tutorialNextBtn">Mai departe</button>
+        <button id="tutorialCloseBtn" class="secondary">Închide</button>
+      </div>
+    </div>
+  </div>
+
+<div id="pinModalBackdrop" style="display:none;"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBXPDyeKhybf7mPqPU3rSQQ5G2pIPgZHYg",
+      authDomain: "calculator-salariu-60957.firebaseapp.com",
+      projectId: "calculator-salariu-60957",
+      storageBucket: "calculator-salariu-60957.firebasestorage.app",
+      messagingSenderId: "60185089263",
+      appId: "1:60185089263:android:a2eac09d3ccefa8113f71a"
+    };
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    async function ensureUserProfile(uid, email) {
+      try {
+        const ref = db.collection('users').doc(uid).collection('profile').doc('main');
+        const doc = await ref.get();
+        if (!doc.exists) {
+          await ref.set({
+            email: email || '',
+            isPremium: false,
+            plan: 'free',
+            premiumSource: null,
+            premiumSince: null,
+            premiumExpiry: null,
+            lastLoginAt: new Date().toISOString(),
+            createdAt: new Date().toISOString()
+          }, { merge: true });
+        } else if (email && doc.data()?.email !== email) {
+          await ref.set({ email, lastLoginAt: new Date().toISOString() }, { merge: true });
+        }
+      } catch (e) {
+        console.error('Eroare profil user:', e);
+      }
+    }
+
+    async function getUserProfile(uid) {
+      try {
+        const doc = await db.collection('users').doc(uid).collection('profile').doc('main').get();
+        if (!doc.exists) return null;
+        return doc.data() || null;
+      } catch (e) {
+        console.error('Eroare profil:', e);
+        return null;
+      }
+    }
+
+    async function checkPremium(uid) {
+      const profile = await getUserProfile(uid);
+      return profile?.isPremium === true;
+    }
+
+    async function loadHolidaysFromFirestore(year) {
+      const holidaysMap = new Map();
+      try {
+        const snapshot = await db.collection('holidays').get();
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const date = doc.id;
+          if (date.startsWith(year) && data.active === true) {
+            holidaysMap.set(date, data.name);
+          }
+        });
+      } catch (e) {
+        console.error('Eroare la citire holidays:', e);
+      }
+      return holidaysMap;
+    }
+
+    const MONTHS = ["Ianuarie","Februarie","Martie","Aprilie","Mai","Iunie","Iulie","August","Septembrie","Octombrie","Noiembrie","Decembrie"];
+    const SHIFT_OPTIONS = [
+      {code:'OFF', label:'Liber'},
+      {code:'M', label:'Morning'},
+      {code:'A', label:'After'},
+      {code:'N', label:'Night'},
+      {code:'CO', label:'Concediu odihnă'},
+      {code:'CM', label:'Concediu medical'}
+    ];
+    const defaultSettings = { baseSalary:0, nightRate:0.25, overtimeRate:0.75, weekendRate:0.10, holidayRate:1, mealValue:40, casRate:0.25, cassRate:0.10, taxRate:0.10, shiftHours:8, unpaidMedicalDays:1 };
+    let state = {
+      settings: load('salary_settings', defaultSettings),
+      currentUser: null,
+      entries: {},
+      year: new Date().getFullYear(),
+      month: new Date().getMonth(),
+      billingState: 'checking',
+      isPremium: false,
+      appUnlocked: false,
+      selectedDayIso: null
+    };
+
+    function load(k, fallback){ try { return JSON.parse(localStorage.getItem(k)) ?? fallback; } catch { return fallback; } }
+
+
+    function getAndroidBridge() {
+      return window.AndroidBilling || null;
+    }
+
+    function hasNativePremiumPin() {
+      return false;
+    }
+
+    function openPremiumScreen() {
+      showPremiumGate({
+        email: state.currentUser?.email || '-',
+        plan: state.isPremium ? 'premium' : 'free',
+        isPremium: state.isPremium
+      });
+    }
+
+    function setInteractiveDisabled(disabled) {
+      const selectors = [
+        '#baseSalary','#nightRate','#overtimeRate','#weekendRate','#holidayRate','#mealValue','#casRate','#cassRate','#taxRate',
+        '#saveSettings','#demoBtn','#resetMonth','#yearSelect','#monthSelect','#days select'
+      ];
+      selectors.forEach(selector => {
+        document.querySelectorAll(selector).forEach(el => {
+          el.disabled = !!disabled;
+          el.classList.toggle('disabled-block', !!disabled);
+        });
+      });
+    }
+
+    function applyAccessMode() {
+      const freeBanner = document.getElementById('freeModeBanner');
+      const planLabel = document.getElementById('currentPlanLabel');
+      const pinActions = document.getElementById('premiumQuickActions');
+      if (planLabel) planLabel.textContent = state.isPremium ? 'premium' : 'free';
+      if (freeBanner) freeBanner.style.display = state.isPremium ? 'none' : 'flex';
+      if (pinActions) pinActions.style.display = state.isPremium ? 'flex' : 'none';
+      setInteractiveDisabled(!state.isPremium || !state.appUnlocked);
+      syncSettingsToInputs();
+      renderLogicSummary();
+      if (!state.isPremium || !state.appUnlocked) {
+        maskSensitiveViews();
+      } else {
+        recalc();
+      }
+    }
+
+    function setPinModal(mode, options = {}) {
+      return;
+    }
+
+    function closePinModal() {
+      const backdrop = document.getElementById('pinModalBackdrop');
+      if (backdrop) backdrop.style.display = 'none';
+    }
+
+    function lockPremiumSession() {
+      return;
+    }
+
+    function ensurePremiumAccessAfterLogin() {
+      state.appUnlocked = !!state.isPremium;
+      applyAccessMode();
+      closePinModal();
+      if (state.isPremium && !localStorage.getItem('salary_tutorial_seen')) {
+        setTimeout(() => { openTutorial(); localStorage.setItem('salary_tutorial_seen', '1'); }, 350);
+      }
+    }
+
+
+    const billingUiMap = {
+      checking: { chip: 'Se verifică Google Play Billing...', button: 'Se verifică...', disabled: true },
+      ready: { chip: 'Google Play Billing este pregătit.', button: 'Activează Premium', disabled: false },
+      processing: { chip: 'Se pregătește plata...', button: 'Se deschide Google Play...', disabled: true },
+      active: { chip: 'Premium este activ.', button: 'Premium activ', disabled: true },
+      unavailable: { chip: 'Google Play Billing nu este disponibil momentan.', button: 'Indisponibil momentan', disabled: true },
+      error: { chip: 'A apărut o problemă la plată.', button: 'Încearcă din nou', disabled: false },
+      idle: { chip: 'Stare inițială.', button: 'Activează Premium', disabled: false }
+    };
+
+    function applyBillingUiState(nextState) {
+      state.billingState = nextState || 'idle';
+      const config = billingUiMap[state.billingState] || billingUiMap.idle;
+      const chip = document.getElementById('premiumStateChip');
+      const btn = document.getElementById('goToPlayBtn');
+      if (chip) {
+        chip.dataset.state = state.billingState;
+        chip.textContent = config.chip;
+      }
+      if (btn) {
+        btn.disabled = !!config.disabled;
+        btn.textContent = config.button;
+      }
+    }
+
+    function save(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+    function fmt(v){ return new Intl.NumberFormat('ro-RO',{style:'currency',currency:'RON',maximumFractionDigits:2}).format(v||0); }
+    function fmtPlain(v){ return new Intl.NumberFormat('ro-RO',{maximumFractionDigits:2}).format(v||0); }
+    function escapeHtml(value){ return String(value||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+    function pad(n){ return String(n).padStart(2,'0'); }
+    function parseNum(id){ return Number(document.getElementById(id).value || 0); }
+    function toISO(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+    function addDays(iso, n){ const d = new Date(iso+'T12:00:00'); d.setDate(d.getDate()+n); return toISO(d); }
+    function orthodoxEaster(y){ const a=y%4,b=y%7,c=y%19,d=(19*c+15)%30,e=(2*a+4*b-d+34)%7,month=Math.floor((d+e+114)/31),day=((d+e+114)%31)+1; const julian=new Date(Date.UTC(y,month-1,day)); julian.setUTCDate(julian.getUTCDate()+13); return `${julian.getUTCFullYear()}-${pad(julian.getUTCMonth()+1)}-${pad(julian.getUTCDate())}`; }
+    function getRomaniaHolidays(year){
+      const easter=orthodoxEaster(year);
+      const goodFriday=addDays(easter,-2);
+      const easterMonday=addDays(easter,1);
+      const pentecost=addDays(easter,49);
+      const pentecostMonday=addDays(easter,50);
+      return new Map([
+        [`${year}-01-01`,'Anul Nou'],
+        [`${year}-01-02`,'A doua zi de Anul Nou'],
+        [`${year}-01-06`,'Boboteaza'],
+        [`${year}-01-07`,'Sf. Ioan'],
+        [`${year}-01-24`,'Ziua Unirii'],
+        [goodFriday,'Vinerea Mare'],
+        [easter,'Paște'],
+        [easterMonday,'A doua zi de Paște'],
+        [`${year}-05-01`,'Ziua Muncii'],
+        [`${year}-06-01`,'Ziua Copilului'],
+        [pentecost,'Rusalii'],
+        [pentecostMonday,'A doua zi de Rusalii'],
+        [`${year}-08-15`,'Adormirea Maicii Domnului'],
+        [`${year}-11-30`,'Sf. Andrei'],
+        [`${year}-12-01`,'Ziua Națională'],
+        [`${year}-12-25`,'Crăciun'],
+        [`${year}-12-26`,'A doua zi de Crăciun'],
+      ]);
+    }
+    function monthKey(){ return `${state.currentUser?.email || 'guest'}_${state.year}_${state.month}`; }
+    function cloudMonthKey(){ return `${state.year}-${String(state.month+1).padStart(2,'0')}`; }
+    function loadEntries(){ state.entries = load('salary_entries_'+monthKey(), {}); }
+    function saveEntries(){ save('salary_entries_'+monthKey(), state.entries); }
+    function getDays(year, month){ const total = new Date(year, month+1, 0).getDate(); const arr=[]; for(let i=1;i<=total;i++){ const d=new Date(year, month, i, 12); arr.push({day:i, iso:toISO(d), weekday:d.toLocaleDateString('ro-RO',{weekday:'short'}), isWeekend:[0,6].includes(d.getDay())}); } return arr; }
+    function workingDaysReference(days, holidays){ return days.filter(d => !d.isWeekend && !holidays.has(d.iso)).length; }
+    function createDefaultEntry(){
+      return {
+        code:'OFF',
+        overtimeHours:0,
+        regularNight:false,
+        regularWeekend:null,
+        regularHoliday:null,
+        overtimeNight:false,
+        overtimeWeekend:false,
+        overtimeHoliday:false,
+        note:''
+      };
+    }
+
+    function normalizeEntry(raw){
+      if (!raw) return createDefaultEntry();
+      if (typeof raw === 'string') return { ...createDefaultEntry(), code: raw };
+      return { ...createDefaultEntry(), ...raw, overtimeHours: Number(raw.overtimeHours || 0), note: String(raw.note || '') };
+    }
+
+    function updateEntry(iso, patch){
+      const next = { ...normalizeEntry(state.entries[iso]), ...patch };
+      state.entries[iso] = next;
+      saveEntries();
+      saveEntriesToCloud();
+      recalc();
+    }
+
+
+    async function saveEntriesToCloud() {
+      const user = auth.currentUser;
+      if (!user) return;
+      try {
+        await db.collection('users').doc(user.uid).collection('entries').doc(cloudMonthKey()).set(state.entries || {}, { merge: false });
+      } catch (e) {
+        console.error('Eroare la salvare entries:', e);
+      }
+    }
+
+    function maskSensitiveViews() {
+      document.getElementById('sumGross').textContent = '—';
+      document.getElementById('sumNet').textContent = '—';
+      document.getElementById('sumMeals').textContent = '—';
+      document.getElementById('sumExtras').textContent = '—';
+      document.getElementById('sumTotal').textContent = '—';
+      document.getElementById('detailList').innerHTML = '<div class="item"><span class="muted">Preview</span><strong>Valorile reale și modelul de calcul sunt afișate doar pentru Premium deblocat.</strong></div>';
+    }
+
+    function renderLogicSummary() {
+      const s = state.settings || defaultSettings;
+      const list = [
+        ['Bază orară', `salariul brut de referință se împarte la zilele lucrătoare de referință × ${fmtPlain(s.shiftHours)} h / tură`],
+        ['Morning / After / Night', 'alegi tura direct din pop-up-ul zilei; Night aplică automat sporul de noapte'],
+        ['Weekend automat', 'sâmbăta și duminica sunt detectate automat din calendar, fără bifă separată'],
+        ['Sărbători automate', 'zilele legale sunt marcate în calendar și primesc automat sporul de sărbătoare'],
+        ['Ore suplimentare', `+${fmtPlain(decimalToPercent(s.overtimeRate))}% din baza orară pentru fiecare oră suplimentară introdusă`],
+        ['OT special', 'poți marca separat dacă overtime-ul a fost de noapte, în weekend sau de sărbătoare'],
+        ['Bonuri', `${fmt(s.mealValue)} pentru fiecare zi cu tură lucrată`],
+        ['Taxe', `CAS ${fmtPlain(decimalToPercent(s.casRate))}% · CASS ${fmtPlain(decimalToPercent(s.cassRate))}% · impozit ${fmtPlain(decimalToPercent(s.taxRate))}%`],
+        ['CO / CM', 'Concediul de odihnă rămâne plătit la bază; pentru CM se țin cont zilele neplătite setate de tine.']
+      ];
+      document.getElementById('logicList').innerHTML = list.map(([a,b])=>`<div class="item"><span class="muted">${a}</span><span>${b}</span></div>`).join('');
+    }
+
+
+    const WEEKDAYS = ['Lun','Mar','Mie','Joi','Vin','Sâm','Dum'];
+    const tutorialSteps = [
+      'Atinge o zi din calendar pentru a deschide pop-up-ul compact al zilei.',
+      'Alege rapid Liber, Morning, After sau Night din primul rând de butoane.',
+      'Weekendul și sărbătorile se detectează automat din calendar, fără bife separate.',
+      'Poți adăuga ore suplimentare și o notiță scurtă direct în pop-up-ul zilei.',
+      'Detaliul calculului, logica și regulile salariale se deschid din săgețile de sus când ai nevoie.'
+    ];
+    let tutorialIndex = 0;
+    function renderWeekdays(){ const box=document.getElementById('weekdays'); if(box) box.innerHTML=WEEKDAYS.map(d=>`<div class="weekday">${d}</div>`).join(''); }
+    function openTutorial(){ tutorialIndex=0; document.getElementById('tutorialOverlay').style.display='flex'; document.getElementById('tutorialTitle').textContent=`Tutorial 1/${tutorialSteps.length}`; document.getElementById('tutorialText').textContent=tutorialSteps[0]; }
+    function nextTutorial(){ tutorialIndex++; if(tutorialIndex>=tutorialSteps.length){ closeTutorial(); return; } document.getElementById('tutorialTitle').textContent=`Tutorial ${tutorialIndex+1}/${tutorialSteps.length}`; document.getElementById('tutorialText').textContent=tutorialSteps[tutorialIndex]; }
+    function closeTutorial(){ document.getElementById('tutorialOverlay').style.display='none'; }
+
+    async function loadEntriesFromCloud() {
+      const user = auth.currentUser;
+      if (!user) return;
+      try {
+        const doc = await db.collection('users').doc(user.uid).collection('entries').doc(cloudMonthKey()).get();
+        if (doc.exists) {
+          state.entries = doc.data() || {};
+          saveEntries();
+        } else {
+          state.entries = {};
+          saveEntries();
+        }
+      } catch (e) {
+        console.error('Eroare la încărcare entries:', e);
+        loadEntries();
+      }
+    }
+
+    async function saveSettingsToCloud() {
+      const user = auth.currentUser;
+      if (!user) return;
+      try {
+        await db.collection('users').doc(user.uid).collection('meta').doc('settings').set({
+          ...state.settings,
+          updatedAt: new Date().toISOString(),
+          selectedYear: state.year,
+          selectedMonth: state.month
+        }, { merge: true });
+      } catch (e) {
+        console.error('Eroare la salvare settings:', e);
+      }
+    }
+
+    async function loadSettingsFromCloud() {
+      const user = auth.currentUser;
+      if (!user) return;
+      try {
+        const doc = await db.collection('users').doc(user.uid).collection('meta').doc('settings').get();
+        if (doc.exists) {
+          const data = doc.data() || {};
+          state.settings = {
+            ...defaultSettings,
+            ...state.settings,
+            ...Object.fromEntries(Object.entries(data).filter(([k]) => k in defaultSettings))
+          };
+          if (typeof data.selectedYear === 'number') state.year = data.selectedYear;
+          if (typeof data.selectedMonth === 'number') state.month = data.selectedMonth;
+          save('salary_settings', state.settings);
+        }
+      } catch (e) {
+        console.error('Eroare la încărcare settings:', e);
+      }
+    }
+
+    function renderSelectors(){
+      const ys=document.getElementById('yearSelect'), ms=document.getElementById('monthSelect'); ys.innerHTML=''; ms.innerHTML='';
+      for(let y=2025;y<=2035;y++){ const o=document.createElement('option'); o.value=y; o.textContent=y; if(y===state.year) o.selected=true; ys.appendChild(o); }
+      MONTHS.forEach((m,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=m; if(i===state.month) o.selected=true; ms.appendChild(o); });
+      const holidayTitle = document.querySelector('#holidaysSection h2');
+      if (holidayTitle) holidayTitle.textContent = `Sărbători ${state.year}`;
+    }
+
+
+    async function renderDays(){
+      const days = getDays(state.year, state.month);
+      const fallbackHolidays = getRomaniaHolidays(state.year);
+      const cloudHolidays = await loadHolidaysFromFirestore(state.year.toString());
+      const holidays = new Map([...fallbackHolidays, ...cloudHolidays]);
+      const box = document.getElementById('days');
+      if (!state.selectedDayIso && days[0]) state.selectedDayIso = days[0].iso;
+      const firstDate = new Date(state.year, state.month, 1, 12);
+      const offset = (firstDate.getDay() + 6) % 7;
+      box.innerHTML='';
+      for(let i=0;i<offset;i++){
+        const empty=document.createElement('div');
+        empty.className='day empty';
+        box.appendChild(empty);
+      }
+      days.forEach(day => {
+        const entry = normalizeEntry(state.entries[day.iso]);
+        const autoHoliday = holidays.has(day.iso);
+        const selected = state.selectedDayIso===day.iso;
+        const code = entry.code || 'OFF';
+        const wrap=document.createElement('div');
+        wrap.className='day'+(selected?' selected':'');
+        if (autoHoliday) wrap.classList.add('holiday');
+        if (day.isWeekend) wrap.classList.add('weekend');
+        const tags=[];
+        if (autoHoliday) tags.push(`<span class="mini-badge holiday">${holidays.get(day.iso) || 'Sărbătoare'}</span>`);
+        else if (day.isWeekend) tags.push('<span class="mini-badge weekend">Weekend</span>');
+        if (entry.overtimeHours) tags.push(`<span class="mini-badge ot">+${fmtPlain(entry.overtimeHours)}h OT</span>`);
+        if (entry.note && entry.note.trim()) tags.push('<span class="mini-badge note">📝 Notiță</span>');
+        if (code==='CO') tags.push('<span class="mini-badge">CO</span>');
+        if (code==='CM') tags.push('<span class="mini-badge">CM</span>');
+        const notePreview = entry.note && entry.note.trim() ? `<div class="note-preview">${escapeHtml(entry.note.trim())}</div>` : '';
+        wrap.innerHTML = `${autoHoliday ? '<span class="holiday-dot"></span>' : ''}
+          <div class="day-top">
+            <div><div class="num">${day.day}</div><div class="meta">${day.weekday}</div></div>
+            <div class="day-code code-${code}">${code==='OFF'?'—':code}</div>
+          </div>
+          <div class="day-sub">${SHIFT_OPTIONS.find(x=>x.code===code)?.label || 'Liber'}</div>
+          <div class="day-note-line">${tags.join('')}</div>${notePreview}`;
+        wrap.addEventListener('click',()=>{
+          state.selectedDayIso = day.iso;
+          renderDays();
+          openDayModal(day, entry, holidays);
+        });
+        box.appendChild(wrap);
+      });
+      renderHolidayYearPanel(holidays);
+    }
+
+    function renderDayEditor(day, entry, holidays){ return; }
+
+    function renderHolidayYearPanel(holidays){
+      const host = document.getElementById('holidayYearList');
+      if (!host) return;
+      const items = Array.from(holidays.entries()).sort((a,b)=>a[0].localeCompare(b[0]));
+      host.innerHTML = items.map(([iso,name])=>`<div class="holiday-item"><strong>${new Date(iso+"T12:00:00").toLocaleDateString('ro-RO',{day:'2-digit',month:'long'})}</strong><span class="muted">${name}</span></div>`).join('');
+    }
+
+    function openDayModal(day, entry, holidays){
+      const autoHoliday = holidays.has(day.iso);
+      const host = document.getElementById('dayModalContent');
+      const overtime = Number(entry.overtimeHours || 0);
+      host.innerHTML = `
+        <div class="day-modal-grid">
+          <div>
+            <h3 style="margin-bottom:4px">${day.day} ${MONTHS[state.month]} ${state.year}</h3>
+            <div class="muted-note">Alegi tura sus, iar dedesubt poți adăuga rapid ore suplimentare și o notiță pentru ziua respectivă.</div>
+          </div>
+          <div class="modal-meta-row">
+            ${day.isWeekend ? '<span class="mini-badge weekend">Weekend automat</span>' : '<span class="mini-badge">Zi lucrătoare</span>'}
+            ${autoHoliday ? `<span class="mini-badge holiday">${holidays.get(day.iso)}</span>` : ''}
+          </div>
+          <div class="shift-quick-grid" id="dayShiftQuick"></div>
+          <div class="shift-secondary-grid" id="dayShiftSecondary"></div>
+          <div class="field"><label>Ore suplimentare</label><input id="dayModalOvertime" type="number" step="0.25" min="0" value="${overtime || ''}" placeholder="0" /></div>
+          <div class="field day-note-box"><label>Notiță pentru ziua asta</label><textarea id="dayModalNote" placeholder="Ex: schimb cu colegul, tură specială, observații...">${escapeHtml(entry.note || '')}</textarea></div>
+          <div class="tiny-checks" id="dayOvertimeChecks"></div>
+        </div>`;
+      const quick = host.querySelector('#dayShiftQuick');
+      const sec = host.querySelector('#dayShiftSecondary');
+      const primaryCodes = ['OFF','M','A','N'];
+      SHIFT_OPTIONS.filter(opt => primaryCodes.includes(opt.code)).forEach(opt => {
+        const b=document.createElement('button');
+        b.type='button';
+        b.className=`tiny-shift-btn code-${opt.code}${entry.code===opt.code ? ' active' : ''}`;
+        b.textContent=opt.label;
+        b.disabled=!state.isPremium || !state.appUnlocked;
+        b.addEventListener('click',()=>{ if (!state.isPremium || !state.appUnlocked) { openPremiumScreen(); return; } updateEntry(day.iso,{ code: opt.code }); openDayModal(day, normalizeEntry(state.entries[day.iso]), holidays); renderDays(); });
+        quick.appendChild(b);
+      });
+      SHIFT_OPTIONS.filter(opt => !primaryCodes.includes(opt.code)).forEach(opt => {
+        const b=document.createElement('button');
+        b.type='button';
+        b.className=`tiny-shift-btn code-${opt.code}${entry.code===opt.code ? ' active' : ''}`;
+        b.textContent=opt.label;
+        b.disabled=!state.isPremium || !state.appUnlocked;
+        b.addEventListener('click',()=>{ if (!state.isPremium || !state.appUnlocked) { openPremiumScreen(); return; } updateEntry(day.iso,{ code: opt.code }); openDayModal(day, normalizeEntry(state.entries[day.iso]), holidays); renderDays(); });
+        sec.appendChild(b);
+      });
+      const ot = host.querySelector('#dayModalOvertime');
+      ot.disabled=!state.isPremium || !state.appUnlocked;
+      ot.addEventListener('input',()=>{ if (!state.isPremium || !state.appUnlocked) { openPremiumScreen(); return; } updateEntry(day.iso,{ overtimeHours: Math.max(Number(ot.value||0),0) }); renderDays(); });
+      const noteInput = host.querySelector('#dayModalNote');
+      noteInput.disabled=!state.isPremium || !state.appUnlocked;
+      noteInput.addEventListener('input',()=>{ if (!state.isPremium || !state.appUnlocked) { openPremiumScreen(); return; } updateEntry(day.iso,{ note: noteInput.value }); renderDays(); });
+      const checkHost = host.querySelector('#dayOvertimeChecks');
+      [
+        ['overtimeNight','OT noapte', !!entry.overtimeNight],
+        ['overtimeWeekend','OT weekend', !!entry.overtimeWeekend],
+        ['overtimeHoliday','OT sărbătoare', !!entry.overtimeHoliday]
+      ].forEach(([key,label,checked])=>{
+        const item=document.createElement('label');
+        item.className='tiny-check';
+        item.innerHTML=`<input type="checkbox"> <span>${label}</span>`;
+        const cb=item.querySelector('input');
+        cb.checked=!!checked;
+        cb.disabled=!state.isPremium || !state.appUnlocked;
+        cb.addEventListener('change',()=>{ if (!state.isPremium || !state.appUnlocked) { openPremiumScreen(); return; } updateEntry(day.iso,{ [key]: cb.checked }); renderDays(); });
+        checkHost.appendChild(item);
+      });
+      document.getElementById('dayModalBackdrop').style.display='flex';
+    }
+
+    function closeDayModal(){
+      document.getElementById('dayModalBackdrop').style.display='none';
+    }
+
+    function changeMonth(delta){
+      const d = new Date(state.year, state.month + delta, 1);
+      state.year = d.getFullYear();
+      state.month = d.getMonth();
+      renderSelectors();
+      loadEntriesFromCloud().then(async ()=>{ await renderDays(); recalc(); saveSettingsToCloud(); });
+    }
+
+    function jumpToToday(){
+      const n = new Date();
+      state.year = n.getFullYear();
+      state.month = n.getMonth();
+      state.selectedDayIso = `${state.year}-${pad(state.month+1)}-${pad(n.getDate())}`;
+      renderSelectors();
+      loadEntriesFromCloud().then(async ()=>{ await renderDays(); recalc(); saveSettingsToCloud(); });
+    }
+
+    function bindCollapsibles(){
+      document.querySelectorAll('.collapse-head').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          const body = document.getElementById(btn.dataset.collapse);
+          const open = body.classList.toggle('open');
+          btn.classList.toggle('active', open);
+        });
+      });
+      document.querySelectorAll('.menu-tab').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          document.querySelectorAll('.menu-tab').forEach(x=>x.classList.remove('active'));
+          btn.classList.add('active');
+          const el = document.getElementById(btn.dataset.target);
+          if (!el) return;
+          const body = el.querySelector('.collapse-body, .estimate-body');
+          const head = el.querySelector('.collapse-head, .estimate-head');
+          if (body && !body.classList.contains('open')) {
+            body.classList.add('open');
+            if (head) head.classList.add('active');
+          }
+          el.scrollIntoView({behavior:'smooth', block:'start'});
+        });
+      });
+    }
+
+
+    function renderMonthlyStats(stats) {
+      document.getElementById('statWorkedDays').textContent = stats.workedDays ?? '—';
+      document.getElementById('statMorning').textContent = stats.morningDays ?? '—';
+      document.getElementById('statAfter').textContent = stats.afterDays ?? '—';
+      document.getElementById('statNight').textContent = stats.nightDays ?? '—';
+      document.getElementById('statOvertime').textContent = `${fmtPlain(stats.overtimeHours || 0)}h`;
+      document.getElementById('statHoliday').textContent = stats.holidayDays ?? '—';
+    }
+
+    function exportMonthlyReport() {
+      if (!state.isPremium || !state.appUnlocked) {
+        openPremiumScreen();
+        return;
+      }
+      const monthName = monthNames[state.month];
+      const rows = Array.from(document.querySelectorAll('#detailList .item')).map(item => {
+        const a = item.querySelector('span')?.textContent || '';
+        const b = item.querySelector('strong')?.textContent || '';
+        return `<tr><td style="padding:8px 10px;border-bottom:1px solid #dbe4f0;">${escapeHtml(a)}</td><td style="padding:8px 10px;border-bottom:1px solid #dbe4f0;text-align:right;">${escapeHtml(b)}</td></tr>`;
+      }).join('');
+      const w = window.open('', '_blank');
+      if (!w) {
+        handleBillingMessage('Nu s-a putut deschide fereastra pentru export.');
+        return;
+      }
+      w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Raport salariu ${monthName} ${state.year}</title></head><body style="font-family:Arial,sans-serif;padding:24px;color:#0f172a;">
+        <h1 style="margin:0 0 8px;">Salary Helper · raport lunar</h1>
+        <p style="margin:0 0 20px;color:#475569;">${monthName} ${state.year} · ${escapeHtml(state.currentUser?.email || '-')}</p>
+        <table style="width:100%;border-collapse:collapse;font-size:14px;">${rows}</table>
+        <p style="margin-top:18px;color:#64748b;">Folosește Print / Save as PDF pentru export.</p>
+      </body></html>`);
+      w.document.close();
+      w.focus();
+      setTimeout(() => w.print(), 250);
+    }
+
+    function recalc(){
+      const s=state.settings, days=getDays(state.year, state.month), holidays=getRomaniaHolidays(state.year);
+      const refDays = Math.max(workingDaysReference(days, holidays),1);
+      const shiftHours = Math.max(Number(s.shiftHours) || 8, 0.25);
+      const hourlyBase = (Number(s.baseSalary) || 0) / (refDays * shiftHours);
+      let workedDays=0, normalHours=0, nightHours=0, weekendHours=0, holidayHours=0, vacationDays=0, medicalDays=0;
+      let overtimeHours=0, overtimeNightHours=0, overtimeWeekendHours=0, overtimeHolidayHours=0;
+      let morningDays=0, afterDays=0, nightDays=0, holidayDays=0;
+
+      days.forEach(day=>{
+        const entry=normalizeEntry(state.entries[day.iso]);
+        const autoHoliday=holidays.has(day.iso);
+        const hasShift = ['M','A','N'].includes(entry.code);
+        if(hasShift){
+          workedDays++;
+          normalHours += shiftHours;
+          if(entry.code==='M') morningDays++;
+          if(entry.code==='A') afterDays++;
+          if(entry.code==='N') { nightHours += shiftHours; nightDays++; }
+          if(day.isWeekend) weekendHours += shiftHours;
+          if(autoHoliday) { holidayHours += shiftHours; holidayDays++; }
+        }
+        overtimeHours += entry.overtimeHours || 0;
+        if(entry.overtimeNight) overtimeNightHours += entry.overtimeHours || 0;
+        if(entry.overtimeWeekend) overtimeWeekendHours += entry.overtimeHours || 0;
+        if(entry.overtimeHoliday || autoHoliday) overtimeHolidayHours += (entry.overtimeHoliday ? entry.overtimeHours || 0 : 0);
+        if(entry.code==='CO') vacationDays++;
+        if(entry.code==='CM') medicalDays++;
+      });
+
+      const hasEntries = workedDays > 0 || vacationDays > 0 || medicalDays > 0 || overtimeHours > 0;
+      if (!hasEntries || !state.isPremium || !state.appUnlocked) {
+        renderMonthlyStats({ workedDays:'—', morningDays:'—', afterDays:'—', nightDays:'—', overtimeHours:0, holidayDays:'—' });
+        maskSensitiveViews();
+        return;
+      }
+
+      const paidMedicalDays = Math.max(medicalDays - Math.max(Number(s.unpaidMedicalDays) || 0, 0), 0);
+      const grossBase = normalHours * hourlyBase;
+      const grossVacation = vacationDays * shiftHours * hourlyBase;
+      const grossMedical = paidMedicalDays * shiftHours * hourlyBase;
+      const grossOvertimeBase = overtimeHours * hourlyBase;
+      const nightBonus = (nightHours + overtimeNightHours) * hourlyBase * s.nightRate;
+      const overtimeBonus = overtimeHours * hourlyBase * s.overtimeRate;
+      const weekendBonus = (weekendHours + overtimeWeekendHours) * hourlyBase * s.weekendRate;
+      const holidayBonus = (holidayHours + overtimeHolidayHours) * hourlyBase * s.holidayRate;
+      const gross = grossBase + grossVacation + grossMedical + grossOvertimeBase + nightBonus + overtimeBonus + weekendBonus + holidayBonus;
+      const cas = gross * s.casRate;
+      const cass = gross * s.cassRate;
+      const taxable = gross - cas - cass;
+      const tax = taxable * s.taxRate;
+      const net = gross - cas - cass - tax;
+      const mealTickets = workedDays * s.mealValue;
+      const extras = nightBonus + overtimeBonus + weekendBonus + holidayBonus;
+      const totalReceived = net + mealTickets;
+
+      document.getElementById('sumGross').textContent = fmt(gross);
+      document.getElementById('sumNet').textContent = fmt(net);
+      document.getElementById('sumMeals').textContent = fmt(mealTickets);
+      document.getElementById('sumExtras').textContent = fmt(extras);
+      document.getElementById('sumTotal').textContent = fmt(totalReceived);
+
+      const detail = [
+        ['Salariu brut de referință', fmt(s.baseSalary)],
+        ['Ore / tură', `${fmtPlain(shiftHours)} h`],
+        ['Zile lucrate', `${workedDays} zile`],
+        ['Ore normale', `${normalHours} h`],
+        ['Ore suplimentare', `${fmtPlain(overtimeHours)} h`],
+        ['Ore night', `${fmtPlain(nightHours + overtimeNightHours)} h`],
+        ['Ore weekend', `${fmtPlain(weekendHours + overtimeWeekendHours)} h`],
+        ['Ore sărbători', `${fmtPlain(holidayHours + overtimeHolidayHours)} h`],
+        ['CO plătit', `${vacationDays} zile`],
+        ['CM plătit', `${paidMedicalDays} zile`],
+        ['Tarif orar', fmt(hourlyBase)],
+        ['Spor noapte', fmt(nightBonus)],
+        ['Spor overtime', fmt(overtimeBonus)],
+        ['Spor weekend', fmt(weekendBonus)],
+        ['Spor sărbători', fmt(holidayBonus)],
+        ['Total brut', fmt(gross)],
+        ['CAS', fmt(cas)],
+        ['CASS', fmt(cass)],
+        ['Impozit', fmt(tax)],
+        ['Salariu net', fmt(net)],
+        ['Bonuri de masă', fmt(mealTickets)],
+        ['Total încasat', fmt(totalReceived)]
+      ];
+      document.getElementById('detailList').innerHTML = detail.map(([a,b])=>`<div class="item"><span class="muted">${a}</span><strong>${b}</strong></div>`).join('');
+      renderMonthlyStats({ workedDays, morningDays, afterDays, nightDays, overtimeHours, holidayDays });
+    }
+
+    function decimalToPercent(value){
+      return Number(((Number(value) || 0) * 100).toFixed(2));
+    }
+
+    function percentInputToDecimal(id){
+      return (parseNum(id) || 0) / 100;
+    }
+
+    function syncSettingsToInputs(){
+      const locked = !state.isPremium || !state.appUnlocked;
+      document.getElementById('baseSalary').value = locked ? '' : (state.settings.baseSalary || '');
+      document.getElementById('nightRate').value = locked ? '' : decimalToPercent(state.settings.nightRate);
+      document.getElementById('overtimeRate').value = locked ? '' : decimalToPercent(state.settings.overtimeRate);
+      document.getElementById('weekendRate').value = locked ? '' : decimalToPercent(state.settings.weekendRate);
+      document.getElementById('holidayRate').value = locked ? '' : decimalToPercent(state.settings.holidayRate);
+      document.getElementById('mealValue').value = locked ? '' : (state.settings.mealValue || '');
+      document.getElementById('casRate').value = locked ? '' : decimalToPercent(state.settings.casRate);
+      document.getElementById('cassRate').value = locked ? '' : decimalToPercent(state.settings.cassRate);
+      document.getElementById('taxRate').value = locked ? '' : decimalToPercent(state.settings.taxRate);
+      document.getElementById('shiftHours').value = locked ? '' : (state.settings.shiftHours || '');
+      document.getElementById('unpaidMedicalDays').value = locked ? '' : (state.settings.unpaidMedicalDays ?? '');
+    }
+
+    async function saveSettings(){
+      if (!state.isPremium || !state.appUnlocked) {
+        openPremiumScreen();
+        return;
+      }
+      state.settings = {
+        baseSalary: parseNum('baseSalary'),
+        nightRate: percentInputToDecimal('nightRate'),
+        overtimeRate: percentInputToDecimal('overtimeRate'),
+        weekendRate: percentInputToDecimal('weekendRate'),
+        holidayRate: percentInputToDecimal('holidayRate'),
+        mealValue: parseNum('mealValue'),
+        casRate: percentInputToDecimal('casRate'),
+        cassRate: percentInputToDecimal('cassRate'),
+        taxRate: percentInputToDecimal('taxRate'),
+        shiftHours: Math.max(parseNum('shiftHours') || 8, 0.25),
+        unpaidMedicalDays: Math.max(Math.round(parseNum('unpaidMedicalDays') || 1), 0)
+      };
+      save('salary_settings', state.settings);
+      await saveSettingsToCloud();
+      recalc();
+    }
+
+    async function fillDemo(){
+      if (!state.isPremium || !state.appUnlocked) {
+        openPremiumScreen();
+        return;
+      }
+      const days=getDays(state.year,state.month); const pattern=['M','A','N','OFF']; const entries={};
+      days.forEach((d,i)=>{ entries[d.iso]={ ...createDefaultEntry(), code: pattern[i%4] }; });
+      if(days[3]) entries[days[3].iso]={ ...createDefaultEntry(), code:'CO' }; if(days[11]) entries[days[11].iso]={ ...createDefaultEntry(), code:'CM' }; if(days[12]) entries[days[12].iso]={ ...createDefaultEntry(), code:'CM' }; if(days[20]) entries[days[20].iso]={ ...createDefaultEntry(), code:'N', overtimeHours:2, overtimeNight:true, overtimeWeekend:true, overtimeHoliday:true,  };
+      state.entries=entries; saveEntries(); await saveEntriesToCloud(); await renderDays(); recalc();
+    }
+
+    async function resetMonth(){ if (!state.isPremium || !state.appUnlocked) { openPremiumScreen(); return; } state.entries={}; saveEntries(); await saveEntriesToCloud(); await renderDays(); recalc(); }
+
+    async function setupAppUI(){
+      await loadSettingsFromCloud();
+      syncSettingsToInputs();
+      renderSelectors();
+      renderWeekdays();
+      bindCollapsibles();
+      await loadEntriesFromCloud();
+      await renderDays();
+      renderLogicSummary();
+      recalc();
+      applyAccessMode();
+      if (!localStorage.getItem('salary_tutorial_seen')) {
+        setTimeout(() => { openTutorial(); localStorage.setItem('salary_tutorial_seen', '1'); }, 350);
+      }
+    }
+
+    function setMainAuthView(mode) {
+      const reg = mode === 'register';
+      document.getElementById('registerMainPanel').classList.toggle('hidden', !reg);
+      document.getElementById('loginMainPanel').classList.toggle('hidden', reg);
+      document.getElementById('tabRegisterMain').className = reg ? 'ghost' : 'secondary';
+      document.getElementById('tabLoginMain').className = reg ? 'secondary' : 'ghost';
+      document.getElementById('mainAuthMsg').textContent = '';
+    }
+
+    async function showApp() {
+      document.getElementById('authScreen').style.display = 'none';
+      document.getElementById('premiumScreen').style.display = 'none';
+      document.getElementById('appScreen').style.display = 'block';
+      document.getElementById('currentUserEmail').textContent = state.currentUser?.email || '-';
+      document.getElementById('currentPlanLabel').textContent = state.isPremium ? 'premium' : 'free';
+      await setupAppUI();
+    }
+
+    function showAuth() {
+      document.getElementById('authScreen').style.display = 'block';
+      document.getElementById('premiumScreen').style.display = 'none';
+      document.getElementById('appScreen').style.display = 'none';
+      state.isPremium = false;
+      state.appUnlocked = false;
+      closePinModal();
+      setMainAuthView('login');
+    }
+
+   async function showPremiumGate(profile) {
+      document.getElementById('authScreen').style.display = 'none';
+      document.getElementById('appScreen').style.display = 'none';
+      document.getElementById('premiumScreen').style.display = 'block';
+      document.getElementById('premiumPlanLabel').textContent = profile?.plan || 'free';
+      document.getElementById('premiumUserEmail').textContent = profile?.email || state.currentUser?.email || '-';
+      document.getElementById('premiumMsg').textContent = '';
+      document.getElementById('premiumBackBtn').style.display = state.currentUser ? 'inline-flex' : 'none';
+      applyBillingUiState(window.AndroidBilling?.getBillingState?.() || state.billingState || 'checking');
+    }
+
+    async function registerMainUser() {
+      const email = document.getElementById('mainRegEmail').value.trim();
+      const pass = document.getElementById('mainRegPass').value;
+      const msg = document.getElementById('mainAuthMsg');
+      msg.textContent = '';
+      if (!email || !pass) {
+        msg.textContent = 'Completează emailul și parola.';
+        return;
+      }
+      try {
+        const userCred = await auth.createUserWithEmailAndPassword(email, pass);
+        await db.collection('users').doc(userCred.user.uid).set({
+          email,
+          createdAt: new Date().toISOString()
+        }, { merge: true });
+        await db.collection('users').doc(userCred.user.uid).collection('profile').doc('main').set({
+          email,
+          isPremium: false,
+          plan: 'free',
+          premiumSource: null,
+          premiumSince: null,
+          premiumExpiry: null,
+          lastLoginAt: new Date().toISOString(),
+          createdAt: new Date().toISOString()
+        }, { merge: true });
+        msg.textContent = 'Cont creat cu succes.';
+      } catch (e) {
+        msg.textContent = e.message || 'Nu s-a putut crea contul.';
+      }
+    }
+
+    async function loginMainUser() {
+      const email = document.getElementById('mainLoginEmail').value.trim();
+      const pass = document.getElementById('mainLoginPass').value;
+      const msg = document.getElementById('mainAuthMsg');
+      msg.textContent = '';
+      if (!email || !pass) {
+        msg.textContent = 'Completează emailul și parola.';
+        return;
+      }
+      try {
+        await auth.signInWithEmailAndPassword(email, pass);
+      } catch (e) {
+        msg.textContent = e.message || 'Login nereușit.';
+      }
+    }
+
+    async function resetMainPassword() {
+      const email = document.getElementById('mainLoginEmail').value.trim() || document.getElementById('mainRegEmail').value.trim();
+      const msg = document.getElementById('mainAuthMsg');
+      msg.textContent = '';
+      if (!email) {
+        msg.textContent = 'Introdu emailul mai întâi.';
+        return;
+      }
+      try {
+        await auth.sendPasswordResetEmail(email);
+        msg.textContent = 'Email de resetare trimis.';
+      } catch (e) {
+        msg.textContent = e.message || 'Nu s-a putut trimite emailul.';
+      }
+    }
+
+    function logoutMainUser() {
+      auth.signOut();
+    }
+
+    document.getElementById('mainRegisterBtn').onclick = registerMainUser;
+    document.getElementById('mainLoginBtn').onclick = loginMainUser;
+    document.getElementById('logoutBtn').onclick = logoutMainUser;
+    document.getElementById('premiumLogoutBtn').onclick = logoutMainUser;
+    document.getElementById('premiumBackBtn').onclick = () => { if (state.currentUser) showApp(); };
+    document.getElementById('openPremiumFromBanner').onclick = openPremiumScreen;
+    document.getElementById('goToPlayBtn').onclick = () => {
+      const premiumMsg = document.getElementById('premiumMsg');
+      premiumMsg.textContent = '';
+      applyBillingUiState('processing');
+      if (window.AndroidBilling && window.AndroidBilling.startPremiumPurchase) {
+        window.AndroidBilling.startPremiumPurchase();
+      } else {
+        applyBillingUiState('unavailable');
+        premiumMsg.textContent = 'Plata nu este disponibilă încă.';
+      }
+    };
+    document.getElementById('saveSettings').onclick = saveSettings;
+    document.getElementById('demoBtn').onclick = fillDemo;
+    document.getElementById('tutorialBtn').onclick = openTutorial;
+    document.getElementById('tutorialNextBtn').onclick = nextTutorial;
+    document.getElementById('tutorialCloseBtn').onclick = closeTutorial;
+    document.getElementById('dayModalCloseBtn').onclick = closeDayModal;
+    document.getElementById('dayModalBackdrop').addEventListener('click', e => { if (e.target.id === 'dayModalBackdrop') closeDayModal(); });
+    document.getElementById('prevMonthBtn').onclick = () => changeMonth(-1);
+    document.getElementById('nextMonthBtn').onclick = () => changeMonth(1);
+    document.getElementById('todayBtn').onclick = jumpToToday;
+    document.getElementById('resetMonth').onclick = resetMonth;
+    document.getElementById('yearSelect').addEventListener('change', async e=>{ if (!state.isPremium || !state.appUnlocked) { e.target.value = state.year; openPremiumScreen(); return; } state.year=Number(e.target.value); renderSelectors(); await loadEntriesFromCloud(); await renderDays(); recalc(); await saveSettingsToCloud(); });
+    document.getElementById('monthSelect').addEventListener('change', async e=>{ if (!state.isPremium || !state.appUnlocked) { e.target.value = state.month; openPremiumScreen(); return; } state.month=Number(e.target.value); renderSelectors(); await loadEntriesFromCloud(); await renderDays(); recalc(); await saveSettingsToCloud(); });
+
+
+        const triggerRestorePremium = () => {
+      const premiumMsg = document.getElementById('premiumMsg');
+      if (premiumMsg) premiumMsg.textContent = '';
+      if (window.AndroidBilling && window.AndroidBilling.restorePremiumPurchases) {
+        applyBillingUiState('checking');
+        window.AndroidBilling.restorePremiumPurchases();
+      } else {
+        handleBillingMessage('Restore Premium nu este disponibil momentan.');
+      }
+    };
+
+    document.getElementById('restorePremiumBtn').onclick = triggerRestorePremium;
+    document.getElementById('restorePremiumTopBtn').onclick = triggerRestorePremium;
+    document.getElementById('restorePremiumEstimateBtn').onclick = triggerRestorePremium;
+    document.getElementById('exportPdfBtn').onclick = exportMonthlyReport;
+
+
+
+    function handleBillingMessage(message) {
+      const premiumMsg = document.getElementById('premiumMsg');
+      if (premiumMsg) premiumMsg.textContent = message || '';
+    }
+
+    function handleBillingState(nextState) {
+      applyBillingUiState(nextState || 'idle');
+    }
+
+    async function handlePremiumActivated() {
+      try {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        await db.collection('users').doc(user.uid).collection('profile').doc('main').set({
+          email: user.email || '',
+          isPremium: true,
+          plan: 'premium',
+          premiumSource: 'google_play',
+          premiumSince: new Date().toISOString(),
+          activatedAt: new Date().toISOString(),
+          lastLoginAt: new Date().toISOString()
+        }, { merge: true });
+
+        state.isPremium = true;
+        state.appUnlocked = false;
+        applyBillingUiState('active');
+        const premiumMsg = document.getElementById('premiumMsg');
+        if (premiumMsg) premiumMsg.textContent = 'Premium activat cu succes.';
+
+        const profile = await getUserProfile(user.uid);
+        if (profile?.isPremium === true) {
+          await showApp();
+          ensurePremiumAccessAfterLogin();
+        }
+      } catch (e) {
+        console.error('Eroare la activarea premium:', e);
+        applyBillingUiState('error');
+        const premiumMsg = document.getElementById('premiumMsg');
+        if (premiumMsg) premiumMsg.textContent = e.message || 'Nu s-a putut activa Premium.';
+      }
+    }
+
+
+   auth.onAuthStateChanged(async user => {
+      if (user) {
+        state.currentUser = { email: user.email || '' };
+        applyBillingUiState(window.AndroidBilling?.getBillingState?.() || 'checking');
+        await ensureUserProfile(user.uid, user.email || '');
+        const profile = await getUserProfile(user.uid);
+        state.isPremium = profile?.isPremium === true;
+        state.appUnlocked = !!state.isPremium;
+
+        if (state.isPremium) {
+          applyBillingUiState('active');
+        }
+
+        await showApp();
+        if (state.isPremium) {
+          ensurePremiumAccessAfterLogin();
+        } else {
+          applyAccessMode();
+        }
+      } else {
+        state.currentUser = null;
+        applyBillingUiState('checking');
+        showAuth();
+      }
+    });
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    }
+  </script>
+
+</body>
+</html>

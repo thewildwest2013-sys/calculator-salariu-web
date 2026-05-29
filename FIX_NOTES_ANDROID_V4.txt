@@ -1,0 +1,21 @@
+Android UX/FREE flow fix v4
+
+Bază: CalcSalinAndrStd_v3.
+
+Modificări:
+- Păstrat proiectul care pornea corect (v3).
+- Free user poate edita reguli salariale, selecta zile în calendar și calcula.
+- Logica free: 15 calcule / 30 zile, reclamă interstitial la fiecare 3 calcule, badge cu calcule rămase.
+- Premium rămâne nelimitat și fără banner free.
+- Reparat pop-up-ul de zi: layout tip bottom-sheet pe mobil, text scurt, butoane mai clare.
+- Reparat lista de bife OT noapte/weekend/sărbătoare.
+- Month/year/reset/demo funcționează pentru utilizator autentificat free.
+
+De verificat în Android Studio:
+1. Sync Gradle.
+2. Run pe emulator/device.
+3. Login cont free.
+4. Apasă o zi din calendar: trebuie să se deschidă editorul.
+5. Schimbă tura și orele.
+6. Modifică Salary rules și apasă Salvează setările.
+7. După fiecare 3 salvări/calculări ar trebui să se ceară interstitial dacă AndroidAds este disponibil.
