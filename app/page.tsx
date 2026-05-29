@@ -2073,7 +2073,7 @@ function CalendarSection({
               <div className="mt-1 font-bold">{calculation?.netSalary ? `${calculation.netSalary.toFixed(2)} RON` : "—"}</div>
             </div>
             <div className="rounded-2xl border border-white/10 bg-[#071326]/70 p-3">
-              <div className="text-white/45">🎟️ {lang === "ro" ? "Bonuri" : "Vouchers"}</div>
+              <div className="text-white/45">🎟️ {lang === "ro" ? "Bonuri de masă" : "Meal Vouchers"}</div>
               <div className="mt-1 font-bold">{calculation?.mealTickets ? `${calculation.mealTickets.toFixed(2)} RON` : "—"}</div>
             </div>
             <div className="rounded-2xl border border-white/10 bg-[#071326]/70 p-3">
