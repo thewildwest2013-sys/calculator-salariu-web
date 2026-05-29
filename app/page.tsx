@@ -2764,21 +2764,23 @@ function HolidaysSection({
 
 function LogicSection({ t, lang }: { t: Translation; lang: Lang }) {
   const rows = lang === "ro" ? [
-    ["Hourly base", "the reference gross salary is divided by approximately 160 monthly hours"],
-    ["Morning / After / Night", "choose the shift directly from the day; Night receives the night bonus"],
-    ["Automatic weekend", "sâmbăta și duminica sunt detectate automat din calendar"],
-    ["Holidays automate", "legal holidays are marked and receive the holiday bonus automatically"],
-    ["Overtime", "+75% of the hourly base for each entered hour"],
-    ["Monetization", "în perioada de review AdSense, aplicația rulează fără reclame, fără overlay-uri și fără porți de vizionare; după aprobare, reclamele trebuie activate doar în zone conforme"],
-    ["Online only", "new calculations and saving are allowed only when the browser is online"],
+    ["Bază orară", "Salariul brut de referință este împărțit aproximativ la 160 de ore lunare pentru a estima valoarea unei ore lucrate."],
+    ["Ture dimineață / după-amiază / noapte", "Alegi tura direct din ziua calendarului. Tura de noapte primește automat sporul de noapte configurat în Reguli."],
+    ["Weekend automat", "Sâmbăta și duminica sunt detectate automat din calendar și pot primi sporul de weekend, dacă ziua este lucrată."],
+    ["Sărbători legale", "Sărbătorile legale sunt marcate automat, iar zilele lucrate în aceste date pot primi sporul de sărbătoare."],
+    ["Ore suplimentare", "Orele suplimentare sunt calculate separat, folosind procentul setat în Reguli pentru fiecare oră introdusă."],
+    ["Concediu medical", "Zilele medicale pot fi marcate în calendar, iar ajustarea se aplică în funcție de setarea lunară introdusă la Reguli."],
+    ["Monetizare", "În perioada de review AdSense, aplicația rulează fără reclame, fără overlay-uri și fără porți de vizionare. După aprobare, reclamele trebuie activate doar în zone conforme."],
+    ["Doar online", "Calculele noi și salvarea istoricului sunt permise doar când browserul este conectat la internet."],
   ] : [
-    ["Hourly base", "the reference gross salary is divided by roughly 160 monthly hours"],
-    ["Morning / Afternoon / Night", "you choose the shift directly on the day; Night gets the night bonus"],
-    ["Automatic weekend", "Saturday and Sunday are detected automatically from the calendar"],
-    ["Automatic holidays", "legal holidays are marked and automatically receive the holiday bonus"],
-    ["Overtime", "+75% of hourly base for each entered overtime hour"],
-    ["Monetization", "during the AdSense review period, the app runs without ads, overlays or view gates; after approval, ads must be enabled only in compliant areas"],
-    ["Online only", "new calculations and saving are allowed only while the browser is online"],
+    ["Hourly base", "The reference gross salary is divided by roughly 160 monthly hours to estimate the value of one worked hour."],
+    ["Morning / Afternoon / Night shifts", "You choose the shift directly on the calendar day. Night shifts automatically receive the night bonus configured in Rules."],
+    ["Automatic weekend", "Saturday and Sunday are detected automatically from the calendar and can receive the weekend bonus when the day is worked."],
+    ["Legal holidays", "Legal holidays are marked automatically, and worked days on those dates can receive the holiday bonus."],
+    ["Overtime", "Overtime hours are calculated separately using the percentage set in Rules for each entered hour."],
+    ["Medical leave", "Medical days can be marked in the calendar, and the adjustment is applied based on the monthly setting entered in Rules."],
+    ["Monetization", "During the AdSense review period, the app runs without ads, overlays or view gates. After approval, ads must be enabled only in compliant areas."],
+    ["Online only", "New calculations and history saving are allowed only while the browser is connected to the internet."],
   ];
 
   return (
@@ -2787,10 +2789,10 @@ function LogicSection({ t, lang }: { t: Translation; lang: Lang }) {
         {rows.map(([left, right]) => (
           <div
             key={left}
-            className="grid gap-4 rounded-[18px] border border-white/10 bg-[#071326]/80 px-5 py-4 md:grid-cols-[220px_1fr]"
+            className="grid gap-4 rounded-[18px] border border-white/10 bg-[#071326]/80 px-5 py-4 md:grid-cols-[230px_1fr]"
           >
-            <div className="text-base text-white/60">{left}</div>
-            <div className="text-base leading-tight break-words">{right}</div>
+            <div className="text-base font-semibold text-white/65">{left}</div>
+            <div className="text-base leading-relaxed break-words text-white/90">{right}</div>
           </div>
         ))}
       </div>

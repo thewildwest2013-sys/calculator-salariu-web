@@ -5,9 +5,9 @@ import ClientTextTranslator from "@/components/ClientTextTranslator";
 
 
 export const metadata: Metadata = {
-  title: "Salary Calculator 2026 - Calculator salariu net, ture și sporuri",
+  title: "Calculator Salariu 2026 - salariu net, ture și sporuri",
   description:
-    "Salary Calculator te ajută să estimezi salariul net, turele, sporul de noapte, weekendurile, sărbătorile legale și istoricul calculelor.",
+    "Calculator Salariu te ajută să estimezi salariul net, turele, sporul de noapte, weekendurile, sărbătorile legale și istoricul calculelor.",
   manifest: "/site.webmanifest",
   icons: {
     icon: "/favicon.ico",
@@ -15,11 +15,11 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
   },
   openGraph: {
-    title: "Salary Calculator 2026",
+    title: "Calculator Salariu 2026",
     description:
-      "Calculate salary net, sporurile, turele și exportă istoricul calculelor.",
+      "Calculează salariul net, sporurile, turele și exportă istoricul calculelor.",
     url: "https://calculator-salariu-web.vercel.app",
-    siteName: "Salary Calculator",
+    siteName: "Calculator Salariu",
     locale: "ro_RO",
     type: "website",
   },
@@ -80,11 +80,11 @@ export default function RootLayout({
             }}
           >
             <a href="/" style={{ color: "white", textDecoration: "none" }}>Calculator</a>
-            <a href="/calculator-salariu-2026" style={{ color: "inherit", textDecoration: "none" }}>Salary guide 2026</a>
-            <a href="/calculator-brut-net" style={{ color: "inherit", textDecoration: "none" }}>Gross / net</a>
-            <a href="/spor-de-noapte" style={{ color: "inherit", textDecoration: "none" }}>Night bonus</a>
-            <a href="/concediu-medical" style={{ color: "inherit", textDecoration: "none" }}>Medical leave</a>
-            <a href="/sarbatori-legale-2026" style={{ color: "inherit", textDecoration: "none" }}>Legal holidays</a>
+            <a href="/calculator-salariu-2026" style={{ color: "inherit", textDecoration: "none" }}>Ghid salariu 2026</a>
+            <a href="/calculator-brut-net" style={{ color: "inherit", textDecoration: "none" }}>Brut / net</a>
+            <a href="/spor-de-noapte" style={{ color: "inherit", textDecoration: "none" }}>Spor noapte</a>
+            <a href="/concediu-medical" style={{ color: "inherit", textDecoration: "none" }}>Concediu medical</a>
+            <a href="/sarbatori-legale-2026" style={{ color: "inherit", textDecoration: "none" }}>Sărbători legale</a>
             <a href="/contact" style={{ color: "inherit", textDecoration: "none" }}>Contact</a>
           </nav>
         </header>
@@ -102,7 +102,7 @@ export default function RootLayout({
           }}
         >
           <div style={{ fontWeight: 700, fontSize: 18, color: "white" }}>
-            Salary Calculator
+            Calculator Salariu
           </div>
 
           <div style={{ marginTop: 6, marginBottom: 18, color: "rgba(255,255,255,0.45)" }}>
@@ -117,7 +117,7 @@ export default function RootLayout({
               textDecoration: "none",
             }}
           >
-            Privacy
+            Confidențialitate
           </a>
 
           <a
@@ -128,7 +128,7 @@ export default function RootLayout({
               textDecoration: "none",
             }}
           >
-            Terms
+            Termeni
           </a>
 
           <a
@@ -149,7 +149,7 @@ export default function RootLayout({
               textDecoration: "none",
             }}
           >
-            Delete account
+            Ștergere cont
           </a>
 
           <div style={{ marginTop: 20 }}>
@@ -166,7 +166,7 @@ export default function RootLayout({
                 fontWeight: 800,
               }}
             >
-              System online
+              Sistem online
             </span>
           </div>
         </footer>
