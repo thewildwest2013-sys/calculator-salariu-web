@@ -1514,7 +1514,7 @@ export default function Home() {
                 <InfoCard icon="🟢" label="Status" value={isOnline ? t.online : t.offline} />
               </div>
 
-              <div className="flex flex-wrap gap-2.5 rounded-[24px] border border-white/10 bg-[#041224]/65 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+              <div className="flex flex-wrap gap-2 rounded-[24px] border border-white/10 bg-[#041224]/65 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
                 <ActionChip dataTab="calendar" onClick={() => setActiveTab("calendar")} active={activeTab === "calendar"}>📅 {t.calendar}</ActionChip>
                 <ActionChip dataTab="estimate" onClick={() => setActiveTab("estimate")} active={activeTab === "estimate"}>📊 {t.estimate}</ActionChip>
                 <ActionChip dataTab="rules" onClick={() => setActiveTab("rules")} active={activeTab === "rules"}>⚙️ {t.rules}</ActionChip>
@@ -1522,28 +1522,28 @@ export default function Home() {
                 <ActionChip dataTab="logic" onClick={() => setActiveTab("logic")} active={activeTab === "logic"}>🧠 {t.logic}</ActionChip>
                 <Link
                   href="/premium"
-                  className="rounded-[15px] border border-amber-300/20 bg-amber-400/10 px-4 py-2.5 text-sm font-bold text-amber-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-amber-400/15 hover:text-white hover:shadow-[0_10px_24px_rgba(15,23,42,0.25)]"
+                  className="rounded-[14px] border border-amber-300/20 bg-amber-400/10 px-3 py-2 text-xs font-bold text-amber-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-amber-400/15 hover:text-white hover:shadow-[0_10px_24px_rgba(15,23,42,0.25)]"
                 >
                   👑 {t.premiumManage}
                 </Link>
                 <Link
                   href="/history"
-                  className="rounded-[16px] border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/90 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white hover:shadow-[0_10px_24px_rgba(15,23,42,0.25)]"
+                  className="rounded-[14px] border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-white/90 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white hover:shadow-[0_10px_24px_rgba(15,23,42,0.25)]"
                 >
                   {t.history}
                 </Link>
                 <a
                   href="/downloads/calculator-salariu.apk"
                   onClick={handleAndroidApkDownloadClick}
-                  className="rounded-[16px] border border-cyan-300/25 bg-cyan-400/10 px-4 py-3 text-sm font-semibold text-cyan-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-cyan-400/15 hover:text-white hover:shadow-[0_10px_24px_rgba(34,211,238,0.25)]"
+                  className="rounded-[14px] border border-cyan-300/25 bg-cyan-400/10 px-3 py-2 text-xs font-bold text-cyan-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-cyan-400/15 hover:text-white hover:shadow-[0_10px_24px_rgba(34,211,238,0.25)]"
                 >
                   📲 {lang === "ro" ? "Descarcă aplicația" : "Download app"}
                 </a>
                 <Link
                   href="/security"
-                  className="rounded-[16px] border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/90 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white hover:shadow-[0_10px_24px_rgba(15,23,42,0.25)]"
+                  className="rounded-[14px] border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-white/90 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white hover:shadow-[0_10px_24px_rgba(15,23,42,0.25)]"
                 >
-                  Security
+                  🛡️ {lang === "ro" ? "Securitate" : "Security"}
                 </Link>
 
               </div>
@@ -1848,7 +1848,7 @@ function ActionChip({
     <button
       data-tab={dataTab}
       onClick={onClick}
-      className={`rounded-[15px] px-4 py-2.5 text-sm font-bold transition-all duration-200
+      className={`rounded-[14px] px-3 py-2 text-xs font-bold transition-all duration-200
       ${active
         ? "bg-blue-500/20 text-blue-200 border border-blue-400/35 shadow-[0_0_22px_rgba(59,130,246,0.28)]"
         : "bg-white/[0.04] text-white/72 border border-white/10 hover:bg-white/[0.08] hover:text-white hover:-translate-y-[1px]"
