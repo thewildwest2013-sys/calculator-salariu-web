@@ -544,6 +544,7 @@ export default function Home() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(true);
+  const [showAndroidDownloadPopup, setShowAndroidDownloadPopup] = useState(false);
 
   const [activeTab, setActiveTab] = useState<TabKey>("calendar");
 
@@ -570,6 +571,56 @@ export default function Home() {
   const [adGateOpen, setAdGateOpen] = useState(false);
   const [approvedCalculationSignature, setApprovedCalculationSignature] = useState<string | null>(null);
   const holidaysForYear = useMemo(() => getRomanianHolidays(year), [year]);
+
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      const isStandalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+
+      const hiddenUntil = Number(localStorage.getItem("android-apk-popup-hidden-until") || "0");
+      const dismissedAfterDownload = localStorage.getItem("android-apk-popup-downloaded") === "true";
+
+      if (isStandalone || dismissedAfterDownload || Date.now() < hiddenUntil) {
+        setShowAndroidDownloadPopup(false);
+        return;
+      }
+
+      const timer = window.setTimeout(() => {
+        setShowAndroidDownloadPopup(true);
+      }, 1800);
+
+      return () => window.clearTimeout(timer);
+    } catch (error) {
+      console.error("Android APK popup init failed:", error);
+    }
+  }, []);
+
+  function hideAndroidDownloadPopupForOneDay() {
+    try {
+      localStorage.setItem(
+        "android-apk-popup-hidden-until",
+        String(Date.now() + 24 * 60 * 60 * 1000),
+      );
+    } catch (error) {
+      console.error("Android APK popup hide failed:", error);
+    }
+
+    setShowAndroidDownloadPopup(false);
+  }
+
+  function handleAndroidApkDownloadClick() {
+    try {
+      localStorage.setItem("android-apk-popup-downloaded", "true");
+    } catch (error) {
+      console.error("Android APK popup download state failed:", error);
+    }
+
+    setShowAndroidDownloadPopup(false);
+  }
 
   useEffect(() => {
     setIsOnline(typeof navigator !== "undefined" ? navigator.onLine : true);
@@ -1541,6 +1592,53 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {showAndroidDownloadPopup && (
+        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/55 px-4 pb-5 pt-10 backdrop-blur-sm sm:items-center sm:pb-10">
+          <div className="w-full max-w-md overflow-hidden rounded-[28px] border border-cyan-300/25 bg-[#061428] text-white shadow-[0_24px_80px_rgba(0,0,0,0.55)]">
+            <div className="bg-gradient-to-r from-blue-600/40 to-cyan-500/30 px-5 py-4">
+              <div className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-100/80">
+                {lang === "ro" ? "Aplicația Android" : "Android app"}
+              </div>
+              <h3 className="mt-1 text-2xl font-black leading-tight">
+                {lang === "ro" ? "Descarcă aplicația pe telefon" : "Download the app on your phone"}
+              </h3>
+            </div>
+
+            <div className="space-y-4 p-5">
+              <p className="text-sm leading-6 text-white/78">
+                {lang === "ro"
+                  ? "Instalează varianta Android pentru acces rapid la Calculator Salariu. Premium se sincronizează prin contul tău."
+                  : "Install the Android version for quick access to Salary Calculator. Premium syncs through your account."}
+              </p>
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-xs leading-5 text-white/65">
+                {lang === "ro"
+                  ? "Dacă Android cere permisiune pentru instalare din browser, apasă Permite / Install unknown apps doar pentru această instalare."
+                  : "If Android asks permission to install from the browser, allow Install unknown apps only for this installation."}
+              </div>
+
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <a
+                  href="/downloads/calculator-salariu.apk"
+                  onClick={handleAndroidApkDownloadClick}
+                  className="flex-1 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 px-5 py-3 text-center text-sm font-black text-white shadow-[0_0_26px_rgba(34,211,238,0.28)] transition hover:scale-[1.02]"
+                >
+                  {lang === "ro" ? "Descarcă APK" : "Download APK"}
+                </a>
+
+                <button
+                  type="button"
+                  onClick={hideAndroidDownloadPopupForOneDay}
+                  className="flex-1 rounded-2xl border border-white/12 bg-white/[0.04] px-5 py-3 text-sm font-bold text-white/80 transition hover:bg-white/[0.08]"
+                >
+                  {lang === "ro" ? "Mai târziu" : "Later"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="fixed bottom-0 left-0 z-50 w-full px-3 pb-2">
         <div className="mx-auto flex max-w-7xl items-center justify-center rounded-[16px] border border-white/10 bg-[#041224]/90 px-3 py-2 text-center text-[12px] text-white/70 shadow-[0_10px_32px_rgba(2,8,23,0.45)] backdrop-blur-md sm:text-sm">
