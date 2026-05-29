@@ -1668,7 +1668,15 @@ export default function Home() {
 }
 
 function InfoCard({ label, value, icon = "•" }: { label: string; value: string; icon?: string }) {
+  const normalizedLabel = label.toLowerCase();
+  const isPlanCard = normalizedLabel.includes("plan");
   const isLongValue = value.length > 18;
+
+  const valueClass = isPlanCard
+    ? "whitespace-nowrap break-normal text-[1.05rem] sm:text-[1.15rem] md:text-[1.25rem] xl:text-[1.35rem]"
+    : isLongValue
+      ? "break-all text-[1rem] sm:text-[1.05rem] md:text-[1.1rem] xl:text-[1.2rem]"
+      : "break-words text-xl md:text-[2rem]";
 
   return (
     <div
@@ -1679,13 +1687,7 @@ function InfoCard({ label, value, icon = "•" }: { label: string; value: string
         <span className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-sm">{icon}</span>
         <span>{label}</span>
       </div>
-      <div
-        className={`mt-3 break-all font-black leading-tight ${
-          isLongValue
-            ? "text-[1rem] sm:text-[1.05rem] md:text-[1.1rem] xl:text-[1.2rem]"
-            : "text-xl md:text-[2rem]"
-        }`}
-      >
+      <div className={`mt-3 font-black leading-tight ${valueClass}`}>
         {value}
       </div>
     </div>
@@ -2103,126 +2105,53 @@ function GuideAccordionGrid({ lang }: { lang: Lang }) {
     {
       icon: "📘",
       title: lang === "ro" ? "Ghid salariu 2026" : "Salary guide 2026",
-      body:
-        lang === "ro"
-          ? [
-              "Setează salariul brut, bonurile de masă și procentele din Reguli înainte de calcul.",
-              "Calculul live se actualizează după fiecare zi selectată în calendar.",
-              "Pentru verificarea completă, folosește tabul Estimare după ce ai completat luna.",
-            ]
-          : [
-              "Set your gross salary, meal vouchers and percentages in Rules before calculating.",
-              "The live calculation updates after each selected day in the calendar.",
-              "For the full breakdown, use the Estimate tab after filling the month.",
-            ],
+      href: "/calculator-salariu-2026",
     },
     {
       icon: "⚡",
       title: lang === "ro" ? "Sporuri și beneficii" : "Bonuses and benefits",
-      body:
-        lang === "ro"
-          ? [
-              "Sporul de noapte se aplică turelor de noapte și orelor suplimentare marcate ca noapte.",
-              "Weekendul și orele suplimentare pot fi calculate separat, în funcție de procentele setate.",
-              "Valorile sunt estimative și trebuie comparate cu fluturașul sau contractul de muncă.",
-            ]
-          : [
-              "Night bonus applies to night shifts and overtime marked as night work.",
-              "Weekend and overtime can be calculated separately based on your configured percentages.",
-              "Values are estimates and should be compared with your payslip or employment contract.",
-            ],
+      href: "/spor-de-noapte",
     },
     {
       icon: "🍽️",
       title: lang === "ro" ? "Bonuri de masă" : "Meal vouchers",
-      body:
-        lang === "ro"
-          ? [
-              "Bonurile se calculează pentru zilele lucrate marcate în calendar.",
-              "Poți modifica valoarea bonului în Reguli, în funcție de angajator.",
-              "Concediul și zilele medicale nu sunt tratate ca zile cu bonuri în estimarea standard.",
-            ]
-          : [
-              "Meal vouchers are calculated for worked days selected in the calendar.",
-              "You can change the voucher value in Rules, depending on your employer.",
-              "Vacation and sick days are not treated as voucher days in the standard estimate.",
-            ],
+      href: "/bonuri-de-masa",
     },
     {
       icon: "🏥",
       title: lang === "ro" ? "Concediu medical" : "Sick leave",
-      body:
-        lang === "ro"
-          ? [
-              "Zilele CM pot reduce estimarea dacă ai setat zile medicale neplătite în Reguli.",
-              "Formula este orientativă și nu înlocuiește calculul oficial de la angajator.",
-              "Pentru situații speciale, verifică mereu documentele medicale și legislația aplicabilă.",
-            ]
-          : [
-              "Sick days can reduce the estimate if unpaid sick days are configured in Rules.",
-              "The formula is indicative and does not replace the employer's official calculation.",
-              "For special cases, always check medical documents and applicable legislation.",
-            ],
+      href: "/concediu-medical",
     },
     {
       icon: "⚖️",
-      title: lang === "ro" ? "Diferența brut / net" : "Gross / net difference",
-      body:
-        lang === "ro"
-          ? [
-              "Salariul brut este baza din care se scad contribuțiile și impozitul.",
-              "Salariul net este suma estimată care rămâne după taxe, înainte de bonuri.",
-              "Totalul final combină netul estimat cu bonurile și sporurile calculate.",
-            ]
-          : [
-              "Gross salary is the base amount from which contributions and tax are deducted.",
-              "Net salary is the estimated amount left after taxes, before meal vouchers.",
-              "The final total combines estimated net salary with vouchers and calculated bonuses.",
-            ],
+      title: lang === "ro" ? "Diferența brut / net" : "Gross / net",
+      href: "/calculator-brut-net",
     },
     {
       icon: "❓",
       title: lang === "ro" ? "FAQ salarii" : "Salary FAQ",
-      body:
-        lang === "ro"
-          ? [
-              "Estimarea se schimbă automat când modifici luna, tura, orele sau procentele.",
-              "Premium păstrează accesul extins, istoricul și experiența fără pași inutili.",
-              "Datele salvate sunt asociate contului tău și pot fi consultate în Istoric.",
-            ]
-          : [
-              "The estimate updates automatically when you change the month, shift, hours or percentages.",
-              "Premium keeps extended access, history and a cleaner experience without extra steps.",
-              "Saved data is linked to your account and can be reviewed in History.",
-            ],
+      href: "/faq",
     },
   ];
 
   return (
-    <div className="mx-auto mt-5 grid max-w-5xl gap-2.5 md:grid-cols-3">
+    <div className="mx-auto mt-4 grid max-w-3xl grid-cols-1 gap-1.5 sm:grid-cols-3">
       {cards.map((card) => (
-        <details
-          key={card.title}
-          className="group rounded-[16px] border border-white/10 bg-[#061327]/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] transition hover:border-cyan-300/20 hover:bg-white/[0.045]"
+        <Link
+          key={card.href}
+          href={card.href}
+          className="group flex min-h-[42px] items-center gap-2 rounded-[12px] border border-white/10 bg-[#061327]/62 px-2.5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition hover:-translate-y-0.5 hover:border-cyan-300/25 hover:bg-white/[0.045]"
         >
-          <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 text-white marker:hidden">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.055] text-sm">
-              {card.icon}
-            </span>
-            <span className="min-w-0 flex-1 text-sm font-black leading-tight">{card.title}</span>
-            <span className="text-xs text-white/55 transition group-open:rotate-180">⌄</span>
-          </summary>
-          <div className="border-t border-white/10 px-3 pb-3 pt-2 text-[12px] leading-5 text-white/68">
-            <ul className="space-y-1.5">
-              {card.body.map((line) => (
-                <li key={line} className="flex gap-2">
-                  <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-cyan-300/70" />
-                  <span>{line}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </details>
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-[11px] leading-none">
+            {card.icon}
+          </span>
+          <span className="min-w-0 flex-1 truncate text-[11px] font-bold leading-tight text-white/88">
+            {card.title}
+          </span>
+          <span className="text-[10px] text-white/38 transition group-hover:translate-x-0.5 group-hover:text-cyan-100">
+            ›
+          </span>
+        </Link>
       ))}
     </div>
   );
