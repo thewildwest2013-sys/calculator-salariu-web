@@ -58,13 +58,33 @@ function AdSlot({ label }: { label: string }) {
 }
 
 function RelatedLinks({ title }: { title: string }) {
+  const lang = usePageLang();
+
   const items = [
-    { href: "/calculator-salariu-2026", label: "Ghid salariu 2026" },
-    { href: "/calculator-brut-net", label: "Brut / net" },
-    { href: "/spor-de-noapte", label: "Sporuri" },
-    { href: "/bonuri-de-masa", label: "Bonuri" },
-    { href: "/concediu-medical", label: "Concediu medical" },
-    { href: "/faq", label: "FAQ" },
+    {
+      href: "/calculator-salariu-2026",
+      label: lang === "ro" ? "Ghid salariu 2026" : "Salary guide 2026",
+    },
+    {
+      href: "/calculator-brut-net",
+      label: lang === "ro" ? "Brut / net" : "Gross / net",
+    },
+    {
+      href: "/spor-de-noapte",
+      label: lang === "ro" ? "Sporuri" : "Bonuses",
+    },
+    {
+      href: "/bonuri-de-masa",
+      label: lang === "ro" ? "Bonuri de masă" : "Meal Vouchers",
+    },
+    {
+      href: "/concediu-medical",
+      label: lang === "ro" ? "Concediu medical" : "Medical leave",
+    },
+    {
+      href: "/faq",
+      label: lang === "ro" ? "FAQ salarii" : "Salary FAQ",
+    },
   ];
 
   return (
