@@ -96,18 +96,43 @@ export default function Page() {
   }[lang];
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-10 text-slate-100">
-      <p className="mb-3 text-xs uppercase tracking-[0.35em] text-blue-300">{t.label}</p>
-      <h1 className="mb-4 text-4xl font-bold">{t.title}</h1>
-      <p className="mb-8 text-lg leading-8 text-slate-300">{t.subtitle}</p>
-      <article className="space-y-6 rounded-3xl border border-slate-700 bg-slate-900/60 p-6 leading-8 text-slate-200">
-        {t.sections.map((section) => (
-          <section key={section.title}>
-            <h2 className="mb-2 text-2xl font-semibold">{section.title}</h2>
-            <p>{section.body}</p>
-          </section>
+    <main className="mx-auto max-w-6xl px-4 py-10 text-slate-100 sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden rounded-[2rem] border border-cyan-400/20 bg-slate-950/70 p-6 shadow-2xl shadow-cyan-950/20 sm:p-8">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent" />
+        <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
+
+        <div className="relative">
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.42em] text-cyan-300">{t.label}</p>
+          <h1 className="max-w-4xl text-4xl font-black tracking-tight sm:text-5xl">{t.title}</h1>
+          <p className="mt-5 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">{t.subtitle}</p>
+
+          <div className="mt-7 flex flex-wrap gap-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-300">
+            <span className="rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-cyan-200">2026</span>
+            <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2">CAS 25%</span>
+            <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2">CASS 10%</span>
+            <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2">Tax 10%</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-8 grid gap-5 md:grid-cols-2">
+        {t.sections.map((section, index) => (
+          <article
+            key={section.title}
+            className="group rounded-3xl border border-slate-700/80 bg-slate-900/55 p-6 leading-8 text-slate-200 shadow-lg shadow-slate-950/20 transition duration-300 hover:-translate-y-1 hover:border-cyan-300/45 hover:bg-slate-900/80 hover:shadow-cyan-950/30"
+          >
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs font-black tracking-[0.2em] text-cyan-200">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span className="h-px flex-1 bg-gradient-to-r from-cyan-300/30 to-transparent" />
+            </div>
+            <h2 className="mb-3 text-2xl font-black leading-snug text-white transition group-hover:text-cyan-100">{section.title}</h2>
+            <p className="text-[15px] leading-8 text-slate-300">{section.body}</p>
+          </article>
         ))}
-      </article>
+      </section>
     </main>
   );
 }

@@ -108,17 +108,32 @@ export default function FAQPage() {
   }[lang];
 
   return (
-    <main className="max-w-4xl mx-auto px-4 py-10 text-gray-200">
-      <h1 className="text-4xl font-bold mb-4">{t.title}</h1>
-      <p className="text-lg text-slate-300 mb-8 leading-8">{t.subtitle}</p>
-      <div className="space-y-6">
-        {t.items.map(([question, answer]) => (
-          <div key={question} className="border border-gray-700 rounded-xl p-5">
-            <h2 className="text-xl font-semibold mb-2">{question}</h2>
-            <p className="text-gray-300 leading-7">{answer}</p>
-          </div>
+    <main className="mx-auto max-w-6xl px-4 py-10 text-slate-100 sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden rounded-[2rem] border border-cyan-400/20 bg-slate-950/70 p-6 shadow-2xl shadow-cyan-950/20 sm:p-8">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent" />
+        <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
+        <p className="mb-3 text-xs font-bold uppercase tracking-[0.42em] text-cyan-300">FAQ</p>
+        <h1 className="max-w-4xl text-4xl font-black tracking-tight sm:text-5xl">{t.title}</h1>
+        <p className="mt-5 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">{t.subtitle}</p>
+      </section>
+
+      <section className="mt-8 grid gap-5 md:grid-cols-2">
+        {t.items.map(([question, answer], index) => (
+          <article
+            key={question}
+            className="group rounded-3xl border border-slate-700/80 bg-slate-900/55 p-6 leading-8 text-slate-200 shadow-lg shadow-slate-950/20 transition duration-300 hover:-translate-y-1 hover:border-cyan-300/45 hover:bg-slate-900/80 hover:shadow-cyan-950/30"
+          >
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs font-black tracking-[0.2em] text-cyan-200">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span className="h-px flex-1 bg-gradient-to-r from-cyan-300/30 to-transparent" />
+            </div>
+            <h2 className="mb-3 text-xl font-black leading-snug text-white transition group-hover:text-cyan-100">{question}</h2>
+            <p className="text-[15px] leading-8 text-slate-300">{answer}</p>
+          </article>
         ))}
-      </div>
+      </section>
     </main>
   );
 }
