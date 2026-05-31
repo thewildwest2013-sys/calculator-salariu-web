@@ -1,1 +1,0 @@
-V40: Romanian text cleanup only. Built from V39. No auth/calendar/billing/security logic changes. Adds EN->RO visible text cleanup when RO language is selected.

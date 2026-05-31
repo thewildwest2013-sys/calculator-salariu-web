@@ -1,1 +1,0 @@
-V8: Monthly Estimate redesign premium card dashboard, clean detail cards, Salary Rules cleanup, improved day popup styling. Base: uploaded working full project CalcSalinAndrStd(2).zip.

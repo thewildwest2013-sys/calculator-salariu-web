@@ -1,7 +1,0 @@
-V55 Restore Premium strict fix
-
-- Restore Premium nu mai activează contul doar pentru că există un purchase vechi în Google Play.
-- Se acceptă doar purchase cu productId premium_monthly, purchaseState PURCHASED și autoRenewing=true.
-- Dacă abonamentul este anulat / neeligibil, aplicația rămâne FREE și afișează mesaj clar.
-- Am păstrat fixurile auth din v5.4: fără auto-login agresiv, forgot password reparat, mesaje pentru email/parolă și Spam/Junk după register.
-- versionCode 55 / versionName 5.5.

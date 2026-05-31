@@ -1,3 +1,0 @@
-v26: Am integrat iconița aleasă, prima din setul generat.
-Fișiere actualizate: app/favicon.ico, app/icon.png, app/apple-icon.png, public/favicon.ico, public/favicon-16x16.png, public/favicon-32x32.png, public/apple-touch-icon.png, public/android-chrome-192x192.png, public/android-chrome-512x512.png, public/site.webmanifest, public/manifest.json.
-După deploy, dacă browserul ține cache, fă Ctrl+Shift+R sau așteaptă câteva minute CDN-ul Vercel.

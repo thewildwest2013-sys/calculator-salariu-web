@@ -1,94 +1,25 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import type { Metadata } from "next";
 
-type Lang = "ro" | "en";
-
-type Section = { title: string; body: string[] };
-type PageCopy = {
-  label: string;
-  title: string;
-  subtitle: string;
-  intro: string[];
-  sections: Section[];
-  examples: { title: string; body: string }[];
-  faq: { q: string; a: string }[];
-  disclaimer: string;
-  relatedTitle: string;
-  backHome: string;
-  adLabel: string;
+export const metadata: Metadata = {
+  title: "Concediu Medical 2026 – Calcul Indemnizație, Procente și Drepturi",
+  description:
+    "Cum se calculează indemnizația de concediu medical în 2026: 75%, 80% sau 100% din baza de calcul. Angajatorul plătește primele 5 zile, CNAS din ziua 6.",
 };
 
-function usePageLang() {
-  const [lang, setLang] = useState<Lang>("ro");
-
-  useEffect(() => {
-    const readLang = () => {
-      const saved =
-        localStorage.getItem("calculator-salariu-lang") ||
-        localStorage.getItem("salary-lang-v1") ||
-        localStorage.getItem("lang") ||
-        localStorage.getItem("language");
-
-      if (saved === "en" || saved === "ro") setLang(saved);
-    };
-
-    readLang();
-    window.addEventListener("storage", readLang);
-    window.addEventListener("calculator-salariu-lang-change", readLang);
-    return () => {
-      window.removeEventListener("storage", readLang);
-      window.removeEventListener("calculator-salariu-lang-change", readLang);
-    };
-  }, []);
-
-  return lang;
-}
-
-function AdSlot({ label: _label }: { label: string }) {
-  const client = process.env.NEXT_PUBLIC_ADSENSE_CLIENT;
-  const slot =
-    process.env.NEXT_PUBLIC_ADSENSE_CONTENT_SLOT ||
-    process.env.NEXT_PUBLIC_ADSENSE_BANNER_SLOT;
-
-  useEffect(() => {
-    if (!client || !slot || client.includes("XXXX")) return;
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
-    } catch (_e) {}
-  }, [client, slot]);
-
-  if (!client || !slot || client.includes("XXXX")) return null;
-
-  return (
-    <div className="my-8" data-ad-slot="manual-content-ad">
-      <ins
-        className="adsbygoogle"
-        style={{ display: "block", textAlign: "center" }}
-        data-ad-layout="in-article"
-        data-ad-format="fluid"
-        data-ad-client={client}
-        data-ad-slot={slot}
-      />
-    </div>
-  );
-}
-
-function RelatedLinks({ title }: { title: string }) {
+function RelatedLinks() {
   const items = [
     { href: "/calculator-salariu-2026", label: "Ghid salariu 2026" },
     { href: "/calculator-brut-net", label: "Brut / net" },
-    { href: "/spor-de-noapte", label: "Sporuri" },
-    { href: "/bonuri-de-masa", label: "Bonuri" },
-    { href: "/concediu-medical", label: "Concediu medical" },
+    { href: "/spor-de-noapte", label: "Spor de noapte" },
+    { href: "/sarbatori-legale-2026", label: "Sărbători legale 2026" },
+    { href: "/bonuri-de-masa", label: "Bonuri de masă" },
     { href: "/faq", label: "FAQ" },
   ];
 
   return (
     <section className="mt-8 rounded-[28px] border border-white/10 bg-white/[0.035] p-5">
-      <h2 className="text-xl font-black text-white">{title}</h2>
+      <h2 className="text-xl font-black text-white">Articole utile</h2>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => (
           <Link
@@ -104,204 +35,101 @@ function RelatedLinks({ title }: { title: string }) {
   );
 }
 
-const COPY: Record<Lang, PageCopy> = {
-  ro: {
-    "label": "Concediu medical",
-    "title": "Concediu medical și impactul asupra estimării",
-    "subtitle": "Cum marchezi zilele medicale și cum pot influența salariul estimat.",
-    "intro": [
-        "Concediul medical este o situație specială care poate influența salariul, bonurile de masă și numărul de ore lucrate. Calculatorul oferă o estimare simplificată, utilă pentru orientare.",
-        "Pentru situații reale, modul de plată poate depinde de tipul concediului, certificatul medical, vechime, cod indemnizație și regulile aplicabile."
+const sections = [
+  {
+    no: "01",
+    title: "Cine plătește concediul medical",
+    body: [
+      "Angajatorul plătește indemnizația pentru primele 5 zile calendaristice de concediu medical. Începând cu ziua a 6-a, plata este asigurată de Casa Națională de Asigurări de Sănătate (CNAS), din fondul de asigurări sociale de sănătate.",
+      "Pentru a beneficia de plată din ziua a 6-a, angajatul trebuie să aibă minimum 6 luni de stagiu de cotizare în ultimele 12 luni. Excepțiile includ urgențele medicale și bolile infectocontagioase, pentru care CNAS plătește de la prima zi.",
     ],
-    "sections": [
-        {
-            "title": "Cum marchezi medicalul",
-            "body": [
-                "Selectează ziua în calendar și alege Medical. Ziua va fi tratată separat de turele lucrate.",
-                "Dacă ai mai multe zile medicale, marchează fiecare zi pentru ca estimarea lunii să fie coerentă."
-            ]
-        },
-        {
-            "title": "Setarea zilelor neplătite",
-            "body": [
-                "În Reguli poți introduce zile medicale neplătite sau ajustări folosite de calculator.",
-                "Această setare este orientativă și trebuie verificată cu documentele oficiale."
-            ]
-        },
-        {
-            "title": "Impact asupra bonurilor",
-            "body": [
-                "În multe situații, zilele medicale nu sunt tratate la fel ca zilele lucrate pentru bonuri de masă.",
-                "Aplicația separă bonurile de salariu pentru a vedea mai clar impactul."
-            ]
-        },
-        {
-            "title": "Verificări recomandate",
-            "body": [
-                "Compară estimarea cu fluturașul și cu informațiile primite de la angajator.",
-                "Pentru cazuri speciale, verifică legislația aplicabilă sau cere informații de la HR/contabilitate."
-            ]
-        }
+  },
+  {
+    no: "02",
+    title: "Procentele de indemnizație",
+    body: [
+      "Procentul aplicat depinde de tipul de concediu medical: 75% din baza de calcul pentru boli obișnuite și carantină; 80% pentru boli profesionale, accidente de muncă, tuberculoză, neoplazii și SIDA; 100% pentru urgențe chirurgicale, îngrijirea copilului bolnav sub 7 ani sau handicapat sub 18 ani.",
+      "Baza de calcul este media veniturilor brute lunare din ultimele 6 luni anterioare lunii în care survine incapacitatea de muncă, împărțită la numărul de zile lucrătoare din acea perioadă.",
     ],
-    "examples": [
-        {
-            "title": "Exemplu medical",
-            "body": "Dacă ai o zi marcată Medical, calculatorul poate reduce zilele lucrate și poate ajusta totalul estimat."
-        },
-        {
-            "title": "Exemplu cu bonuri",
-            "body": "Dacă o zi medicală nu primește bon, totalul bonurilor scade față de o lună complet lucrată."
-        }
+  },
+  {
+    no: "03",
+    title: "Exemplu de calcul – boli obișnuite (75%)",
+    body: [
+      "Salariat cu medie brut ultimele 6 luni: 5.000 lei/lună. Zile lucrătoare medii: 21 zile/lună. Baza zilnică: 5.000 / 21 = ~238 lei/zi. Indemnizație zilnică: 238 × 75% = ~178,50 lei/zi.",
+      "Pentru 10 zile de concediu medical: primele 5 zile = plătite de angajator (5 × 178,50 = 892,50 lei brut), zilele 6–10 = plătite de CNAS (5 × 178,50 = 892,50 lei brut). Total brut: ~1.785 lei. Din această sumă se rețin CASS 10% și impozit 10%.",
     ],
-    "faq": [
-        {
-            "q": "Calculatorul stabilește indemnizația medicală exactă?",
-            "a": "Nu. Oferă doar o estimare simplificată."
-        },
-        {
-            "q": "Pot marca mai multe zile medicale?",
-            "a": "Da, selectezi fiecare zi din calendar."
-        },
-        {
-            "q": "Medicalul afectează bonurile?",
-            "a": "Poate afecta, în funcție de regulile angajatorului."
-        }
+  },
+  {
+    no: "04",
+    title: "Cum marchezi concediul medical în aplicație",
+    body: [
+      "În calendarul lunar marchezi zilele de concediu medical cu tipul Medical (M). Aplicația le identifică separat față de zilele de muncă și le exclude din calculul normal de ture și sporuri.",
+      "Indemnizația exactă nu poate fi calculată automat fără istoricul veniturilor din ultimele 6 luni. Aplicația afișează o estimare orientativă. Pentru suma exactă, contactează departamentul de resurse umane sau medicul de medicina muncii.",
     ],
-    "disclaimer": "Nu reprezintă consultanță juridică sau medicală. Verifică documentele oficiale și legislația aplicabilă.",
-    "relatedTitle": "Articole utile",
-    "backHome": "Înapoi la calculator",
-    "adLabel": "Spațiu publicitar / AdSense"
-},
-  en: {
-    "label": "Medical leave",
-    "title": "Medical leave and salary estimate impact",
-    "subtitle": "How to mark medical days and how they may affect the salary estimate.",
-    "intro": [
-        "Medical leave is a special situation that can affect salary, meal vouchers and worked hours. The calculator provides a simplified informational estimate.",
-        "In real cases, payment may depend on certificate type, leave type, seniority, compensation code and applicable rules."
-    ],
-    "sections": [
-        {
-            "title": "Marking medical leave",
-            "body": [
-                "Select a calendar day and choose Medical. The day is handled separately from worked shifts.",
-                "If you have multiple medical days, mark each one for a coherent estimate."
-            ]
-        },
-        {
-            "title": "Unpaid day setting",
-            "body": [
-                "In Rules you can enter unpaid medical days or adjustments used by the calculator.",
-                "This setting is informational and should be checked with official documents."
-            ]
-        },
-        {
-            "title": "Impact on vouchers",
-            "body": [
-                "Medical days are often not treated the same as worked days for meal vouchers.",
-                "The app separates vouchers from salary to make the impact clearer."
-            ]
-        },
-        {
-            "title": "Recommended checks",
-            "body": [
-                "Compare the estimate with your payslip and employer information.",
-                "For special cases, check law or ask HR/accounting."
-            ]
-        }
-    ],
-    "examples": [
-        {
-            "title": "Medical example",
-            "body": "A Medical day can reduce worked days and adjust the estimated total."
-        },
-        {
-            "title": "Voucher example",
-            "body": "If a Medical day does not receive a voucher, voucher total drops compared to a fully worked month."
-        }
-    ],
-    "faq": [
-        {
-            "q": "Does the calculator compute exact medical allowance?",
-            "a": "No. It provides a simplified estimate."
-        },
-        {
-            "q": "Can I mark several medical days?",
-            "a": "Yes, select each day in the calendar."
-        },
-        {
-            "q": "Does medical leave affect vouchers?",
-            "a": "It may, depending on employer rules."
-        }
-    ],
-    "disclaimer": "This is not legal or medical advice. Check official documents and applicable rules.",
-    "relatedTitle": "Useful articles",
-    "backHome": "Back to calculator",
-    "adLabel": "Ad space / AdSense"
-},
-};
+  },
+];
+
+const faq = [
+  {
+    q: "Se rețin contribuțiile din indemnizația de boală?",
+    a: "Da. Din indemnizația de concediu medical se rețin CASS (10%) și impozit pe venit (10%). CAS (pensie) nu se reține din indemnizația de boală plătită de CNAS.",
+  },
+  {
+    q: "Bonurile de masă se primesc în zilele de concediu medical?",
+    a: "Nu. Bonurile de masă se acordă doar pentru zilele efectiv lucrate. Zilele de concediu medical nu dau dreptul la bon de masă.",
+  },
+  {
+    q: "Ce se întâmplă dacă am mai puțin de 6 luni stagiu?",
+    a: "Dacă nu îndeplinești stagiul de cotizare, angajatorul plătește primele 5 zile, dar CNAS poate refuza plata din ziua a 6-a. Excepțiile sunt urgențele și bolile infectocontagioase.",
+  },
+];
 
 export default function Page() {
-  const lang = usePageLang();
-  const t = COPY[lang];
-
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_20%_0%,rgba(34,211,238,0.12),transparent_28%),linear-gradient(180deg,#061122_0%,#07192f_45%,#04101f_100%)] px-4 py-10 text-white">
       <article className="mx-auto max-w-5xl">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs font-bold uppercase tracking-[0.32em] text-cyan-200/65">{t.label}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.32em] text-cyan-200/65">Ghid salarizare România</p>
           <Link href="/" className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-bold text-white/80 transition hover:bg-white/[0.08]">
-            {t.backHome}
+            Înapoi la calculator
           </Link>
         </div>
 
         <header className="rounded-[32px] border border-white/10 bg-[#071326]/82 p-6 shadow-[0_0_60px_rgba(0,80,255,0.08)] md:p-8">
-          <h1 className="text-4xl font-black tracking-tight md:text-5xl">{t.title}</h1>
-          <p className="mt-4 max-w-3xl text-lg leading-8 text-white/72">{t.subtitle}</p>
+          <h1 className="text-4xl font-black tracking-tight md:text-5xl">Concediu Medical 2026</h1>
+          <p className="mt-4 max-w-3xl text-lg leading-8 text-white/72">
+            Cum se calculează indemnizația de boală: cine plătește, ce procent se aplică (75%, 80% sau 100%) și un exemplu complet cu cifre reale.
+          </p>
         </header>
 
-        <AdSlot label={t.adLabel} />
-
-        <section className="rounded-[30px] border border-white/10 bg-[#071326]/80 p-6 leading-8 text-white/78 md:p-8">
-          {t.intro.map((paragraph) => (
-            <p key={paragraph} className="mb-5 last:mb-0">{paragraph}</p>
-          ))}
+        <section className="mt-6 rounded-[30px] border border-white/10 bg-[#071326]/80 p-6 leading-8 text-white/78 md:p-8">
+          <p className="mb-5">
+            Concediul medical este reglementat prin OUG 158/2005 și oferă protecție financiară angajaților care nu pot presta activitate din cauza unei boli sau accidente. Suma primită nu este egală cu salariul normal – procentul variază între 75% și 100% din baza de calcul, în funcție de tipul afecțiunii.
+          </p>
+          <p>
+            Regula cheie: angajatorul suportă primele 5 zile de concediu medical, CNAS suportă restul. Există excepții importante pentru urgențe și boli grave.
+          </p>
         </section>
 
         <div className="mt-6 grid gap-5 lg:grid-cols-2">
-          {t.sections.map((section, index) => (
+          {sections.map((section) => (
             <section key={section.title} className="rounded-[28px] border border-white/10 bg-white/[0.035] p-5 leading-7 text-white/75">
-              <div className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-cyan-200/55">
-                {String(index + 1).padStart(2, "0")}
-              </div>
+              <div className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-cyan-200/55">{section.no}</div>
               <h2 className="text-2xl font-black text-white">{section.title}</h2>
               <div className="mt-3 space-y-3">
-                {section.body.map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
+                {section.body.map((paragraph, i) => (
+                  <p key={i}>{paragraph}</p>
                 ))}
               </div>
             </section>
           ))}
         </div>
 
-        <AdSlot label={t.adLabel} />
-
-        <section className="mt-6 rounded-[30px] border border-white/10 bg-[#071326]/80 p-6 md:p-8">
-          <h2 className="text-2xl font-black">{lang === "ro" ? "Exemple practice" : "Practical examples"}</h2>
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            {t.examples.map((example) => (
-              <div key={example.title} className="rounded-[22px] border border-cyan-300/12 bg-cyan-300/[0.035] p-4">
-                <h3 className="font-black text-cyan-100">{example.title}</h3>
-                <p className="mt-2 leading-7 text-white/72">{example.body}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
         <section className="mt-6 rounded-[30px] border border-white/10 bg-white/[0.035] p-6 md:p-8">
-          <h2 className="text-2xl font-black">{lang === "ro" ? "Întrebări rapide" : "Quick questions"}</h2>
+          <h2 className="text-2xl font-black">Întrebări frecvente</h2>
           <div className="mt-5 space-y-3">
-            {t.faq.map((item) => (
+            {faq.map((item) => (
               <details key={item.q} className="rounded-[18px] border border-white/10 bg-[#071326]/75 p-4">
                 <summary className="cursor-pointer font-black text-white">{item.q}</summary>
                 <p className="mt-3 leading-7 text-white/72">{item.a}</p>
@@ -311,10 +139,10 @@ export default function Page() {
         </section>
 
         <div className="mt-6 rounded-[24px] border border-amber-300/15 bg-amber-300/[0.055] p-5 leading-7 text-amber-50/78">
-          {t.disclaimer}
+          Informațiile sunt orientative. Suma exactă a indemnizației se stabilește de angajator și CNAS pe baza veniturilor reale din ultimele 6 luni. Consultați medicul curant și HR pentru detalii specifice situației dvs.
         </div>
 
-        <RelatedLinks title={t.relatedTitle} />
+        <RelatedLinks />
       </article>
     </main>
   );

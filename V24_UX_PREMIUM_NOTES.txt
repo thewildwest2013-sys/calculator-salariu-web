@@ -1,9 +1,0 @@
-V24 changes:
-- Bottom navigation cleaned: Acasă / Istoric / Premium / Cont.
-- Quick result simplified: visible Net + Meal vouchers only; detailed cards remain hidden for calculations/export logic.
-- Secondary cards Reguli/Detalii/Sărbători/Logică are hidden from main flow and open only from quick menu.
-- Account/Profile section added with email, plan, Premium, Restore and Logout.
-- Day editor gets sticky back/close controls: ← Calendar and X.
-- Premium screen includes note explaining why Google Play Billing can show unavailable in Android Studio/emulator.
-- Manifest keeps AD_ID permission.
-- Version set to 24 / 2.0.4.

@@ -1,1 +1,0 @@
-v13 pornește de la v9 stabil, schimbă emailul de suport și implementează delete account fără să altereze formatarea codului.

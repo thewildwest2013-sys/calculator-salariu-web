@@ -1,1 +1,0 @@
-v17: Privacy, Terms, Contact and Delete Account now switch content based on saved RO/EN language preference.

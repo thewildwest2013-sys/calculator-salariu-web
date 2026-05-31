@@ -1,6 +1,0 @@
-V32 calendar daily details restored
-- Restored inline per-day editor below the calendar.
-- Kept multi-select mode.
-- Day click now selects day and shows details instead of only the bulk select flow.
-- Added per-day shift buttons, worked hours, undertime, overtime, OT flags and notes.
-- Improved English labels for weekday/month rendering and daily details.

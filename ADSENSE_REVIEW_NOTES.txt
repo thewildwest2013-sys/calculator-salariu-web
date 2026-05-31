@@ -1,7 +1,0 @@
-Versiune v7 AdSense review safe:
-- UI-ul nu mai afișează texte explicite de reclame/gate.
-- Paginile tehnice existente au noindex unde s-au putut identifica.
-- Au fost adăugate articole informative relevante pentru calculator salarial.
-- Privacy / Terms / Contact / Delete Account au fost completate.
-- Butonul Deschide Regulile are fallback mai robust.
-După deploy: verifică local/live, cere indexare în Search Console și așteaptă 3-7 zile înainte de re-review.

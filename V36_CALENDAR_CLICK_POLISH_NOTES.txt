@@ -1,1 +1,0 @@
-V36: restored calendar Morning/Afternoon/Night clickability, kept auth/device security, polished English text labels including meal tickets, Salary Rules, Calculation Details and Salary FAQ.

@@ -1,2 +1,0 @@
-V15: adăugat selectare multiplă zile în calendar + aplicare tură pe grup, toggle Light/Dark, styling light theme, păstrează V14 features.
-Nu include încă widget iframe sau push notifications reale.

@@ -1,1 +1,0 @@
-v21: Added central i18n helper and ClientTextTranslator safety net. It translates hardcoded static text when EN is selected and listens to language changes.

@@ -1,7 +1,0 @@
-V19 HOME LAYOUT PREMIUM CLEAN
-- Home începe cu card compact Salariu brut + buton Calculează.
-- Calendarul este mutat imediat sub salariu, ca element principal.
-- Cardul Free Account / preview mode este ascuns de pe Home.
-- Rezultatul rapid este mutat sub calendar și compactat.
-- Navigația de jos rămâne ridicată peste reclama AdMob.
-- Culorile sunt mai verzi/galbene, apropiate de mockup-ul premium.

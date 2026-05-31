@@ -1,9 +1,0 @@
-V56 FINAL BILLING DEBUG / FIX
-
-- versionCode 56 / versionName 5.6.
-- Pastreaza fixurile din V54/V55: fara auto-login agresiv, forgot password, spam notice, logout hard, restore strict.
-- Restore Premium NU activeaza premium decat daca Google Play returneaza purchase premium_monthly cu state PURCHASED si autoRenewing=true.
-- Butonul Activeaza Premium afiseaza diagnosticul pe ecran: produs, numar oferte, basePlan, offerId, offerToken.
-- Selecteaza prioritar basePlanId=monthly fara offer special, ca sa evitam oferte neeligibile.
-- Afiseaza responseCode cu nume: INTERNAL_ERROR, DEVELOPER_ERROR, ITEM_UNAVAILABLE etc.
-- Daca launchBillingFlow porneste OK, iar apoi apare eroare, problema vine din Google Play/Payments/testing, nu din buton.

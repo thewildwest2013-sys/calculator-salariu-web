@@ -1,8 +1,0 @@
-V17 AUTH/NAV FIX
-- Login button now explicitly opens the app after successful Firebase signInWithEmailAndPassword.
-- Register now creates account and immediately opens app after successful Firebase createUser.
-- Auth state listener simplified and guarded with try/catch to avoid silent login freeze.
-- Free/test users are not blocked by device-id checks.
-- Premium anti-sharing device check remains active for premium profiles.
-- Added fallback opening of appScreen if secondary setup/profile/firestore logic fails after successful auth.
-- Keeps V15/V16 UI/features pack: calendar colors, bulk/theme base, history/export/simulator/minimum salary/free limit.
