@@ -2768,23 +2768,23 @@ function HolidaysSection({
 }
 
 function LogicSection({ t, lang }: { t: Translation; lang: Lang }) {
-  const rows = lang === "ro" ? [
-    ["Hourly base", "the reference gross salary is divided by approximately 160 monthly hours"],
-    ["Morning / After / Night", "choose the shift directly from the day; Night receives the night bonus"],
-    ["Automatic weekend", "sâmbăta și duminica sunt detectate automat din calendar"],
-    ["Holidays automate", "legal holidays are marked and receive the holiday bonus automatically"],
-    ["Overtime", "+75% of the hourly base for each entered hour"],
-    ["Monetization", "în perioada de review AdSense, aplicația rulează fără reclame, fără overlay-uri și fără porți de vizionare; după aprobare, reclamele trebuie activate doar în zone conforme"],
-    ["Online only", "new calculations and saving are allowed only when the browser is online"],
-  ] : [
-    ["Hourly base", "the reference gross salary is divided by roughly 160 monthly hours"],
-    ["Morning / Afternoon / Night", "you choose the shift directly on the day; Night gets the night bonus"],
-    ["Automatic weekend", "Saturday and Sunday are detected automatically from the calendar"],
-    ["Automatic holidays", "legal holidays are marked and automatically receive the holiday bonus"],
-    ["Overtime", "+75% of hourly base for each entered overtime hour"],
-    ["Monetization", "during the AdSense review period, the app runs without ads, overlays or view gates; after approval, ads must be enabled only in compliant areas"],
-    ["Online only", "new calculations and saving are allowed only while the browser is online"],
-  ];
+const rows = lang === "ro" ? [
+  ["Bază orară", "salariul brut de referință este împărțit la aproximativ 160 de ore lunare"],
+  ["Dimineață / După-amiază / Noapte", "alegi tura direct din ziua selectată; tura de noapte primește sporul de noapte"],
+  ["Weekend automat", "sâmbăta și duminica sunt detectate automat din calendar"],
+  ["Sărbători automate", "sărbătorile legale sunt marcate și primesc automat sporul de sărbătoare"],
+  ["Ore suplimentare", "+75% din baza orară pentru fiecare oră suplimentară introdusă"],
+  ["Monetizare", "în perioada de review AdSense, aplicația rulează fără reclame, fără overlay-uri și fără porți de vizionare; după aprobare, reclamele vor fi activate doar în zone conforme"],
+  ["Doar online", "calculele noi și salvarea sunt permise doar când browserul este online"],
+] : [
+  ["Hourly base", "the reference gross salary is divided by roughly 160 monthly hours"],
+  ["Morning / Afternoon / Night", "you choose the shift directly on the day; Night gets the night bonus"],
+  ["Automatic weekend", "Saturday and Sunday are detected automatically from the calendar"],
+  ["Automatic holidays", "legal holidays are marked and automatically receive the holiday bonus"],
+  ["Overtime", "+75% of hourly base for each entered overtime hour"],
+  ["Monetization", "during the AdSense review period, the app runs without ads, overlays or view gates; after approval, ads must be enabled only in compliant areas"],
+  ["Online only", "new calculations and saving are allowed only while the browser is online"],
+];
 
   return (
     <SectionShell kicker={t.howItWorks} title={t.logicImplemented}>
