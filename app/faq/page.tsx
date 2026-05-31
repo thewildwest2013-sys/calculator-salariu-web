@@ -132,7 +132,6 @@ export default function FAQPage() {
       ] as FAQItem[],
       relatedTitle: "Articole recomandate",
       related: [
-        { href: "/about", label: "Despre proiect" },
         { href: "/calculator-brut-net", label: "Diferența brut / net" },
         { href: "/calculator-salariu-2026", label: "Ghid salariu 2026" },
         { href: "/bonuri-de-masa", label: "Bonuri de masă" },
@@ -226,7 +225,6 @@ export default function FAQPage() {
       ] as FAQItem[],
       relatedTitle: "Recommended articles",
       related: [
-        { href: "/about", label: "About the project" },
         { href: "/calculator-brut-net", label: "Gross / net difference" },
         { href: "/calculator-salariu-2026", label: "Salary guide 2026" },
         { href: "/bonuri-de-masa", label: "Meal vouchers" },

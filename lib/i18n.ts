@@ -204,6 +204,7 @@ export function translateStaticText(text: string, lang: Lang): string {
     "Privacy": "Privacy",
     "Terms": "Terms",
     "Delete account": "Delete account",
+    "Despre proiect": "About",
 
   };
 

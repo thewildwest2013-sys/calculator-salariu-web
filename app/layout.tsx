@@ -125,26 +125,37 @@ export default function RootLayout({
           </a>
 
           <a
-            href="/terms"
-            style={{
-              color: "inherit",
-              marginRight: 16,
-              textDecoration: "none",
-            }}
-          >
-            Termeni
-          </a>
+  href="/terms"
+  style={{
+    color: "inherit",
+    marginRight: 16,
+    textDecoration: "none",
+  }}
+>
+  Termeni
+</a>
 
-          <a
-            href="/contact"
-            style={{
-              color: "inherit",
-              marginRight: 16,
-              textDecoration: "none",
-            }}
-          >
-            Contact
-          </a>
+<a
+  href="/about"
+  style={{
+    color: "inherit",
+    marginRight: 16,
+    textDecoration: "none",
+  }}
+>
+  Despre proiect
+</a>
+
+<a
+  href="/contact"
+  style={{
+    color: "inherit",
+    marginRight: 16,
+    textDecoration: "none",
+  }}
+>
+  Contact
+</a>
 
           <a
             href="/delete-account"

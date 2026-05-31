@@ -132,6 +132,17 @@ export default function RootLayout({
           </a>
 
           <a
+            href="/about"
+            style={{
+              color: "inherit",
+              marginRight: 16,
+              textDecoration: "none",
+            }}
+          >
+            About
+          </a>
+
+          <a
             href="/contact"
             style={{
               color: "inherit",
@@ -176,5 +187,3 @@ export default function RootLayout({
   );
 }
 
-
-{/* Added informational pages for AdSense trust */}
