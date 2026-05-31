@@ -176,5 +176,3 @@ export default function RootLayout({
   );
 }
 
-
-{/* Added informational pages for AdSense trust */}

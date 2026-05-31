@@ -46,13 +46,32 @@ function usePageLang() {
   return lang;
 }
 
-function AdSlot({ label }: { label: string }) {
+function AdSlot({ label: _label }: { label: string }) {
+  const client = process.env.NEXT_PUBLIC_ADSENSE_CLIENT;
+  const slot =
+    process.env.NEXT_PUBLIC_ADSENSE_CONTENT_SLOT ||
+    process.env.NEXT_PUBLIC_ADSENSE_BANNER_SLOT;
+
+  useEffect(() => {
+    if (!client || !slot || client.includes("XXXX")) return;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
+    } catch (_e) {}
+  }, [client, slot]);
+
+  if (!client || !slot || client.includes("XXXX")) return null;
+
   return (
-    <div
-      className="my-8 flex min-h-[96px] items-center justify-center rounded-[24px] border border-cyan-300/10 bg-cyan-300/[0.035] px-4 text-center text-xs font-semibold uppercase tracking-[0.22em] text-cyan-100/35"
-      data-ad-slot="manual-content-ad"
-    >
-      {label}
+    <div className="my-8" data-ad-slot="manual-content-ad">
+      <ins
+        className="adsbygoogle"
+        style={{ display: "block", textAlign: "center" }}
+        data-ad-layout="in-article"
+        data-ad-format="fluid"
+        data-ad-client={client}
+        data-ad-slot={slot}
+      />
     </div>
   );
 }
