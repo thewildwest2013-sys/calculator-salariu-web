@@ -49,6 +49,10 @@ function translateTree(lang: Lang) {
   const inputMap: Record<string, string> = {
     "STERGERE": "DELETE",
     "STERGERE / DELETE": "DELETE",
+    "Introdu emailul": "Enter your email",
+    "Introdu parola": "Enter your password",
+    "Email pentru resetare": "Password reset email",
+    "Ex: 6.5": "Ex: 6.5",
   };
 
   document.querySelectorAll("input[placeholder], textarea[placeholder]").forEach((element) => {

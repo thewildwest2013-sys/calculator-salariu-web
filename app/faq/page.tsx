@@ -1,39 +1,19 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type Lang = "ro" | "en";
 
-type Section = { title: string; body: string[] };
-type PageCopy = {
-  label: string;
-  title: string;
-  subtitle: string;
-  intro: string[];
-  sections: Section[];
-  examples: { title: string; body: string }[];
-  faq: { q: string; a: string }[];
-  disclaimer: string;
-  relatedTitle: string;
-  backHome: string;
-  adLabel: string;
-};
-
 function usePageLang() {
   const [lang, setLang] = useState<Lang>("ro");
-
   useEffect(() => {
     const readLang = () => {
       const saved =
         localStorage.getItem("calculator-salariu-lang") ||
-        localStorage.getItem("salary-lang-v1") ||
         localStorage.getItem("lang") ||
         localStorage.getItem("language");
-
       if (saved === "en" || saved === "ro") setLang(saved);
     };
-
     readLang();
     window.addEventListener("storage", readLang);
     window.addEventListener("calculator-salariu-lang-change", readLang);
@@ -42,280 +22,103 @@ function usePageLang() {
       window.removeEventListener("calculator-salariu-lang-change", readLang);
     };
   }, []);
-
   return lang;
 }
 
-function AdSlot({ label: _label }: { label: string }) {
-  const client = process.env.NEXT_PUBLIC_ADSENSE_CLIENT;
-  const slot =
-    process.env.NEXT_PUBLIC_ADSENSE_CONTENT_SLOT ||
-    process.env.NEXT_PUBLIC_ADSENSE_BANNER_SLOT;
+export default function FAQPage() {
+  const lang = usePageLang();
 
-  useEffect(() => {
-    if (!client || !slot || client.includes("XXXX")) return;
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
-    } catch (_e) {}
-  }, [client, slot]);
-
-  if (!client || !slot || client.includes("XXXX")) return null;
+  const t = {
+    ro: {
+      title: "Întrebări frecvente",
+      subtitle: "Răspunsuri detaliate la cele mai comune întrebări despre calculul salariului net în România.",
+      items: [
+        [
+          "Ce procente se aplică în 2026 pentru CAS, CASS și impozit?",
+          "În 2026, contribuțiile standard sunt: CAS (pensie) = 25% din salariul brut, CASS (sănătate) = 10% din salariul brut, impozit pe venit = 10% din baza impozabilă (brut minus CAS minus CASS, minus deducere personală dacă e cazul). Totalul reținut poate ajunge la aproximativ 41–42% din brut pentru un angajat fără deducere personală.",
+        ],
+        [
+          "Care este salariul minim net în România în 2026?",
+          "Salariul minim brut în 2026 este de 4.050 lei. Salariul minim net estimat este de aproximativ 2.363–2.370 lei, după deducerea CAS (1.012,5 lei), CASS (405 lei) și impozit (~270 lei). La acesta se pot adăuga bonuri de masă pentru zilele lucrate.",
+        ],
+        [
+          "Calculatorul oferă valori exacte identice cu fluturașul?",
+          "Nu. Calculatorul oferă estimări orientative. Fluturașul real poate diferi din cauza deducerilor personale (variabile pe copii în întreținere), regularizărilor de impozit, concediilor medicale plătite parțial din CNAS, primelor, reținerilor executorești sau altor elemente specifice angajatorului tău.",
+        ],
+        [
+          "Cum se calculează sporul de noapte conform legii?",
+          "Conform art. 123 din Codul Muncii, angajații care lucrează minimum 3 ore noaptea (22:00–06:00) au dreptul la un spor de minimum 25% din salariul de bază. Formula: (Salariu brut ÷ ore lunare) × ore noapte × procent spor. Exemplu: 6.000 lei ÷ 168 ore × 80 ore noapte × 25% = 714 lei spor brut.",
+        ],
+        [
+          "Bonurile de masă sunt impozabile?",
+          "Nu, bonurile de masă acordate în limita valorii legale maxime (actualizată periodic) sunt scutite de CAS, CASS și impozit pe venit. Aceasta le face net mai avantajoase decât un salariu echivalent. Un bon de 40 lei ajunge integral la angajat, pe când un supliment salarial brut de 40 lei devine net doar ~23 lei.",
+        ],
+        [
+          "Cum funcționează concediul medical pentru angajat?",
+          "Primele 5 zile de concediu medical sunt plătite de angajator. Din ziua a 6-a, CNAS suportă indemnizația. Valoarea indemnizației = media zilnică din ultimele 6 luni × număr zile × procent (75% pentru boli obișnuite, 80% dacă ai peste 8 ani vechime, 100% pentru afecțiuni grave). Nu se acordă bonuri de masă pe zilele de concediu medical.",
+        ],
+        [
+          "Dacă lucrez în zi de sărbătoare legală, ce drepturi am?",
+          "Angajatorul trebuie fie să îți acorde zile libere compensatorii în 30 de zile, fie să plătească un spor de 100% din salariul de bază pentru orele lucrate. Dacă tura de noapte coincide cu o sărbătoare, sporurile se pot cumula. Verifică contractul colectiv de muncă pentru detalii specifice angajatorului tău.",
+        ],
+        [
+          "Cum pot verifica dacă calculul meu este corect?",
+          "Compară estimarea calculatorului cu fluturașul de salariu real și cu contractul individual de muncă. Verifică dacă procentele de CAS, CASS și impozit introduse în Reguli corespund celor reținute. Dacă există diferențe mari, consultați departamentul de resurse umane sau un contabil.",
+        ],
+      ],
+    },
+    en: {
+      title: "Frequently Asked Questions",
+      subtitle: "Detailed answers to the most common questions about net salary calculation in Romania.",
+      items: [
+        [
+          "What percentages apply in 2026 for CAS, CASS and income tax?",
+          "In 2026, the standard contributions are: CAS (pension) = 25% of gross salary, CASS (health) = 10% of gross salary, income tax = 10% of taxable base (gross minus CAS minus CASS, minus personal deduction if applicable). The total withheld can reach approximately 41–42% of gross for an employee without a personal deduction.",
+        ],
+        [
+          "What is the minimum net salary in Romania in 2026?",
+          "The minimum gross salary in 2026 is 4,050 RON. The estimated minimum net salary is approximately 2,363–2,370 RON, after deducting CAS (1,012.5 RON), CASS (405 RON) and income tax (~270 RON). Meal vouchers for worked days may be added on top.",
+        ],
+        [
+          "Does the calculator provide exact values identical to the payslip?",
+          "No. The calculator provides indicative estimates. The actual payslip may differ due to personal deductions (variable for dependents), tax regularizations, medical leave partially paid by CNAS, bonuses, enforcement deductions or other elements specific to your employer.",
+        ],
+        [
+          "How is the night shift bonus calculated according to law?",
+          "According to art. 123 of the Labour Code, employees working at least 3 hours at night (22:00–06:00) are entitled to a bonus of at least 25% of base salary. Formula: (Gross salary ÷ monthly hours) × night hours × bonus percentage. Example: 6,000 RON ÷ 168 hours × 80 night hours × 25% = 714 RON gross bonus.",
+        ],
+        [
+          "Are meal vouchers taxable?",
+          "No, meal vouchers granted within the legal maximum value (updated periodically) are exempt from CAS, CASS and income tax. This makes them net more advantageous than an equivalent salary. A 40 RON voucher reaches the employee in full, whereas a 40 RON gross salary supplement becomes only ~23 RON net.",
+        ],
+        [
+          "How does medical leave work for an employee?",
+          "The first 5 days of medical leave are paid by the employer. From day 6 onwards, CNAS covers the allowance. The allowance value = daily average from the last 6 months × number of days × percentage (75% for ordinary illnesses, 80% if over 8 years of service, 100% for serious conditions). No meal vouchers are granted for medical leave days.",
+        ],
+        [
+          "If I work on a public holiday, what rights do I have?",
+          "The employer must either grant you compensatory days off within 30 days, or pay a bonus of 100% of base salary for hours worked. If a night shift coincides with a public holiday, bonuses may be combined. Check the collective labour agreement for details specific to your employer.",
+        ],
+        [
+          "How can I verify if my calculation is correct?",
+          "Compare the calculator's estimate with your actual payslip and individual employment contract. Check that the CAS, CASS and income tax percentages entered in Rules match those withheld. If there are large discrepancies, consult your HR department or an accountant.",
+        ],
+      ],
+    },
+  }[lang];
 
   return (
-    <div className="my-8" data-ad-slot="manual-content-ad">
-      <ins
-        className="adsbygoogle"
-        style={{ display: "block", textAlign: "center" }}
-        data-ad-layout="in-article"
-        data-ad-format="fluid"
-        data-ad-client={client}
-        data-ad-slot={slot}
-      />
-    </div>
-  );
-}
-
-function RelatedLinks({ title }: { title: string }) {
-  const items = [
-    { href: "/calculator-salariu-2026", label: "Ghid salariu 2026" },
-    { href: "/calculator-brut-net", label: "Brut / net" },
-    { href: "/spor-de-noapte", label: "Sporuri" },
-    { href: "/bonuri-de-masa", label: "Bonuri" },
-    { href: "/concediu-medical", label: "Concediu medical" },
-    { href: "/faq", label: "FAQ" },
-  ];
-
-  return (
-    <section className="mt-8 rounded-[28px] border border-white/10 bg-white/[0.035] p-5">
-      <h2 className="text-xl font-black text-white">{title}</h2>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="rounded-2xl border border-white/10 bg-[#071326]/80 px-4 py-3 text-sm font-bold text-white/82 transition hover:border-cyan-300/30 hover:bg-cyan-400/10 hover:text-white"
-          >
-            {item.label}
-          </Link>
+    <main className="max-w-4xl mx-auto px-4 py-10 text-gray-200">
+      <h1 className="text-4xl font-bold mb-4">{t.title}</h1>
+      <p className="text-lg text-slate-300 mb-8 leading-8">{t.subtitle}</p>
+      <div className="space-y-6">
+        {t.items.map(([question, answer]) => (
+          <div key={question} className="border border-gray-700 rounded-xl p-5">
+            <h2 className="text-xl font-semibold mb-2">{question}</h2>
+            <p className="text-gray-300 leading-7">{answer}</p>
+          </div>
         ))}
       </div>
-    </section>
-  );
-}
-
-const COPY: Record<Lang, PageCopy> = {
-  ro: {
-    "label": "FAQ salarii",
-    "title": "Întrebări frecvente despre salarii și calculator",
-    "subtitle": "Răspunsuri rapide pentru cele mai frecvente întrebări despre calculul salariului, sporuri, bonuri și utilizarea aplicației.",
-    "intro": [
-        "Această pagină grupează întrebările frecvente despre calculator și despre elementele care pot influența venitul lunar. Răspunsurile sunt scrise simplu, pentru utilizare rapidă.",
-        "Dacă vrei explicații mai detaliate, folosește paginile dedicate din ghid: brut/net, sporuri, bonuri de masă și concediu medical."
-    ],
-    "sections": [
-        {
-            "title": "Întrebări despre calcul",
-            "body": [
-                "Calculatorul folosește valorile introduse de tine: salariu brut, taxe, sporuri, bonuri și ture. Dacă una dintre valori este greșită, rezultatul va fi influențat.",
-                "Rezultatul este estimativ și trebuie comparat cu documentele oficiale."
-            ]
-        },
-        {
-            "title": "Întrebări despre ture",
-            "body": [
-                "Turele Morning, After și Night sunt marcate pe zile în calendar. Weekendurile și sărbătorile sunt detectate automat.",
-                "Pentru ore suplimentare, completează câmpul dedicat din ziua selectată."
-            ]
-        },
-        {
-            "title": "Întrebări despre cont",
-            "body": [
-                "Contul permite salvarea setărilor, sincronizarea datelor și acces la istoric.",
-                "Pentru securitate, unele funcții pot cere autentificare și conexiune la internet."
-            ]
-        },
-        {
-            "title": "Întrebări despre Premium",
-            "body": [
-                "Premium oferă acces extins, istoric și utilizare fără limitările planului free.",
-                "Statusul Premium este citit din profilul contului tău și se sincronizează automat."
-            ]
-        }
-    ],
-    "examples": [
-        {
-            "title": "Exemplu întrebare",
-            "body": "Dacă netul pare prea mare sau prea mic, verifică întâi salariul brut, procentele de taxe și numărul de zile lucrate."
-        },
-        {
-            "title": "Exemplu utilizare",
-            "body": "Pentru o lună nouă, setează luna corectă, marchează turele și verifică rezultatul în Calcul Live."
-        }
-    ],
-    "faq": [
-        {
-            "q": "De ce nu văd același rezultat ca pe fluturaș?",
-            "a": "Pentru că pot exista deduceri, prime, rețineri sau reguli interne care nu sunt introduse în calculator."
-        },
-        {
-            "q": "Datele mele rămân salvate?",
-            "a": "Da, pentru utilizatorii autentificați setările pot fi sincronizate în cont."
-        },
-        {
-            "q": "Pot șterge contul?",
-            "a": "Da, există pagină dedicată pentru ștergerea contului și a datelor asociate."
-        }
-    ],
-    "disclaimer": "FAQ-ul este informativ și nu înlocuiește verificările oficiale.",
-    "relatedTitle": "Articole utile",
-    "backHome": "Înapoi la calculator",
-    "adLabel": "Spațiu publicitar / AdSense"
-},
-  en: {
-    "label": "Salary FAQ",
-    "title": "Frequently asked questions about salary and the calculator",
-    "subtitle": "Quick answers for common questions about salary calculation, bonuses, vouchers and app usage.",
-    "intro": [
-        "This page groups frequent questions about the calculator and the elements that may influence monthly income. Answers are written simply for quick use.",
-        "For detailed explanations, open the dedicated guide pages: gross/net, bonuses, meal vouchers and medical leave."
-    ],
-    "sections": [
-        {
-            "title": "Calculation questions",
-            "body": [
-                "The calculator uses your inputs: gross salary, taxes, bonuses, vouchers and shifts. Wrong inputs influence the result.",
-                "The result is an estimate and should be compared with official documents."
-            ]
-        },
-        {
-            "title": "Shift questions",
-            "body": [
-                "Morning, After and Night shifts are marked in the calendar. Weekends and legal holidays are detected automatically.",
-                "For overtime, fill in the dedicated field on the selected day."
-            ]
-        },
-        {
-            "title": "Account questions",
-            "body": [
-                "The account enables saved settings, data sync and history access.",
-                "For security, some features require authentication and internet connection."
-            ]
-        },
-        {
-            "title": "Premium questions",
-            "body": [
-                "Premium provides extended access, history and fewer plan limitations.",
-                "Premium status is read from your account profile and syncs automatically."
-            ]
-        }
-    ],
-    "examples": [
-        {
-            "title": "Question example",
-            "body": "If net salary looks too high or too low, first check gross salary, tax percentages and worked days."
-        },
-        {
-            "title": "Usage example",
-            "body": "For a new month, select the correct month, mark shifts and check Live Calculation."
-        }
-    ],
-    "faq": [
-        {
-            "q": "Why is the result different from my payslip?",
-            "a": "Because deductions, bonuses, withholdings or internal rules may not be entered in the calculator."
-        },
-        {
-            "q": "Is my data saved?",
-            "a": "For signed-in users, settings can be synced to the account."
-        },
-        {
-            "q": "Can I delete my account?",
-            "a": "Yes, there is a dedicated account deletion page."
-        }
-    ],
-    "disclaimer": "The FAQ is informational and does not replace official checks.",
-    "relatedTitle": "Useful articles",
-    "backHome": "Back to calculator",
-    "adLabel": "Ad space / AdSense"
-},
-};
-
-export default function Page() {
-  const lang = usePageLang();
-  const t = COPY[lang];
-
-  return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_20%_0%,rgba(34,211,238,0.12),transparent_28%),linear-gradient(180deg,#061122_0%,#07192f_45%,#04101f_100%)] px-4 py-10 text-white">
-      <article className="mx-auto max-w-5xl">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs font-bold uppercase tracking-[0.32em] text-cyan-200/65">{t.label}</p>
-          <Link href="/" className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-bold text-white/80 transition hover:bg-white/[0.08]">
-            {t.backHome}
-          </Link>
-        </div>
-
-        <header className="rounded-[32px] border border-white/10 bg-[#071326]/82 p-6 shadow-[0_0_60px_rgba(0,80,255,0.08)] md:p-8">
-          <h1 className="text-4xl font-black tracking-tight md:text-5xl">{t.title}</h1>
-          <p className="mt-4 max-w-3xl text-lg leading-8 text-white/72">{t.subtitle}</p>
-        </header>
-
-        <AdSlot label={t.adLabel} />
-
-        <section className="rounded-[30px] border border-white/10 bg-[#071326]/80 p-6 leading-8 text-white/78 md:p-8">
-          {t.intro.map((paragraph) => (
-            <p key={paragraph} className="mb-5 last:mb-0">{paragraph}</p>
-          ))}
-        </section>
-
-        <div className="mt-6 grid gap-5 lg:grid-cols-2">
-          {t.sections.map((section, index) => (
-            <section key={section.title} className="rounded-[28px] border border-white/10 bg-white/[0.035] p-5 leading-7 text-white/75">
-              <div className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-cyan-200/55">
-                {String(index + 1).padStart(2, "0")}
-              </div>
-              <h2 className="text-2xl font-black text-white">{section.title}</h2>
-              <div className="mt-3 space-y-3">
-                {section.body.map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-
-        <AdSlot label={t.adLabel} />
-
-        <section className="mt-6 rounded-[30px] border border-white/10 bg-[#071326]/80 p-6 md:p-8">
-          <h2 className="text-2xl font-black">{lang === "ro" ? "Exemple practice" : "Practical examples"}</h2>
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            {t.examples.map((example) => (
-              <div key={example.title} className="rounded-[22px] border border-cyan-300/12 bg-cyan-300/[0.035] p-4">
-                <h3 className="font-black text-cyan-100">{example.title}</h3>
-                <p className="mt-2 leading-7 text-white/72">{example.body}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-6 rounded-[30px] border border-white/10 bg-white/[0.035] p-6 md:p-8">
-          <h2 className="text-2xl font-black">{lang === "ro" ? "Întrebări rapide" : "Quick questions"}</h2>
-          <div className="mt-5 space-y-3">
-            {t.faq.map((item) => (
-              <details key={item.q} className="rounded-[18px] border border-white/10 bg-[#071326]/75 p-4">
-                <summary className="cursor-pointer font-black text-white">{item.q}</summary>
-                <p className="mt-3 leading-7 text-white/72">{item.a}</p>
-              </details>
-            ))}
-          </div>
-        </section>
-
-        <div className="mt-6 rounded-[24px] border border-amber-300/15 bg-amber-300/[0.055] p-5 leading-7 text-amber-50/78">
-          {t.disclaimer}
-        </div>
-
-        <RelatedLinks title={t.relatedTitle} />
-      </article>
     </main>
   );
 }

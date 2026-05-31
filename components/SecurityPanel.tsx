@@ -1,156 +1,144 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { onAuthStateChanged, User } from "firebase/auth";
+import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase";
-import {
-  forceLogoutOtherSessions,
-  getSecurityStatus,
-  requestImmediateDeviceChange,
-} from "@/lib/security-client";
+import { getSecureHeaders } from "@/lib/secure-api";
+import { getSavedLang, type Lang } from "@/lib/i18n";
 
-function formatDateTime(value: number | null) {
-  if (!value) return "—";
-  return new Date(value).toLocaleString("ro-RO", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+type SecurityStatus = {
+  activeDeviceId?: string;
+  changeAvailableAt?: number;
+  sessionValid?: boolean;
+};
+
+const copy = {
+  ro: {
+    label: "SECURITY",
+    title: "Control acces web",
+    text: "Contul tău poate avea un singur browser/dispozitiv web activ. De aici poți verifica statusul, poți invalida alte sesiuni și poți permite schimbarea browserului.",
+    active: "DISPOZITIV ACTIV",
+    change: "SCHIMBARE BROWSER",
+    available: "Disponibil acum",
+    valid: "Sesiune validă aici",
+    reload: "Reîncarcă statusul",
+    logout: "Force logout alte browsere",
+    move: "Schimbă dispozitivul acum",
+    login: "Autentifică-te pentru a vedea statusul de securitate.",
+    loading: "Se încarcă...",
+    error: "Nu am putut citi statusul. Încearcă din nou.",
+    done: "Gata.",
+  },
+  en: {
+    label: "SECURITY",
+    title: "Web access control",
+    text: "Your account can have only one active web browser/device. From here you can check the status, invalidate other sessions and allow browser changes.",
+    active: "ACTIVE DEVICE",
+    change: "BROWSER CHANGE",
+    available: "Available now",
+    valid: "Session valid here",
+    reload: "Reload status",
+    logout: "Force logout other browsers",
+    move: "Change device now",
+    login: "Sign in to view the security status.",
+    loading: "Loading...",
+    error: "Could not read the status. Try again.",
+    done: "Done.",
+  },
+} as const;
 
 export default function SecurityPanel() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<Awaited<ReturnType<typeof getSecurityStatus>> | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [lang, setLang] = useState<Lang>("ro");
+  const [status, setStatus] = useState<SecurityStatus | null>(null);
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  async function refreshStatus() {
+  useEffect(() => {
+    const read = () => setLang(getSavedLang());
+    read();
+    window.addEventListener("calculator-salariu-lang-change", read);
+    window.addEventListener("storage", read);
+    return () => {
+      window.removeEventListener("calculator-salariu-lang-change", read);
+      window.removeEventListener("storage", read);
+    };
+  }, []);
+
+  const t = copy[lang];
+
+  async function loadStatus() {
+    const user = auth.currentUser;
+    if (!user) {
+      setMessage(t.login);
+      return;
+    }
+
+    setLoading(true);
+    setMessage(t.loading);
     try {
-      setError(null);
-      const current = await getSecurityStatus();
-      setStatus(current);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Nu am putut încărca statusul de securitate.";
-      setError(msg);
+      const response = await fetch("/api/security/status", { headers: await getSecureHeaders() });
+      if (!response.ok) throw new Error("status failed");
+      const data = await response.json();
+      setStatus(data);
+      setMessage("");
+    } catch (_error) {
+      setMessage(t.error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function postAction(url: string) {
+    const user = auth.currentUser;
+    if (!user) {
+      setMessage(t.login);
+      return;
+    }
+
+    setLoading(true);
+    setMessage(t.loading);
+    try {
+      const response = await fetch(url, { method: "POST", headers: await getSecureHeaders() });
+      if (!response.ok) throw new Error("action failed");
+      setMessage(t.done);
+      await loadStatus();
+    } catch (_error) {
+      setMessage(t.error);
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (!currentUser) {
-        setLoading(false);
-        return;
-      }
-      await refreshStatus();
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const canUnlockNow = useMemo(() => {
-    if (!status?.deviceChangeAvailableAt) return true;
-    return Date.now() >= status.deviceChangeAvailableAt;
-  }, [status]);
-
-  async function handleForceLogout() {
-    try {
-      setBusy(true);
-      setMessage(null);
-      setError(null);
-      await forceLogoutOtherSessions();
-      await refreshStatus();
-      setMessage("Toate celelalte sesiuni web au fost invalidate. Browserul curent a rămas activ.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Nu am putut închide celelalte sesiuni.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleUnlockDeviceChange() {
-    try {
-      setBusy(true);
-      setMessage(null);
-      setError(null);
-      await requestImmediateDeviceChange();
-      await refreshStatus();
-      setMessage("Ai deblocat imediat schimbarea browserului. Te poți autentifica acum pe un alt dispozitiv web.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Nu am putut activa schimbarea browserului.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  if (!user) {
-    return (
-      <main className="app-shell flex min-h-screen items-center justify-center p-6">
-        <section className="auth-card max-w-xl">
-          <div className="text-sm uppercase tracking-[0.22em] text-white/45">Security</div>
-          <h1 className="mt-2 text-4xl font-bold">Control acces web</h1>
-          <p className="mt-3 text-white/70">Trebuie să fii autentificat ca să vezi securitatea sesiunii.</p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/login" className="primary-btn">Mergi la login</Link>
-            <Link href="/" className="secondary-btn">Înapoi la Home</Link>
-          </div>
-        </section>
-      </main>
-    );
-  }
+    const timer = window.setTimeout(loadStatus, 600);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
 
   return (
-    <main className="app-shell flex min-h-screen items-center justify-center p-6">
-      <section className="auth-card max-w-3xl">
-        <div className="text-sm uppercase tracking-[0.22em] text-white/45">Security</div>
-        <h1 className="mt-2 text-4xl font-bold">Control acces web</h1>
-        <p className="mt-3 text-white/70">
-          Contul tău poate avea un singur browser/dispozitiv web activ. De aici poți invalida alte sesiuni și poți permite schimbarea browserului.
-        </p>
+    <main className="min-h-screen bg-[radial-gradient(circle_at_20%_0%,rgba(34,211,238,0.12),transparent_28%),linear-gradient(180deg,#061122_0%,#07192f_45%,#04101f_100%)] px-4 py-10 text-white">
+      <section className="mx-auto max-w-4xl rounded-[32px] border border-white/10 bg-[#071326]/82 p-6 shadow-[0_0_60px_rgba(0,80,255,0.08)] md:p-8">
+        <p className="text-xs font-bold uppercase tracking-[0.32em] text-cyan-200/65">{t.label}</p>
+        <h1 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">{t.title}</h1>
+        <p className="mt-4 max-w-3xl text-lg leading-8 text-white/72">{t.text}</p>
 
         <div className="mt-8 grid gap-4 md:grid-cols-2">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-            <div className="text-xs uppercase tracking-[0.2em] text-white/45">Dispozitiv activ</div>
-            <div className="mt-3 text-lg font-semibold text-white">{status?.activeDeviceLabel || "—"}</div>
-            <div className="mt-2 text-sm text-white/65">ID activ: {status?.activeDeviceId || "—"}</div>
-            <div className="mt-2 text-sm text-white/65">Sesiune validă aici: {status?.valid ? "Da" : "Nu"}</div>
+          <div className="rounded-[24px] border border-white/10 bg-white/[0.035] p-5">
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-200/55">{t.active}</div>
+            <div className="mt-3 break-all text-sm text-white/70">{status?.activeDeviceId || "—"}</div>
+            <div className="mt-3 text-sm font-bold text-emerald-200">{status?.sessionValid ? t.valid : "—"}</div>
           </div>
-
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-            <div className="text-xs uppercase tracking-[0.2em] text-white/45">Schimbare browser</div>
-            <div className="mt-3 text-lg font-semibold text-white">
-              {canUnlockNow ? "Disponibil acum" : "Blocat până la"}
-            </div>
-            <div className="mt-2 text-sm text-white/65">
-              {canUnlockNow ? "Poți muta contul imediat." : formatDateTime(status?.deviceChangeAvailableAt ?? null)}
-            </div>
-            <div className="mt-2 text-sm text-white/65">
-              Poți și debloca manual mutarea din browserul curent.
-            </div>
+          <div className="rounded-[24px] border border-white/10 bg-white/[0.035] p-5">
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-200/55">{t.change}</div>
+            <div className="mt-3 text-sm text-white/70">{status?.changeAvailableAt ? new Date(status.changeAvailableAt).toLocaleString() : t.available}</div>
           </div>
         </div>
 
-        {error && <div className="mt-6 rounded-xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm text-red-100">{error}</div>}
-        {message && <div className="mt-6 rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">{message}</div>}
+        {message && <p className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm font-bold text-white/78">{message}</p>}
 
-        <div className="mt-8 flex flex-wrap gap-3">
-          <button className="primary-btn" onClick={handleForceLogout} disabled={busy || loading}>
-            {busy ? "Se procesează..." : "Force logout alte browsere"}
-          </button>
-          <button className="secondary-btn" onClick={handleUnlockDeviceChange} disabled={busy || loading}>
-            {busy ? "Se procesează..." : "Schimbă dispozitivul acum"}
-          </button>
-          <button className="secondary-btn" onClick={() => refreshStatus()} disabled={busy}>
-            Reîncarcă statusul
-          </button>
-          <Link href="/" className="secondary-btn">Înapoi la Home</Link>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button disabled={loading} onClick={loadStatus} className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-3 text-sm font-black text-white/85 transition hover:bg-white/[0.10] disabled:opacity-60">{t.reload}</button>
+          <button disabled={loading} onClick={() => postAction("/api/security/force-logout")} className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-5 py-3 text-sm font-black text-cyan-100 transition hover:bg-cyan-300/15 disabled:opacity-60">{t.logout}</button>
+          <button disabled={loading} onClick={() => postAction("/api/security/request-device-change")} className="rounded-full border border-amber-300/20 bg-amber-300/10 px-5 py-3 text-sm font-black text-amber-100 transition hover:bg-amber-300/15 disabled:opacity-60">{t.move}</button>
         </div>
       </section>
     </main>

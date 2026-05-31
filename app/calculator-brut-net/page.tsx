@@ -1,39 +1,19 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type Lang = "ro" | "en";
 
-type Section = { title: string; body: string[] };
-type PageCopy = {
-  label: string;
-  title: string;
-  subtitle: string;
-  intro: string[];
-  sections: Section[];
-  examples: { title: string; body: string }[];
-  faq: { q: string; a: string }[];
-  disclaimer: string;
-  relatedTitle: string;
-  backHome: string;
-  adLabel: string;
-};
-
 function usePageLang() {
   const [lang, setLang] = useState<Lang>("ro");
-
   useEffect(() => {
     const readLang = () => {
       const saved =
         localStorage.getItem("calculator-salariu-lang") ||
-        localStorage.getItem("salary-lang-v1") ||
         localStorage.getItem("lang") ||
         localStorage.getItem("language");
-
       if (saved === "en" || saved === "ro") setLang(saved);
     };
-
     readLang();
     window.addEventListener("storage", readLang);
     window.addEventListener("calculator-salariu-lang-change", readLang);
@@ -42,299 +22,91 @@ function usePageLang() {
       window.removeEventListener("calculator-salariu-lang-change", readLang);
     };
   }, []);
-
   return lang;
 }
 
-function AdSlot({ label: _label }: { label: string }) {
-  const client = process.env.NEXT_PUBLIC_ADSENSE_CLIENT;
-  const slot =
-    process.env.NEXT_PUBLIC_ADSENSE_CONTENT_SLOT ||
-    process.env.NEXT_PUBLIC_ADSENSE_BANNER_SLOT;
-
-  useEffect(() => {
-    if (!client || !slot || client.includes("XXXX")) return;
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
-    } catch (_e) {}
-  }, [client, slot]);
-
-  if (!client || !slot || client.includes("XXXX")) return null;
-
-  return (
-    <div className="my-8" data-ad-slot="manual-content-ad">
-      <ins
-        className="adsbygoogle"
-        style={{ display: "block", textAlign: "center" }}
-        data-ad-layout="in-article"
-        data-ad-format="fluid"
-        data-ad-client={client}
-        data-ad-slot={slot}
-      />
-    </div>
-  );
-}
-
-function RelatedLinks({ title }: { title: string }) {
-  const lang = usePageLang();
-
-  const items = [
-    {
-      href: "/calculator-salariu-2026",
-      label: lang === "ro" ? "Ghid salariu 2026" : "Salary guide 2026",
-    },
-    {
-      href: "/calculator-brut-net",
-      label: lang === "ro" ? "Brut / net" : "Gross / net",
-    },
-    {
-      href: "/spor-de-noapte",
-      label: lang === "ro" ? "Sporuri" : "Bonuses",
-    },
-    {
-      href: "/bonuri-de-masa",
-      label: lang === "ro" ? "Bonuri de masă" : "Meal Vouchers",
-    },
-    {
-      href: "/concediu-medical",
-      label: lang === "ro" ? "Concediu medical" : "Medical leave",
-    },
-    {
-      href: "/faq",
-      label: lang === "ro" ? "FAQ salarii" : "Salary FAQ",
-    },
-  ];
-
-  return (
-    <section className="mt-8 rounded-[28px] border border-white/10 bg-white/[0.035] p-5">
-      <h2 className="text-xl font-black text-white">{title}</h2>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="rounded-2xl border border-white/10 bg-[#071326]/80 px-4 py-3 text-sm font-bold text-white/82 transition hover:border-cyan-300/30 hover:bg-cyan-400/10 hover:text-white"
-          >
-            {item.label}
-          </Link>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-const COPY: Record<Lang, PageCopy> = {
-  ro: {
-    "label": "Brut / net",
-    "title": "Diferența dintre salariul brut și net",
-    "subtitle": "Explicație clară despre salariul brut, contribuții, impozit și venitul final estimat.",
-    "intro": [
-        "Salariul brut este suma de referință folosită înainte de contribuții și impozit. Salariul net este suma estimată care rămâne după aplicarea procentelor configurate în calculator.",
-        "În practică, venitul lunar poate include și bonuri de masă, sporuri de noapte, weekend, sărbători sau ore suplimentare. De aceea, totalul afișat în aplicație poate fi mai mare decât netul simplu."
-    ],
-    "sections": [
-        {
-            "title": "Salariul brut",
-            "body": [
-                "Brutul este baza de calcul. Din el se scad contribuțiile și impozitul, conform setărilor introduse în pagina Reguli.",
-                "Dacă brutul introdus nu corespunde contractului tău, rezultatul estimat va fi diferit."
-            ]
-        },
-        {
-            "title": "Salariul net",
-            "body": [
-                "Netul este suma rămasă după taxe. În calculator, netul se actualizează când modifici salariul brut, procentele fiscale sau turele care adaugă sporuri.",
-                "Netul nu include întotdeauna bonurile de masă, de aceea aplicația le afișează separat."
-            ]
-        },
-        {
-            "title": "Bonuri și sporuri",
-            "body": [
-                "Bonurile de masă sunt adăugate separat la totalul estimat, în funcție de zilele lucrate.",
-                "Sporurile pot crește venitul brut estimat înainte de taxare sau pot fi tratate diferit în funcție de regulile angajatorului."
-            ]
-        },
-        {
-            "title": "Când verifici diferențele",
-            "body": [
-                "Dacă suma din aplicație diferă de fluturaș, verifică brutul, zilele lucrate, procentele de spor și situațiile speciale din luna respectivă.",
-                "Diferențele pot apărea și din prime, deduceri, rețineri sau modificări interne."
-            ]
-        }
-    ],
-    "examples": [
-        {
-            "title": "Exemplu brut/net",
-            "body": "Dacă brutul crește, netul estimat crește proporțional, dar nu identic, pentru că se aplică taxe și contribuții."
-        },
-        {
-            "title": "Exemplu total lunar",
-            "body": "Dacă ai 20 de zile lucrate și bonuri de masă, totalul estimat include netul plus valoarea bonurilor."
-        }
-    ],
-    "faq": [
-        {
-            "q": "Netul include bonurile?",
-            "a": "În aplicație, bonurile sunt afișate separat și apoi adăugate la totalul estimat."
-        },
-        {
-            "q": "Pot schimba taxele?",
-            "a": "Da, valorile CAS, CASS și impozit se pot ajusta în Reguli."
-        },
-        {
-            "q": "De ce totalul diferă de net?",
-            "a": "Pentru că totalul poate include bonuri și sporuri."
-        }
-    ],
-    "disclaimer": "Calculul este orientativ și trebuie comparat cu documentele oficiale.",
-    "relatedTitle": "Articole utile",
-    "backHome": "Înapoi la calculator",
-    "adLabel": "Spațiu publicitar / AdSense"
-},
-  en: {
-    "label": "Gross / net",
-    "title": "Gross salary vs net salary",
-    "subtitle": "Clear explanation of gross salary, contributions, tax and estimated final income.",
-    "intro": [
-        "Gross salary is the reference amount before contributions and tax. Net salary is the estimated amount remaining after applying the configured percentages.",
-        "Monthly income may also include meal vouchers, night, weekend, holiday or overtime bonuses. That is why the app total can be higher than simple net salary."
-    ],
-    "sections": [
-        {
-            "title": "Gross salary",
-            "body": [
-                "Gross salary is the calculation base. Contributions and tax are subtracted from it according to Rules settings.",
-                "If the entered gross amount does not match your contract, the estimate will differ."
-            ]
-        },
-        {
-            "title": "Net salary",
-            "body": [
-                "Net salary updates when you change gross salary, tax settings or shift bonuses.",
-                "Meal vouchers are displayed separately because they are not always part of the salary net line."
-            ]
-        },
-        {
-            "title": "Vouchers and bonuses",
-            "body": [
-                "Meal vouchers are added separately based on worked days.",
-                "Bonuses may increase the estimate depending on employer rules."
-            ]
-        },
-        {
-            "title": "Checking differences",
-            "body": [
-                "If the app differs from the payslip, check gross salary, worked days, bonus percentages and special situations.",
-                "Differences can also come from bonuses, deductions or internal changes."
-            ]
-        }
-    ],
-    "examples": [
-        {
-            "title": "Gross/net example",
-            "body": "If gross salary increases, net salary also increases, but not by the exact same amount because taxes apply."
-        },
-        {
-            "title": "Monthly total example",
-            "body": "With 20 worked days and meal vouchers, the final total includes net salary plus vouchers."
-        }
-    ],
-    "faq": [
-        {
-            "q": "Does net include vouchers?",
-            "a": "The app shows vouchers separately and adds them to estimated total."
-        },
-        {
-            "q": "Can I change taxes?",
-            "a": "Yes, CAS, CASS and tax values can be adjusted in Rules."
-        },
-        {
-            "q": "Why is total different from net?",
-            "a": "Because total may include vouchers and bonuses."
-        }
-    ],
-    "disclaimer": "The calculation is informational and should be compared with official documents.",
-    "relatedTitle": "Useful articles",
-    "backHome": "Back to calculator",
-    "adLabel": "Ad space / AdSense"
-},
-};
-
 export default function Page() {
   const lang = usePageLang();
-  const t = COPY[lang];
+
+  const t = {
+    ro: {
+      label: "Ghid salarizare România",
+      title: "Calculator brut-net 2026",
+      subtitle:
+        "Explicație detaliată despre diferența dintre salariul brut și net, cu formula de calcul și exemple concrete pentru 2026.",
+      sections: [
+        {
+          title: "Formula de calcul brut → net",
+          body: "Calculul se face în trei pași: (1) CAS = brut × 25%; (2) CASS = brut × 10%; (3) Bază impozabilă = brut − CAS − CASS; (4) Impozit = bază impozabilă × 10%; (5) Net = brut − CAS − CASS − impozit. Dacă ai deducere personală, aceasta se scade din baza impozabilă înainte de aplicarea impozitului.",
+        },
+        {
+          title: "Exemplu concret: brut 4.050 lei (salariu minim)",
+          body: "CAS = 4.050 × 25% = 1.012,5 lei. CASS = 4.050 × 10% = 405 lei. Bază impozabilă = 4.050 − 1.012,5 − 405 = 2.632,5 lei. Impozit = 2.632,5 × 10% = 263,25 lei. Net estimat = 4.050 − 1.012,5 − 405 − 263,25 = 2.369 lei. La care se adaugă bonurile de masă pentru zilele lucrate.",
+        },
+        {
+          title: "Exemplu concret: brut 7.000 lei",
+          body: "CAS = 1.750 lei. CASS = 700 lei. Bază impozabilă = 4.550 lei. Impozit = 455 lei. Net estimat = 4.095 lei. Dacă ai 21 de zile lucrate și bon de 35 lei/zi, adaugi 735 lei din bonuri, ajungând la un total lunar estimat de aproximativ 4.830 lei în mână.",
+        },
+        {
+          title: "Exemplu concret: brut 13.000 lei",
+          body: "CAS = 3.250 lei. CASS = 1.300 lei. Bază impozabilă = 8.450 lei. Impozit = 845 lei. Net estimat = 7.605 lei. Angajații cu salarii mari nu mai beneficiază de deducere personală, care se reduce progresiv de la salariile de peste 2 ori salariul minim.",
+        },
+        {
+          title: "Bonurile de masă și impozitarea lor",
+          body: "Bonurile de masă sunt acordate netaxat până la o valoare maximă stabilită prin lege și actualizată periodic. Ele nu intră în calculul CAS, CASS sau impozit pe venit. Se adaugă separat la totalul lunar. Valoarea lor depinde de numărul de zile efectiv lucrate, nu de zilele din lună.",
+        },
+        {
+          title: "Diferența față de total angajator",
+          body: "Pe lângă contribuțiile reținute din salariu (CAS 25% + CASS 10% + impozit 10%), angajatorul plătește și el contribuții proprii. Costul total al unui angajat pentru firmă este mai mare decât salariul brut. Acesta este motivul pentru care negocierea salariului se face întotdeauna pe brut.",
+        },
+      ],
+    },
+    en: {
+      label: "Romanian salary guide",
+      title: "Gross-to-net calculator 2026",
+      subtitle:
+        "Detailed explanation of the difference between gross and net salary, with the calculation formula and concrete examples for 2026.",
+      sections: [
+        {
+          title: "Gross → net calculation formula",
+          body: "The calculation is done in steps: (1) CAS = gross × 25%; (2) CASS = gross × 10%; (3) Taxable base = gross − CAS − CASS; (4) Income tax = taxable base × 10%; (5) Net = gross − CAS − CASS − income tax. If you have a personal deduction, it is subtracted from the taxable base before applying the tax.",
+        },
+        {
+          title: "Concrete example: gross 4,050 RON (minimum wage)",
+          body: "CAS = 4,050 × 25% = 1,012.5 RON. CASS = 4,050 × 10% = 405 RON. Taxable base = 4,050 − 1,012.5 − 405 = 2,632.5 RON. Income tax = 2,632.5 × 10% = 263.25 RON. Estimated net = 4,050 − 1,012.5 − 405 − 263.25 = 2,369 RON. Meal vouchers for worked days are added on top.",
+        },
+        {
+          title: "Concrete example: gross 7,000 RON",
+          body: "CAS = 1,750 RON. CASS = 700 RON. Taxable base = 4,550 RON. Income tax = 455 RON. Estimated net = 4,095 RON. If you have 21 worked days and a 35 RON/day voucher, you add 735 RON from vouchers, reaching an estimated monthly total of approximately 4,830 RON in hand.",
+        },
+        {
+          title: "Concrete example: gross 13,000 RON",
+          body: "CAS = 3,250 RON. CASS = 1,300 RON. Taxable base = 8,450 RON. Income tax = 845 RON. Estimated net = 7,605 RON. Employees with higher salaries no longer benefit from the personal deduction, which reduces progressively for salaries above twice the minimum wage.",
+        },
+        {
+          title: "Meal vouchers and their taxation",
+          body: "Meal vouchers are granted tax-free up to a maximum value set by law and updated periodically. They are not included in the CAS, CASS or income tax calculation. They are added separately to the monthly total. Their value depends on the number of days actually worked, not the days in the month.",
+        },
+        {
+          title: "Difference from total employer cost",
+          body: "In addition to contributions withheld from salary (CAS 25% + CASS 10% + income tax 10%), the employer also pays their own contributions. The total cost of an employee to the company is higher than the gross salary. This is why salary negotiations always take place on the gross amount.",
+        },
+      ],
+    },
+  }[lang];
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_20%_0%,rgba(34,211,238,0.12),transparent_28%),linear-gradient(180deg,#061122_0%,#07192f_45%,#04101f_100%)] px-4 py-10 text-white">
-      <article className="mx-auto max-w-5xl">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs font-bold uppercase tracking-[0.32em] text-cyan-200/65">{t.label}</p>
-          <Link href="/" className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-bold text-white/80 transition hover:bg-white/[0.08]">
-            {t.backHome}
-          </Link>
-        </div>
-
-        <header className="rounded-[32px] border border-white/10 bg-[#071326]/82 p-6 shadow-[0_0_60px_rgba(0,80,255,0.08)] md:p-8">
-          <h1 className="text-4xl font-black tracking-tight md:text-5xl">{t.title}</h1>
-          <p className="mt-4 max-w-3xl text-lg leading-8 text-white/72">{t.subtitle}</p>
-        </header>
-
-        <AdSlot label={t.adLabel} />
-
-        <section className="rounded-[30px] border border-white/10 bg-[#071326]/80 p-6 leading-8 text-white/78 md:p-8">
-          {t.intro.map((paragraph) => (
-            <p key={paragraph} className="mb-5 last:mb-0">{paragraph}</p>
-          ))}
-        </section>
-
-        <div className="mt-6 grid gap-5 lg:grid-cols-2">
-          {t.sections.map((section, index) => (
-            <section key={section.title} className="rounded-[28px] border border-white/10 bg-white/[0.035] p-5 leading-7 text-white/75">
-              <div className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-cyan-200/55">
-                {String(index + 1).padStart(2, "0")}
-              </div>
-              <h2 className="text-2xl font-black text-white">{section.title}</h2>
-              <div className="mt-3 space-y-3">
-                {section.body.map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-
-        <AdSlot label={t.adLabel} />
-
-        <section className="mt-6 rounded-[30px] border border-white/10 bg-[#071326]/80 p-6 md:p-8">
-          <h2 className="text-2xl font-black">{lang === "ro" ? "Exemple practice" : "Practical examples"}</h2>
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            {t.examples.map((example) => (
-              <div key={example.title} className="rounded-[22px] border border-cyan-300/12 bg-cyan-300/[0.035] p-4">
-                <h3 className="font-black text-cyan-100">{example.title}</h3>
-                <p className="mt-2 leading-7 text-white/72">{example.body}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-6 rounded-[30px] border border-white/10 bg-white/[0.035] p-6 md:p-8">
-          <h2 className="text-2xl font-black">{lang === "ro" ? "Întrebări rapide" : "Quick questions"}</h2>
-          <div className="mt-5 space-y-3">
-            {t.faq.map((item) => (
-              <details key={item.q} className="rounded-[18px] border border-white/10 bg-[#071326]/75 p-4">
-                <summary className="cursor-pointer font-black text-white">{item.q}</summary>
-                <p className="mt-3 leading-7 text-white/72">{item.a}</p>
-              </details>
-            ))}
-          </div>
-        </section>
-
-        <div className="mt-6 rounded-[24px] border border-amber-300/15 bg-amber-300/[0.055] p-5 leading-7 text-amber-50/78">
-          {t.disclaimer}
-        </div>
-
-        <RelatedLinks title={t.relatedTitle} />
+    <main className="mx-auto max-w-4xl px-4 py-10 text-slate-100">
+      <p className="mb-3 text-xs uppercase tracking-[0.35em] text-blue-300">{t.label}</p>
+      <h1 className="mb-4 text-4xl font-bold">{t.title}</h1>
+      <p className="mb-8 text-lg leading-8 text-slate-300">{t.subtitle}</p>
+      <article className="space-y-6 rounded-3xl border border-slate-700 bg-slate-900/60 p-6 leading-8 text-slate-200">
+        {t.sections.map((section) => (
+          <section key={section.title}>
+            <h2 className="mb-2 text-2xl font-semibold">{section.title}</h2>
+            <p>{section.body}</p>
+          </section>
+        ))}
       </article>
     </main>
   );

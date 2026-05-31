@@ -68,24 +68,28 @@ export default function RootLayout({
             style={{
               maxWidth: 1120,
               margin: "0 auto",
-              padding: "14px 16px",
+              padding: "12px 16px",
               display: "flex",
-              flexWrap: "wrap",
-              gap: 12,
               alignItems: "center",
               justifyContent: "center",
               color: "rgba(255,255,255,0.82)",
               fontSize: 14,
-              fontWeight: 700,
+              fontWeight: 800,
             }}
           >
-            <a href="/" style={{ color: "white", textDecoration: "none" }}>Calculator</a>
-            <a href="/calculator-salariu-2026" style={{ color: "inherit", textDecoration: "none" }}>Ghid salariu 2026</a>
-            <a href="/calculator-brut-net" style={{ color: "inherit", textDecoration: "none" }}>Brut / net</a>
-            <a href="/spor-de-noapte" style={{ color: "inherit", textDecoration: "none" }}>Spor noapte</a>
-            <a href="/concediu-medical" style={{ color: "inherit", textDecoration: "none" }}>Concediu medical</a>
-            <a href="/sarbatori-legale-2026" style={{ color: "inherit", textDecoration: "none" }}>Sărbători legale</a>
-            <a href="/contact" style={{ color: "inherit", textDecoration: "none" }}>Contact</a>
+            <a
+              href="/"
+              style={{
+                color: "white",
+                textDecoration: "none",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 999,
+                padding: "8px 16px",
+                background: "rgba(255,255,255,0.04)",
+              }}
+            >
+              Calculator / Home
+            </a>
           </nav>
         </header>
 
