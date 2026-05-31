@@ -6,29 +6,22 @@ type Lang = "ro" | "en";
 
 function usePageLang() {
   const [lang, setLang] = useState<Lang>("ro");
-
   useEffect(() => {
     const readLang = () => {
       const saved =
         localStorage.getItem("calculator-salariu-lang") ||
         localStorage.getItem("lang") ||
         localStorage.getItem("language");
-
-      if (saved === "en" || saved === "ro") {
-        setLang(saved);
-      }
+      if (saved === "en" || saved === "ro") setLang(saved);
     };
-
     readLang();
     window.addEventListener("storage", readLang);
     window.addEventListener("calculator-salariu-lang-change", readLang);
-
     return () => {
       window.removeEventListener("storage", readLang);
       window.removeEventListener("calculator-salariu-lang-change", readLang);
     };
   }, []);
-
   return lang;
 }
 
@@ -38,35 +31,91 @@ export default function FAQPage() {
   const t = {
     ro: {
       title: "Întrebări frecvente",
+      subtitle: "Răspunsuri detaliate la cele mai comune întrebări despre calculul salariului net în România.",
       items: [
-        ["Calculatorul oferă valori exacte?", "Rezultatele sunt estimative și pot varia în funcție de contract, sporuri sau taxe."],
-        ["Cum se calculează sporul de noapte?", "Sporul de noapte se calculează în funcție de orele lucrate în intervalul legal și procentul stabilit de angajator."],
-        ["Pot calcula ture de weekend și sărbători?", "Da. Platforma permite estimarea turelor de weekend și a sărbătorilor legale."],
-        ["Datele mele sunt stocate?", "Datele pot fi stocate local sau în contul utilizatorului pentru sincronizare și istoric."],
-        ["Cum îmi pot șterge contul?", "Există o pagină dedicată pentru ștergerea automată a contului și a datelor asociate."],
+        [
+          "Ce procente se aplică în 2026 pentru CAS, CASS și impozit?",
+          "În 2026, contribuțiile standard sunt: CAS (pensie) = 25% din salariul brut, CASS (sănătate) = 10% din salariul brut, impozit pe venit = 10% din baza impozabilă (brut minus CAS minus CASS, minus deducere personală dacă e cazul). Totalul reținut poate ajunge la aproximativ 41–42% din brut pentru un angajat fără deducere personală.",
+        ],
+        [
+          "Care este salariul minim net în România în 2026?",
+          "Salariul minim brut în 2026 este de 4.050 lei. Salariul minim net estimat este de aproximativ 2.363–2.370 lei, după deducerea CAS (1.012,5 lei), CASS (405 lei) și impozit (~270 lei). La acesta se pot adăuga bonuri de masă pentru zilele lucrate.",
+        ],
+        [
+          "Calculatorul oferă valori exacte identice cu fluturașul?",
+          "Nu. Calculatorul oferă estimări orientative. Fluturașul real poate diferi din cauza deducerilor personale (variabile pe copii în întreținere), regularizărilor de impozit, concediilor medicale plătite parțial din CNAS, primelor, reținerilor executorești sau altor elemente specifice angajatorului tău.",
+        ],
+        [
+          "Cum se calculează sporul de noapte conform legii?",
+          "Conform art. 123 din Codul Muncii, angajații care lucrează minimum 3 ore noaptea (22:00–06:00) au dreptul la un spor de minimum 25% din salariul de bază. Formula: (Salariu brut ÷ ore lunare) × ore noapte × procent spor. Exemplu: 6.000 lei ÷ 168 ore × 80 ore noapte × 25% = 714 lei spor brut.",
+        ],
+        [
+          "Bonurile de masă sunt impozabile?",
+          "Nu, bonurile de masă acordate în limita valorii legale maxime (actualizată periodic) sunt scutite de CAS, CASS și impozit pe venit. Aceasta le face net mai avantajoase decât un salariu echivalent. Un bon de 40 lei ajunge integral la angajat, pe când un supliment salarial brut de 40 lei devine net doar ~23 lei.",
+        ],
+        [
+          "Cum funcționează concediul medical pentru angajat?",
+          "Primele 5 zile de concediu medical sunt plătite de angajator. Din ziua a 6-a, CNAS suportă indemnizația. Valoarea indemnizației = media zilnică din ultimele 6 luni × număr zile × procent (75% pentru boli obișnuite, 80% dacă ai peste 8 ani vechime, 100% pentru afecțiuni grave). Nu se acordă bonuri de masă pe zilele de concediu medical.",
+        ],
+        [
+          "Dacă lucrez în zi de sărbătoare legală, ce drepturi am?",
+          "Angajatorul trebuie fie să îți acorde zile libere compensatorii în 30 de zile, fie să plătească un spor de 100% din salariul de bază pentru orele lucrate. Dacă tura de noapte coincide cu o sărbătoare, sporurile se pot cumula. Verifică contractul colectiv de muncă pentru detalii specifice angajatorului tău.",
+        ],
+        [
+          "Cum pot verifica dacă calculul meu este corect?",
+          "Compară estimarea calculatorului cu fluturașul de salariu real și cu contractul individual de muncă. Verifică dacă procentele de CAS, CASS și impozit introduse în Reguli corespund celor reținute. Dacă există diferențe mari, consultați departamentul de resurse umane sau un contabil.",
+        ],
       ],
     },
     en: {
       title: "Frequently Asked Questions",
+      subtitle: "Detailed answers to the most common questions about net salary calculation in Romania.",
       items: [
-        ["Does the calculator provide exact values?", "Results are estimates and may vary depending on contract, bonuses or taxes."],
-        ["How is the night bonus calculated?", "The night bonus is calculated based on worked hours in the applicable interval and the percentage set by the employer."],
-        ["Can I calculate weekend and holiday shifts?", "Yes. The platform supports estimates for weekend shifts and legal holidays."],
-        ["Is my data stored?", "Data may be stored locally or in the user account for synchronization and history."],
-        ["How can I delete my account?", "There is a dedicated page for automatic deletion of the account and associated data."],
+        [
+          "What percentages apply in 2026 for CAS, CASS and income tax?",
+          "In 2026, the standard contributions are: CAS (pension) = 25% of gross salary, CASS (health) = 10% of gross salary, income tax = 10% of taxable base (gross minus CAS minus CASS, minus personal deduction if applicable). The total withheld can reach approximately 41–42% of gross for an employee without a personal deduction.",
+        ],
+        [
+          "What is the minimum net salary in Romania in 2026?",
+          "The minimum gross salary in 2026 is 4,050 RON. The estimated minimum net salary is approximately 2,363–2,370 RON, after deducting CAS (1,012.5 RON), CASS (405 RON) and income tax (~270 RON). Meal vouchers for worked days may be added on top.",
+        ],
+        [
+          "Does the calculator provide exact values identical to the payslip?",
+          "No. The calculator provides indicative estimates. The actual payslip may differ due to personal deductions (variable for dependents), tax regularizations, medical leave partially paid by CNAS, bonuses, enforcement deductions or other elements specific to your employer.",
+        ],
+        [
+          "How is the night shift bonus calculated according to law?",
+          "According to art. 123 of the Labour Code, employees working at least 3 hours at night (22:00–06:00) are entitled to a bonus of at least 25% of base salary. Formula: (Gross salary ÷ monthly hours) × night hours × bonus percentage. Example: 6,000 RON ÷ 168 hours × 80 night hours × 25% = 714 RON gross bonus.",
+        ],
+        [
+          "Are meal vouchers taxable?",
+          "No, meal vouchers granted within the legal maximum value (updated periodically) are exempt from CAS, CASS and income tax. This makes them net more advantageous than an equivalent salary. A 40 RON voucher reaches the employee in full, whereas a 40 RON gross salary supplement becomes only ~23 RON net.",
+        ],
+        [
+          "How does medical leave work for an employee?",
+          "The first 5 days of medical leave are paid by the employer. From day 6 onwards, CNAS covers the allowance. The allowance value = daily average from the last 6 months × number of days × percentage (75% for ordinary illnesses, 80% if over 8 years of service, 100% for serious conditions). No meal vouchers are granted for medical leave days.",
+        ],
+        [
+          "If I work on a public holiday, what rights do I have?",
+          "The employer must either grant you compensatory days off within 30 days, or pay a bonus of 100% of base salary for hours worked. If a night shift coincides with a public holiday, bonuses may be combined. Check the collective labour agreement for details specific to your employer.",
+        ],
+        [
+          "How can I verify if my calculation is correct?",
+          "Compare the calculator's estimate with your actual payslip and individual employment contract. Check that the CAS, CASS and income tax percentages entered in Rules match those withheld. If there are large discrepancies, consult your HR department or an accountant.",
+        ],
       ],
     },
   }[lang];
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-10 text-gray-200">
-      <h1 className="text-4xl font-bold mb-8">{t.title}</h1>
-
+      <h1 className="text-4xl font-bold mb-4">{t.title}</h1>
+      <p className="text-lg text-slate-300 mb-8 leading-8">{t.subtitle}</p>
       <div className="space-y-6">
         {t.items.map(([question, answer]) => (
           <div key={question} className="border border-gray-700 rounded-xl p-5">
             <h2 className="text-xl font-semibold mb-2">{question}</h2>
-            <p className="text-gray-300">{answer}</p>
+            <p className="text-gray-300 leading-7">{answer}</p>
           </div>
         ))}
       </div>

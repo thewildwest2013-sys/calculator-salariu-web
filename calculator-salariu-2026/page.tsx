@@ -6,29 +6,22 @@ type Lang = "ro" | "en";
 
 function usePageLang() {
   const [lang, setLang] = useState<Lang>("ro");
-
   useEffect(() => {
     const readLang = () => {
       const saved =
         localStorage.getItem("calculator-salariu-lang") ||
         localStorage.getItem("lang") ||
         localStorage.getItem("language");
-
-      if (saved === "en" || saved === "ro") {
-        setLang(saved);
-      }
+      if (saved === "en" || saved === "ro") setLang(saved);
     };
-
     readLang();
     window.addEventListener("storage", readLang);
     window.addEventListener("calculator-salariu-lang-change", readLang);
-
     return () => {
       window.removeEventListener("storage", readLang);
       window.removeEventListener("calculator-salariu-lang-change", readLang);
     };
   }, []);
-
   return lang;
 }
 
@@ -38,41 +31,67 @@ export default function Page() {
   const t = {
     ro: {
       label: "Ghid salarizare România",
-      title: 'Ghid salariu 2026',
-      subtitle: 'Ghid informativ pentru estimarea salariului net, a sporurilor și a veniturilor lunare în România.',
+      title: "Ghid salariu 2026",
+      subtitle:
+        "Tot ce trebuie să știi despre calculul salariului net, contribuțiile obligatorii, sporuri și venitul lunar în România în 2026.",
       sections: [
-    {
-      title: 'Cum folosești calculatorul',
-      body: 'Configurează salariul brut, sporurile și bonurile în pagina Reguli, apoi completează calendarul lunar cu turele lucrate.',
-    },
-    {
-      title: 'De ce rezultatul este estimativ',
-      body: 'Calculul poate varia în funcție de contract, regulament intern, zile libere, concedii și modificări legislative.',
-    },
-    {
-      title: 'Ce poți verifica',
-      body: 'Poți urmări salariul net estimat, bonurile de masă, sporurile de noapte, weekend, sărbătoare și ore suplimentare.',
-    }
-  ],
+        {
+          title: "Contribuțiile obligatorii în 2026",
+          body: "În România, din salariul brut se rețin trei contribuții principale: CAS (contribuția la pensie) de 25% din brut, CASS (contribuția la sănătate) de 10% din brut și impozitul pe venit de 10% aplicat la baza impozabilă. De exemplu, pentru un salariu brut de 5.000 lei: CAS = 1.250 lei, CASS = 500 lei, baza impozabilă = 3.250 lei, impozit = 325 lei, salariu net estimat = 2.925 lei.",
+        },
+        {
+          title: "Salariul minim brut 2026",
+          body: "Salariul minim brut garantat în plată în România pentru 2026 este de 4.050 lei. Aceasta înseamnă un salariu net estimat de aproximativ 2.363 lei, după deducerea CAS (1.012,5 lei), CASS (405 lei) și impozit (270 lei aproximativ). Angajații din construcții sau agricultură pot beneficia de regimuri fiscale diferite.",
+        },
+        {
+          title: "Cum folosești calculatorul",
+          body: "Introdu salariul brut în câmpul dedicat din pagina Reguli. Completează procentele de sporuri (noapte, weekend, sărbători) conform contractului tău. Marchează zilele lucrate în calendar selectând tipul turei: Morning, After, Night, Vacation sau Medical. Calculatorul actualizează în timp real netul estimat, bonurile de masă și sporurile.",
+        },
+        {
+          title: "Ce influențează salariul net",
+          body: "Salariul net final depinde de: salariul brut din contract, numărul de zile lucrate, tipul turelor (noapte, weekend, sărbători), bonurile de masă (valoarea maximă neimpozabilă per zi este reglementată anual), concediile medicale (plătite diferit față de zilele lucrate normal), orele suplimentare și eventualele deduceri personale aplicabile.",
+        },
+        {
+          title: "Deducerea personală de bază",
+          body: "Angajații cu venituri mici pot beneficia de deducere personală, care reduce baza de impozitare. Deducerea se acordă în funcție de venitul brut lunar și numărul de persoane în întreținere. Verifică cu angajatorul sau contabilul dacă ești eligibil, deoarece aplicarea ei poate crește salariul net cu câteva sute de lei lunar.",
+        },
+        {
+          title: "De ce estimarea diferă de fluturaș",
+          body: "Calculatorul oferă o estimare orientativă. Fluturașul real poate diferi din cauza: reținerilor executorești, primelor acordate sau reținute, regularizărilor de impozit, zilelor de concediu medical (unde procentul din bază diferă față de zilele lucrate), și regulilor interne ale angajatorului privind cumulul sporurilor.",
+        },
+      ],
     },
     en: {
       label: "Romanian salary guide",
-      title: 'Salary guide 2026',
-      subtitle: 'Informational guide for estimating net salary, bonuses and monthly income in Romania.',
+      title: "Salary guide 2026",
+      subtitle:
+        "Everything you need to know about net salary calculation, mandatory contributions, bonuses and monthly income in Romania in 2026.",
       sections: [
-    {
-      title: 'How to use the calculator',
-      body: 'Set the gross salary, bonuses and meal vouchers in the Rules page, then fill in the monthly calendar with your worked shifts.',
-    },
-    {
-      title: 'Why the result is an estimate',
-      body: 'The calculation may vary depending on the employment contract, internal rules, days off, leave and legal changes.',
-    },
-    {
-      title: 'What you can check',
-      body: 'You can track estimated net salary, meal vouchers, night, weekend, holiday bonuses and overtime.',
-    }
-  ],
+        {
+          title: "Mandatory contributions in 2026",
+          body: "In Romania, three main contributions are deducted from gross salary: CAS (pension contribution) at 25% of gross, CASS (health contribution) at 10% of gross, and income tax at 10% applied to the taxable base. For example, for a 5,000 RON gross salary: CAS = 1,250 RON, CASS = 500 RON, taxable base = 3,250 RON, income tax = 325 RON, estimated net salary = 2,925 RON.",
+        },
+        {
+          title: "Minimum gross wage 2026",
+          body: "The guaranteed minimum gross wage in Romania for 2026 is 4,050 RON. This means an estimated net salary of approximately 2,363 RON, after deducting CAS (1,012.5 RON), CASS (405 RON) and income tax (approximately 270 RON). Employees in construction or agriculture may benefit from different tax regimes.",
+        },
+        {
+          title: "How to use the calculator",
+          body: "Enter the gross salary in the dedicated field on the Rules page. Fill in the bonus percentages (night, weekend, holidays) according to your contract. Mark worked days in the calendar by selecting the shift type: Morning, After, Night, Vacation or Medical. The calculator updates in real time showing estimated net, meal vouchers and bonuses.",
+        },
+        {
+          title: "What affects net salary",
+          body: "The final net salary depends on: gross salary in the contract, number of days worked, shift types (night, weekend, holidays), meal vouchers (maximum non-taxable value per day is regulated annually), medical leave (paid differently from normally worked days), overtime and any applicable personal deductions.",
+        },
+        {
+          title: "Basic personal deduction",
+          body: "Employees with low incomes may benefit from a personal deduction, which reduces the tax base. The deduction is granted based on monthly gross income and number of dependents. Check with your employer or accountant if you are eligible, as applying it can increase net salary by several hundred RON per month.",
+        },
+        {
+          title: "Why the estimate differs from the payslip",
+          body: "The calculator provides an indicative estimate. The actual payslip may differ due to: enforcement deductions, bonuses granted or withheld, tax regularizations, medical leave days (where the base percentage differs from worked days), and the employer's internal rules on combining bonuses.",
+        },
+      ],
     },
   }[lang];
 
@@ -81,7 +100,6 @@ export default function Page() {
       <p className="mb-3 text-xs uppercase tracking-[0.35em] text-blue-300">{t.label}</p>
       <h1 className="mb-4 text-4xl font-bold">{t.title}</h1>
       <p className="mb-8 text-lg leading-8 text-slate-300">{t.subtitle}</p>
-
       <article className="space-y-6 rounded-3xl border border-slate-700 bg-slate-900/60 p-6 leading-8 text-slate-200">
         {t.sections.map((section) => (
           <section key={section.title}>
