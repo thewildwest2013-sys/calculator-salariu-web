@@ -2226,7 +2226,7 @@ function DayModal({
   const maxShiftHours = 8;
   const initialWorkedHours = typeof data?.workedHours === "number" ? data.workedHours : (data?.type && data.type !== "Off" && data.type !== "CO" && data.type !== "CM" ? maxShiftHours : 0);
   const [workedHoursInput, setWorkedHoursInput] = useState<string>(String(initialWorkedHours));
-  const [overtimeHours, setOvertimeHours] = useState<number>(data?.overtimeHours || 0);
+  const [overtimeHoursInput, setOvertimeHoursInput] = useState<string>(String(data?.overtimeHours ?? 0));
   const [note, setNote] = useState<string>(data?.note || "");
   const [otNight, setOtNight] = useState<boolean>(data?.otNight || false);
   const [otWeekend, setOtWeekend] = useState<boolean>(data?.otWeekend || false);
@@ -2320,8 +2320,12 @@ function DayModal({
           <label className="mb-2 block text-sm text-white/75">{t.overtimeHours}</label>
           <input
             type="number"
-            value={overtimeHours}
-            onChange={(e) => setOvertimeHours(Number(e.target.value))}
+            min={0}
+            max={24}
+            step={0.5}
+            inputMode="decimal"
+            value={overtimeHoursInput}
+            onChange={(e) => setOvertimeHoursInput(e.target.value)}
             className="w-full rounded-[18px] border border-white/10 bg-[#041224] px-5 py-4 text-2xl font-semibold outline-none"
           />
         </div>
@@ -2351,7 +2355,7 @@ function DayModal({
                 workedHours: type === "Morning" || type === "After" || type === "Night"
                   ? Math.min(maxShiftHours, Math.max(0, Number(workedHoursInput.replace(',', '.')) || 0))
                   : 0,
-                overtimeHours,
+                overtimeHours: Math.min(24, Math.max(0, Number(overtimeHoursInput.replace(',', '.')) || 0)),
                 note,
                 otNight,
                 otWeekend,
