@@ -1282,6 +1282,7 @@ export default function Home() {
             lang={lang}
             calculation={calculation}
             onCalculate={handleCalculateRequest}
+            onSaveCalculation={saveCalculation}
             usageLoading={usageLoading}
             isOnline={isOnline}
           />
@@ -1896,6 +1897,7 @@ function CalendarSection({
   lang,
   calculation,
   onCalculate,
+  onSaveCalculation,
   usageLoading,
   isOnline,
 }: any) {
@@ -2091,6 +2093,13 @@ function CalendarSection({
             className="mt-4 w-full rounded-[18px] bg-gradient-to-r from-blue-600 to-cyan-500 px-5 py-3 text-sm font-black transition hover:-translate-y-0.5 hover:from-blue-500 hover:to-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {lang === "ro" ? "Vezi detaliile complete" : "View full details"}
+          </button>
+
+          <button
+            onClick={onSaveCalculation}
+            className="mt-3 w-full rounded-[18px] border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-sm font-black text-emerald-300 transition hover:bg-emerald-500/20"
+          >
+            {lang === "ro" ? "Salvează calculul" : "Save calculation"}
           </button>
         </div>
       </div>
