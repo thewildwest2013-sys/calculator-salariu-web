@@ -37,6 +37,11 @@ type HistoryText = {
   home: string;
   savedCount: string;
   savedTotal: string;
+  averageSaved: string;
+  highestSaved: string;
+  chartTitle: string;
+  chartSubtitle: string;
+  chartEmpty: string;
   empty: string;
   confirmDelete: string;
   deleted: string;
@@ -68,6 +73,11 @@ const TEXT: Record<Lang, HistoryText> = {
     home: "Acasă",
     savedCount: "Calcule salvate",
     savedTotal: "Total estimat salvat",
+    averageSaved: "Medie calcul salvat",
+    highestSaved: "Cel mai mare total",
+    chartTitle: "Evoluția salariului",
+    chartSubtitle: "Grafic pe luni din calculele salvate în istoric.",
+    chartEmpty: "Graficul apare după ce ai cel puțin două luni cu calcule salvate.",
     empty: "Nu ai calcule salvate încă. După ce faci un calcul, intră la Estimare și salvează calculul.",
     confirmDelete: "Sigur vrei să ștergi acest calcul?",
     deleted: "Calcul șters",
@@ -97,6 +107,11 @@ const TEXT: Record<Lang, HistoryText> = {
     home: "Home",
     savedCount: "Saved calculations",
     savedTotal: "Saved estimated total",
+    averageSaved: "Average saved calculation",
+    highestSaved: "Highest total",
+    chartTitle: "Salary trend",
+    chartSubtitle: "Monthly chart based on saved calculations.",
+    chartEmpty: "The chart appears after you have saved calculations in at least two months.",
     empty: "You do not have saved calculations yet. After making a calculation, go to Estimate and save the calculation.",
     confirmDelete: "Are you sure you want to delete this calculation?",
     deleted: "Calculation deleted",
@@ -166,6 +181,32 @@ function formatDate(value: unknown, lang: Lang, fallback: string) {
   }
 }
 
+function calcDate(value: unknown) {
+  if (!value) return null;
+
+  try {
+    const maybeTimestamp = value as { toDate?: () => Date; seconds?: number };
+    const date = typeof maybeTimestamp.toDate === "function"
+      ? maybeTimestamp.toDate()
+      : typeof maybeTimestamp.seconds === "number"
+        ? new Date(maybeTimestamp.seconds * 1000)
+        : value instanceof Date
+          ? value
+          : new Date(String(value));
+
+    return Number.isNaN(date.getTime()) ? null : date;
+  } catch {
+    return null;
+  }
+}
+
+function monthLabel(date: Date, lang: Lang) {
+  return new Intl.DateTimeFormat(lang === "ro" ? "ro-RO" : "en-GB", {
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
 export default function HistoryPage() {
   const router = useRouter();
   const lang = useSavedLang();
@@ -178,6 +219,44 @@ export default function HistoryPage() {
     () => calculations.reduce((sum, calc) => sum + (calc.totalEstimated ?? calc.netSalary ?? 0), 0),
     [calculations],
   );
+
+  const averageSaved = useMemo(
+    () => calculations.length ? totalSaved / calculations.length : 0,
+    [calculations.length, totalSaved],
+  );
+
+  const highestSaved = useMemo(
+    () => calculations.reduce((max, calc) => Math.max(max, calc.totalEstimated ?? calc.netSalary ?? 0), 0),
+    [calculations],
+  );
+
+  const chartData = useMemo(() => {
+    const grouped = new Map<string, { label: string; total: number; count: number; sort: number }>();
+
+    for (const calc of calculations) {
+      const date = calcDate(calc.createdAt);
+      if (!date) continue;
+
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      const current = grouped.get(key) ?? {
+        label: monthLabel(date, lang),
+        total: 0,
+        count: 0,
+        sort: date.getFullYear() * 100 + date.getMonth(),
+      };
+
+      current.total += calc.totalEstimated ?? calc.netSalary ?? 0;
+      current.count += 1;
+      grouped.set(key, current);
+    }
+
+    return Array.from(grouped.values())
+      .sort((a, b) => a.sort - b.sort)
+      .map((item) => ({
+        label: item.label,
+        value: item.count ? item.total / item.count : 0,
+      }));
+  }, [calculations, lang]);
 
   async function loadCalculations(uid: string) {
     const q = query(collection(db, "users", uid, "calculations"), orderBy("createdAt", "desc"));
@@ -292,16 +371,31 @@ export default function HistoryPage() {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
+        <div className="mt-6 grid gap-4 md:grid-cols-4">
           <div className="rounded-[22px] border border-white/10 bg-[#071326]/80 p-4">
             <div className="text-xs uppercase tracking-[0.18em] text-white/45">{t.savedCount}</div>
             <div className="mt-2 text-3xl font-bold">{calculations.length}</div>
           </div>
-          <div className="rounded-[22px] border border-white/10 bg-[#071326]/80 p-4 md:col-span-2">
+          <div className="rounded-[22px] border border-white/10 bg-[#071326]/80 p-4">
             <div className="text-xs uppercase tracking-[0.18em] text-white/45">{t.savedTotal}</div>
             <div className="mt-2 break-words text-3xl font-bold">{money(totalSaved)}</div>
           </div>
+          <div className="rounded-[22px] border border-white/10 bg-[#071326]/80 p-4">
+            <div className="text-xs uppercase tracking-[0.18em] text-white/45">{t.averageSaved}</div>
+            <div className="mt-2 break-words text-3xl font-bold">{money(averageSaved)}</div>
+          </div>
+          <div className="rounded-[22px] border border-white/10 bg-[#071326]/80 p-4">
+            <div className="text-xs uppercase tracking-[0.18em] text-white/45">{t.highestSaved}</div>
+            <div className="mt-2 break-words text-3xl font-bold">{money(highestSaved)}</div>
+          </div>
         </div>
+
+        <SalaryHistoryChart
+          title={t.chartTitle}
+          subtitle={t.chartSubtitle}
+          emptyText={t.chartEmpty}
+          data={chartData}
+        />
 
         {calculations.length === 0 ? (
           <div className="mt-6 rounded-[24px] border border-white/10 bg-[#071326]/80 p-6 text-white/75">
@@ -332,6 +426,91 @@ export default function HistoryPage() {
         )}
       </div>
     </main>
+  );
+}
+
+function SalaryHistoryChart({
+  title,
+  subtitle,
+  emptyText,
+  data,
+}: {
+  title: string;
+  subtitle: string;
+  emptyText: string;
+  data: Array<{ label: string; value: number }>;
+}) {
+  const maxValue = Math.max(...data.map((item) => item.value), 0);
+  const width = 720;
+  const height = 260;
+  const paddingX = 42;
+  const paddingY = 34;
+  const plotWidth = width - paddingX * 2;
+  const plotHeight = height - paddingY * 2;
+  const points = data.map((item, index) => {
+    const x = data.length <= 1 ? paddingX + plotWidth / 2 : paddingX + (index / (data.length - 1)) * plotWidth;
+    const y = paddingY + plotHeight - ((maxValue ? item.value / maxValue : 0) * plotHeight);
+    return { ...item, x, y };
+  });
+  const path = points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
+
+  return (
+    <section className="mt-6 rounded-[28px] border border-cyan-300/15 bg-[#061327]/90 p-5 shadow-[0_0_38px_rgba(34,211,238,0.08)]">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="text-xs uppercase tracking-[0.22em] text-cyan-200/70">{title}</div>
+          <p className="mt-2 text-sm text-white/55">{subtitle}</p>
+        </div>
+      </div>
+
+      {data.length < 2 ? (
+        <div className="mt-5 rounded-[22px] border border-white/10 bg-white/[0.03] p-5 text-sm text-white/60">
+          {emptyText}
+        </div>
+      ) : (
+        <div className="mt-5 overflow-x-auto">
+          <svg viewBox={`0 0 ${width} ${height}`} className="min-w-[620px] rounded-[22px] border border-white/10 bg-white/[0.03]">
+            <defs>
+              <linearGradient id="salaryHistoryLine" x1="0" x2="1" y1="0" y2="0">
+                <stop offset="0%" stopColor="#38bdf8" />
+                <stop offset="100%" stopColor="#22c55e" />
+              </linearGradient>
+              <linearGradient id="salaryHistoryArea" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.24" />
+                <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+
+            {[0, 1, 2, 3].map((line) => {
+              const y = paddingY + (line / 3) * plotHeight;
+              return <line key={line} x1={paddingX} x2={width - paddingX} y1={y} y2={y} stroke="rgba(255,255,255,0.08)" />;
+            })}
+
+            {path && (
+              <>
+                <path
+                  d={`${path} L ${points[points.length - 1].x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z`}
+                  fill="url(#salaryHistoryArea)"
+                />
+                <path d={path} fill="none" stroke="url(#salaryHistoryLine)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+              </>
+            )}
+
+            {points.map((point) => (
+              <g key={point.label}>
+                <circle cx={point.x} cy={point.y} r="6" fill="#071326" stroke="#67e8f9" strokeWidth="3" />
+                <text x={point.x} y={height - 12} textAnchor="middle" fill="rgba(255,255,255,0.62)" fontSize="12">
+                  {point.label}
+                </text>
+                <text x={point.x} y={Math.max(18, point.y - 12)} textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize="12" fontWeight="700">
+                  {Math.round(point.value).toLocaleString("ro-RO")} RON
+                </text>
+              </g>
+            ))}
+          </svg>
+        </div>
+      )}
+    </section>
   );
 }
 
