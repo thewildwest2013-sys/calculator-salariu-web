@@ -1535,14 +1535,7 @@ export default function Home() {
                 >
                   {t.history}
                 </Link>
-                <a
-                  href="/downloads/calculator-salariu.apk"
-                  onClick={handleAndroidApkDownloadClick}
-                  className="rounded-[14px] border border-cyan-300/25 bg-cyan-400/10 px-3 py-2 text-xs font-bold text-cyan-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-cyan-400/15 hover:text-white hover:shadow-[0_10px_24px_rgba(34,211,238,0.25)]"
-                >
-                  📲 {lang === "ro" ? "Descarcă aplicația" : "Download app"}
-                </a>
-                <Link
+<Link
                   href="/security"
                   className="rounded-[14px] border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-white/90 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white hover:shadow-[0_10px_24px_rgba(15,23,42,0.25)]"
                 >
@@ -1602,7 +1595,7 @@ export default function Home() {
         )}
       </div>
 
-      {showAndroidDownloadPopup && (
+      {false && (
         <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/55 px-4 pb-5 pt-10 backdrop-blur-sm sm:items-center sm:pb-10">
           <div className="w-full max-w-md overflow-hidden rounded-[28px] border border-cyan-300/25 bg-[#061428] text-white shadow-[0_24px_80px_rgba(0,0,0,0.55)]">
             <div className="bg-gradient-to-r from-blue-600/40 to-cyan-500/30 px-5 py-4">
