@@ -9,6 +9,7 @@ import { logoutUser } from "@/lib/auth";
 import { clearStoredSecurityState } from "@/lib/security-client";
 import { consumeUsage, getUsageStatus, UsageStatus } from "@/lib/usage";
 import MonetagBanner from "@/components/ads/MonetagBanner";
+import MonetagVignette from "@/components/ads/MonetagVignette";
 
 type Lang = "ro" | "en";
 
@@ -1649,6 +1650,7 @@ export default function Home() {
       )}
 
       {!profile?.isPremium && <MonetagBanner />}
+      {!profile?.isPremium && <MonetagVignette />}
 
       <div className="fixed bottom-0 left-0 z-50 w-full px-3 pb-2">
         <div className="mx-auto flex max-w-7xl items-center justify-center rounded-[16px] border border-white/10 bg-[#041224]/90 px-3 py-2 text-center text-[12px] text-white/70 shadow-[0_10px_32px_rgba(2,8,23,0.45)] backdrop-blur-md sm:text-sm">
