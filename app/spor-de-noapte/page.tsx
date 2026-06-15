@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import MonetagBanner from "@/components/ads/MonetagBanner";
+import MonetagVignette from "@/components/ads/MonetagVignette";
 
 type Lang = "ro" | "en";
 
@@ -133,6 +135,9 @@ export default function Page() {
           </article>
         ))}
       </section>
-    </main>
+    
+      <MonetagBanner />
+      <MonetagVignette />
+</main>
   );
 }
