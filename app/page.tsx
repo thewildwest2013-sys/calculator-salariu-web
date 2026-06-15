@@ -1952,7 +1952,7 @@ function CalendarSection({
     if (type === "Night") return "border-blue-400/45 bg-blue-500/[0.10] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:bg-blue-500/[0.14]";
     if (type === "CO") return "border-violet-400/45 bg-violet-500/[0.12] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:bg-violet-500/[0.16]";
     if (type === "CM") return "border-rose-400/45 bg-rose-500/[0.12] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:bg-rose-500/[0.16]";
-    if (isHoliday) return "border-rose-400/30 bg-rose-500/[0.08] hover:bg-rose-500/[0.12]";
+    if (isHoliday) return "border-yellow-300/75 bg-yellow-400/[0.12] shadow-[0_0_24px_rgba(250,204,21,0.25),inset_0_1px_0_rgba(255,255,255,0.08)] hover:bg-yellow-400/[0.18]";
     if (isWeekend) return "border-amber-400/25 bg-amber-500/[0.06] hover:bg-amber-500/[0.10]";
     return "border-cyan-400/15 bg-cyan-500/[0.035] hover:bg-cyan-500/[0.07]";
   }
@@ -2024,14 +2024,26 @@ function CalendarSection({
                 <button
                   key={`${item.day}-${idx}`}
                   onClick={() => setSelectedDay(item.day)}
-                  className={`min-h-[78px] overflow-hidden rounded-[18px] border px-2.5 py-2 text-left transition-all duration-200 transform-gpu hover:-translate-y-0.5 hover:scale-[1.03] active:scale-[0.98] hover:border-white/25 ${getStyle(
+                  title={item.holidayName ? `${item.day} ${months[monthIndex]} - ${item.holidayName}` : undefined}
+                  className={`relative min-h-[78px] overflow-hidden rounded-[18px] border px-2.5 py-2 text-left transition-all duration-200 transform-gpu hover:-translate-y-0.5 hover:scale-[1.03] active:scale-[0.98] hover:border-white/25 ${getStyle(
                     item.day,
                     item.isWeekend,
                     item.isHoliday
-                  )}${selectedDay === item.day
+                  )}${item.isHoliday
+                    ? " ring-1 ring-yellow-300/70 shadow-[0_0_24px_rgba(250,204,21,0.25)]"
+                    : ""}${selectedDay === item.day
                     ? " ring-2 ring-blue-400/75 bg-blue-500/10 shadow-[0_0_28px_rgba(59,130,246,0.28)] scale-[1.02]"
                     : ""}`}
                 >
+                  {item.isHoliday && (
+                    <div
+                      className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-yellow-200/70 bg-yellow-400/20 text-[11px] shadow-[0_0_14px_rgba(250,204,21,0.45)] animate-pulse"
+                      aria-label={item.holidayName}
+                    >
+                      🎉
+                    </div>
+                  )}
+
                   <div className="text-2xl font-black leading-none">{item.day}</div>
                   <div className="mt-1 text-[9px] font-semibold leading-none text-white/70">
                     {weekdays[item.weekdayIndex]}
@@ -2042,8 +2054,9 @@ function CalendarSection({
                     ]}
                   </div>
                   {item.holidayName && (
-                    <div className="mt-1 rounded-full bg-white/10 px-1.5 py-1 text-[7px] leading-2 text-white/80 break-words">
-                      {item.holidayName}
+                    <div className="mt-1 inline-flex max-w-full items-center gap-1 rounded-full border border-yellow-300/30 bg-yellow-400/10 px-1.5 py-0.5 text-[7px] font-black uppercase tracking-[0.08em] text-yellow-100">
+                      <span>✨</span>
+                      <span>{lang === "ro" ? "Sărb." : "Holiday"}</span>
                     </div>
                   )}
                 </button>
