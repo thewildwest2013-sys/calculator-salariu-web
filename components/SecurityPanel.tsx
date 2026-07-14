@@ -80,7 +80,7 @@ export default function SecurityPanel() {
       const data = await response.json();
       setStatus(data);
       setMessage("");
-    } catch (_error) {
+    } catch {
       setMessage(t.error);
     } finally {
       setLoading(false);
@@ -101,7 +101,7 @@ export default function SecurityPanel() {
       if (!response.ok) throw new Error("action failed");
       setMessage(t.done);
       await loadStatus();
-    } catch (_error) {
+    } catch {
       setMessage(t.error);
     } finally {
       setLoading(false);

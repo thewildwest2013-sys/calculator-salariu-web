@@ -6,8 +6,8 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: ["/", "/calculator-salariu-2026", "/calculator-brut-net", "/spor-de-noapte", "/concediu-medical", "/sarbatori-legale-2026", "/privacy", "/terms", "/contact", "/delete-account"],
-      disallow: ["/api/", "/login", "/register", "/history", "/premium", "/security"],
+      allow: "/",
+      disallow: ["/api/", "/login", "/register", "/forgot-password", "/dashboard", "/profiles", "/company", "/history", "/settings", "/assistant", "/pricing/success"],
     },
     sitemap: `${siteUrl}/sitemap.xml`,
   };

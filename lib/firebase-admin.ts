@@ -1,24 +1,20 @@
-import admin from "firebase-admin";
+import { applicationDefault, cert, getApp, getApps, initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
+import { FieldValue, getFirestore } from "firebase-admin/firestore";
 
-const projectId = process.env.FIREBASE_PROJECT_ID;
+const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
-if (!projectId || !clientEmail || !privateKey) {
-  throw new Error("Lipsesc variabilele FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY");
-}
-
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
+const adminApp = getApps().length
+  ? getApp()
+  : initializeApp({
+      credential: projectId && clientEmail && privateKey
+        ? cert({ projectId, clientEmail, privateKey })
+        : applicationDefault(),
       projectId,
-      clientEmail,
-      privateKey,
-    }),
-  });
-}
+    });
 
-export const adminApp = admin.app();
-export const adminAuth = admin.auth();
-export const adminDb = admin.firestore();
-export { admin };
+export const adminAuth = getAuth(adminApp);
+export const adminDb = getFirestore(adminApp);
+export { adminApp, FieldValue };

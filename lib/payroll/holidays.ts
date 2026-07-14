@@ -1,0 +1,4 @@
+function addDays(date:Date,days:number){const copy=new Date(date);copy.setDate(copy.getDate()+days);return copy}
+function key(date:Date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`}
+function orthodoxEaster(year:number){const a=year%4,b=year%7,c=year%19,d=(19*c+15)%30,e=(2*a+4*b-d+34)%7,month=Math.floor((d+e+114)/31),day=(d+e+114)%31+1;const julian=new Date(year,month-1,day);julian.setDate(julian.getDate()+13);return julian}
+export function getRomanianHolidaySet(year:number){const dates=new Set<string>();[[1,1],[1,2],[1,6],[1,7],[1,24],[5,1],[6,1],[8,15],[11,30],[12,1],[12,25],[12,26]].forEach(([m,d])=>dates.add(`${year}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`));const easter=orthodoxEaster(year);[-2,0,1,49,50].forEach(offset=>dates.add(key(addDays(easter,offset))));return dates}

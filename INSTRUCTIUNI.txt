@@ -1,0 +1,17 @@
+Copiază cele 3 fișiere peste proiect, păstrând structura folderelor:
+
+app/calculator-universal/page.tsx
+lib/payroll/types.ts
+lib/payroll/payroll-engine.ts
+
+Apoi, dacă npm run dev rulează deja, pagina se recompilă automat și dai Ctrl+F5 în browser.
+Pentru verificare finală:
+  Ctrl+C
+  npm run build
+
+Ce face patch-ul:
+- adaugă Ore lipsă (undertime) lângă Ore suplimentare;
+- sincronizează automat Ore lucrate cu undertime;
+- scade undertime din baza salarială;
+- reduce proporțional sporurile variabile ale turei;
+- afișează undertime în rezultatele lunii și în celula calendarului.

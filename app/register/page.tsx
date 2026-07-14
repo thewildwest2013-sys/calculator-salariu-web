@@ -1,113 +1,51 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { registerWithEmail } from "@/lib/auth";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import AuthSimpleShell from "@/components/AuthSimpleShell";
+import { useUI } from "@/lib/ui-context";
+import { auth } from "@/lib/firebase";
+import { ensureUserAccountDocument, mapAuthError, registerWithEmail } from "@/lib/auth";
+import styles from "@/components/authSimple.module.css";
 
 export default function RegisterPage() {
+  const { language } = useUI();
   const router = useRouter();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const ro = language === "ro";
 
-  async function handleRegister(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-
-    const finalEmail = email.trim();
-
-    if (!finalEmail) {
-      alert("Introdu adresa de email.");
-      return;
-    }
-
-    if (password.length < 6) {
-      alert("Parola trebuie să aibă minimum 6 caractere.");
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      await registerWithEmail(finalEmail, password);
-
-      alert(
-        "Cont creat cu succes.\n\nAm trimis emailul de verificare.\n\nDacă nu îl găsești în Inbox, verifică și folderul Spam/Junk înainte să te autentifici."
-      );
-
-      router.push("/login");
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "Eroare la înregistrare";
-
-      alert(message);
-    } finally {
-      setLoading(false);
-    }
+  async function submit(event: FormEvent) {
+    event.preventDefault(); setError(""); setSuccess("");
+    if (password.length < 8) return setError(ro ? "Parola trebuie să aibă minimum 8 caractere." : "Password must contain at least 8 characters.");
+    if (password !== confirm) return setError(ro ? "Parolele nu coincid." : "Passwords do not match.");
+    try { setLoading(true); await registerWithEmail(email.trim(), password); setSuccess(ro ? "Cont creat. Verifică emailul și confirmă adresa înainte de autentificare." : "Account created. Check your email and verify the address before signing in."); }
+    catch (e) { setError(mapAuthError(e)); }
+    finally { setLoading(false); }
   }
 
-  return (
-    <main className="app-shell flex min-h-screen items-center justify-center p-6">
-      <section className="auth-card">
-        <div className="text-sm uppercase tracking-[0.22em] text-white/45">
-          Cont nou
-        </div>
+  async function google() {
+    try { setLoading(true); const provider = new GoogleAuthProvider(); provider.setCustomParameters({ prompt: "select_account" }); const credential = await signInWithPopup(auth, provider); await ensureUserAccountDocument(credential.user); router.replace("/dashboard"); }
+    catch (e) { setError(mapAuthError(e)); }
+    finally { setLoading(false); }
+  }
 
-        <h1 className="mt-2 text-4xl font-bold">Register</h1>
-
-        <p className="mt-3 text-white/70">
-          Creează un cont nou pentru a salva calculele și statusul premium.
-        </p>
-
-        <p className="mt-2 text-sm text-white/55">
-          După creare, trebuie să confirmi adresa de email. Verifică și folderul
-          Spam/Junk dacă emailul nu apare în Inbox.
-        </p>
-
-        <form onSubmit={handleRegister} className="mt-8 flex flex-col gap-4">
-          <div>
-            <label className="mb-2 block text-sm text-white/75">Email</label>
-            <input
-              className="auth-input"
-              type="email"
-              placeholder="Introdu emailul"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm text-white/75">Parolă</label>
-            <input
-              className="auth-input"
-              type="password"
-              placeholder="Introdu parola"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="new-password"
-              required
-              minLength={6}
-            />
-          </div>
-
-          <button className="primary-btn" type="submit" disabled={loading}>
-            {loading ? "Se creează contul..." : "Creează cont"}
-          </button>
-        </form>
-
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Link href="/" className="secondary-btn">
-            Înapoi la Home
-          </Link>
-
-          <Link href="/login" className="secondary-btn">
-            Am deja cont
-          </Link>
-        </div>
-      </section>
-    </main>
-  );
+  return <AuthSimpleShell title={ro ? "Creează cont" : "Create account"} subtitle={ro ? "Primul calcul lunar complet este gratuit. Nu este necesar cardul pentru înregistrare." : "Your first complete monthly calculation is free. No card is required to register."}>
+    {error && <div className={styles.error}>{error}</div>}{success && <div className={styles.success}>{success}</div>}
+    <form className={styles.form} onSubmit={submit}>
+      <div className={styles.field}><label>Email</label><input type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required autoComplete="email" /></div>
+      <div className={styles.field}><label>{ro ? "Parolă" : "Password"}</label><input type="password" value={password} onChange={(e)=>setPassword(e.target.value)} required autoComplete="new-password" /></div>
+      <div className={styles.field}><label>{ro ? "Confirmă parola" : "Confirm password"}</label><input type="password" value={confirm} onChange={(e)=>setConfirm(e.target.value)} required autoComplete="new-password" /></div>
+      <button className={styles.submit} disabled={loading}>{loading ? (ro ? "Se procesează..." : "Processing...") : (ro ? "Creează contul" : "Create account")}</button>
+      <button type="button" className={styles.google} onClick={google} disabled={loading}>G&nbsp;&nbsp;{ro ? "Continuă cu Google" : "Continue with Google"}</button>
+    </form>
+    <div className={styles.notice}>{ro ? "Prin creare confirmi că ai citit Termenii și Politica de confidențialitate. Datele sensibile nu sunt necesare pentru un cont personal simplu." : "By creating an account you confirm that you have read the Terms and Privacy Policy. Sensitive data is not required for a basic personal account."}</div>
+    <div className={styles.switch}>{ro ? "Ai deja cont?" : "Already have an account?"} <Link href="/login">{ro ? "Intră în cont" : "Sign in"}</Link></div>
+  </AuthSimpleShell>;
 }

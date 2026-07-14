@@ -1,38 +1,69 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isSignedIn() {
-      return request.auth != null;
+    function signedIn() { return request.auth != null; }
+    function ownsUser(uid) { return signedIn() && request.auth.uid == uid; }
+    function orgDoc(orgId) { return get(/databases/$(database)/documents/organizations/$(orgId)); }
+    function memberDoc(orgId) { return get(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid)); }
+    function isOwner(orgId) { return signedIn() && orgDoc(orgId).data.ownerId == request.auth.uid; }
+    function isOrgMember(orgId) {
+      return signedIn() && (isOwner(orgId) || memberDoc(orgId).data.active == true || memberDoc(orgId).data.status == 'active');
     }
-
-    function isOwner(uid) {
-      return isSignedIn() && request.auth.uid == uid;
+    function hasOrgRole(orgId, roles) {
+      return isOwner(orgId) || (isOrgMember(orgId) && memberDoc(orgId).data.role in roles);
+    }
+    function safeUserUpdate() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+        'credits', 'plan', 'subscriptionStatus', 'stripeCustomerId', 'freeCalculationUsed',
+        'businessPlan', 'employeeLimit', 'adminLimit', 'adminSeatLimit', 'entitlementActive', 'aiUsage'
+      ]);
     }
 
     match /users/{uid} {
-      allow read, write: if isOwner(uid);
+      allow create: if ownsUser(uid);
+      allow read: if ownsUser(uid);
+      allow update: if ownsUser(uid) && safeUserUpdate();
+      allow delete: if false;
+
+      match /monthlyCalculations/{id} { allow read: if ownsUser(uid); allow write: if false; }
+      match /payments/{id} { allow read: if ownsUser(uid); allow write: if false; }
+      match /creditTransactions/{id} { allow read: if ownsUser(uid); allow write: if false; }
+      match /subscriptions/{id} { allow read: if ownsUser(uid); allow write: if false; }
+      match /aiUsage/{id} { allow read: if ownsUser(uid); allow write: if false; }
+      match /{subcollection}/{document=**} {
+        allow read, create, update, delete: if ownsUser(uid)
+          && !(subcollection in ['payments', 'creditTransactions', 'subscriptions', 'aiUsage', 'monthlyCalculations']);
+      }
     }
 
-    match /users/{uid}/profile/{docId} {
-      allow read, write: if isOwner(uid);
+    match /organizations/{orgId} {
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow read: if isOrgMember(orgId);
+      allow update: if hasOrgRole(orgId, ['owner', 'admin']);
+      allow delete: if isOwner(orgId);
+
+      match /members/{uid} {
+        allow read: if isOrgMember(orgId);
+        allow create: if hasOrgRole(orgId, ['owner', 'admin'])
+          || (signedIn() && uid == request.auth.uid
+              && request.resource.data.role == 'owner'
+              && getAfter(/databases/$(database)/documents/organizations/$(orgId)).data.ownerId == request.auth.uid);
+        allow update, delete: if hasOrgRole(orgId, ['owner', 'admin']);
+      }
+      match /employees/{employeeId} {
+        allow read: if isOrgMember(orgId);
+        allow create, update: if hasOrgRole(orgId, ['owner', 'admin', 'payroll', 'operator']);
+        allow delete: if hasOrgRole(orgId, ['owner', 'admin']);
+      }
+      match /{collectionName}/{document=**} {
+        allow read: if isOrgMember(orgId);
+        allow create, update: if hasOrgRole(orgId, ['owner', 'admin', 'payroll', 'operator']);
+        allow delete: if hasOrgRole(orgId, ['owner', 'admin']);
+      }
     }
 
-    match /users/{uid}/history/{docId} {
-      allow read, write: if isOwner(uid);
-    }
-
-    match /users/{uid}/usage/{docId} {
-      allow read, write: if isOwner(uid);
-    }
-
-    match /users/{uid}/security/{docId} {
-      allow read: if isOwner(uid);
-      allow write: if false;
-    }
-
-    match /users/{uid}/devices/{deviceId} {
-      allow read: if isOwner(uid);
-      allow write: if false;
-    }
+    match /fiscalRuleSets/{id} { allow read: if true; allow write: if false; }
+    match /stripeEvents/{id} { allow read, write: if false; }
+    match /{document=**} { allow read, write: if false; }
   }
 }

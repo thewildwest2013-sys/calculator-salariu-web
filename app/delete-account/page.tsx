@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { deleteUser } from "firebase/auth";
-import { collection, deleteDoc, doc, getDocs } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { getSecureHeaders } from "@/lib/secure-api";
+import { clearStoredSecurityState } from "@/lib/security-client";
 
 type Lang = "ro" | "en";
 
@@ -37,24 +38,6 @@ function usePageLang() {
   return lang;
 }
 
-async function deleteCollectionDocuments(path: string) {
-  const snapshot = await getDocs(collection(db, path));
-  await Promise.all(snapshot.docs.map((item) => deleteDoc(item.ref)));
-}
-
-async function deleteUserData(uid: string) {
-  await Promise.allSettled([
-    deleteDoc(doc(db, "users", uid, "profile", "main")),
-    deleteCollectionDocuments(`users/${uid}/history`),
-    deleteCollectionDocuments(`users/${uid}/sessions`),
-    deleteCollectionDocuments(`users/${uid}/devices`),
-    deleteCollectionDocuments(`users/${uid}/calculations`),
-    deleteCollectionDocuments(`users/${uid}/logs`),
-  ]);
-
-  await Promise.allSettled([deleteDoc(doc(db, "users", uid))]);
-}
-
 export default function DeleteAccountPage() {
   const lang = usePageLang();
   const [confirmText, setConfirmText] = useState("");
@@ -79,7 +62,7 @@ export default function DeleteAccountPage() {
       ],
       subTitle: "Important despre abonamente",
       subText:
-        "Dacă ai un abonament activ prin Google Play sau Stripe, anularea abonamentului trebuie făcută și din platforma prin care a fost achiziționat. Ștergerea contului nu garantează anularea automată a plăților recurente gestionate de terți.",
+        "Dacă ai un abonament Stripe activ, reînnoirea este programată pentru anulare la ștergerea contului. Verifică și portalul de facturare pentru confirmare.",
       confirmTitle: "Confirmare ștergere automată",
       notLogged: "Nu ești autentificat. Intră în cont, apoi revino pe această pagină pentru ștergere automată.",
       label: "Scrie STERGERE pentru confirmare",
@@ -112,7 +95,7 @@ export default function DeleteAccountPage() {
       ],
       subTitle: "Important subscription note",
       subText:
-        "If you have an active subscription through Google Play or Stripe, the subscription must also be cancelled in the platform where it was purchased. Account deletion does not guarantee automatic cancellation of recurring payments managed by third parties.",
+        "If you have an active Stripe subscription, renewal is scheduled for cancellation when the account is deleted. Check the billing portal for confirmation.",
       confirmTitle: "Automatic deletion confirmation",
       notLogged: "You are not signed in. Sign in, then return to this page for automatic deletion.",
       label: "Type DELETE to confirm",
@@ -150,19 +133,24 @@ export default function DeleteAccountPage() {
     setBusy(true);
 
     try {
-      await deleteUserData(user.uid);
-      await deleteUser(user);
-
+      const headers = await getSecureHeaders();
+      const response = await fetch("/api/delete-account", { method: "POST", headers });
+      const data = await response.json();
+      if (!response.ok) {
+        if (data.error === "REAUTH_REQUIRED") throw new Error("REAUTH_REQUIRED");
+        if (data.error === "TRANSFER_OR_DELETE_COMPANY_FIRST") throw new Error("TRANSFER_OR_DELETE_COMPANY_FIRST");
+        throw new Error(data.error || "DELETE_FAILED");
+      }
+      clearStoredSecurityState();
+      await signOut(auth).catch(() => undefined);
       setStatus(t.success);
       setConfirmText("");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-
-      if (error?.code === "auth/requires-recent-login") {
-        setStatus(t.recentLogin);
-      } else {
-        setStatus(t.error);
-      }
+      const message = error instanceof Error ? error.message : "";
+      if (message === "REAUTH_REQUIRED") setStatus(t.recentLogin);
+      else if (message === "TRANSFER_OR_DELETE_COMPANY_FIRST") setStatus(lang === "ro" ? "Transferă proprietatea sau șterge mai întâi compania pe care o deții." : "Transfer ownership or delete the company you own first.");
+      else setStatus(t.error);
     } finally {
       setBusy(false);
     }

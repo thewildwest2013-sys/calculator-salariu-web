@@ -33,5 +33,5 @@ export async function requireValidWebSession(req: Request) {
     throw new Error("SESSION_INVALID");
   }
 
-  return { uid, email: decoded.email || null };
+  return { uid, email: decoded.email || null, authTime: decoded.auth_time || 0 };
 }

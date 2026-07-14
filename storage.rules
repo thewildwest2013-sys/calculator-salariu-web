@@ -1,0 +1,23 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() { return request.auth != null; }
+    function validFile() {
+      return request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('(application/pdf|image/jpeg|image/png|image/webp|application/vnd.openxmlformats-officedocument.*)');
+    }
+
+    match /users/{uid}/{allPaths=**} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if signedIn() && request.auth.uid == uid && validFile();
+    }
+
+    // Organization access must also be verified by a server endpoint before issuing uploads/downloads.
+    // Direct client access is intentionally disabled for sensitive company documents.
+    match /organizations/{orgId}/{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    match /{allPaths=**} { allow read, write: if false; }
+  }
+}
