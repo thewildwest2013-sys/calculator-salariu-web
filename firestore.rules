@@ -25,6 +25,7 @@ service cloud.firestore {
       allow update: if ownsUser(uid) && safeUserUpdate();
       allow delete: if false;
 
+      match /calculations/{id} { allow read: if ownsUser(uid); allow write: if false; }
       match /monthlyCalculations/{id} { allow read: if ownsUser(uid); allow write: if false; }
       match /payments/{id} { allow read: if ownsUser(uid); allow write: if false; }
       match /creditTransactions/{id} { allow read: if ownsUser(uid); allow write: if false; }
@@ -32,7 +33,7 @@ service cloud.firestore {
       match /aiUsage/{id} { allow read: if ownsUser(uid); allow write: if false; }
       match /{subcollection}/{document=**} {
         allow read, create, update, delete: if ownsUser(uid)
-          && !(subcollection in ['payments', 'creditTransactions', 'subscriptions', 'aiUsage', 'monthlyCalculations']);
+          && !(subcollection in ['payments', 'creditTransactions', 'subscriptions', 'aiUsage', 'calculations', 'monthlyCalculations']);
       }
     }
 
