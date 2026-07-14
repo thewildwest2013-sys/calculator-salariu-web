@@ -39,9 +39,6 @@ export async function POST(req: Request) {
       let source = "";
       if (subscriptionActive) {
         source = "subscription";
-      } else if (user.freeCalculationUsed !== true) {
-        source = "free";
-        tx.set(userRef, { freeCalculationUsed: true, updatedAt: now }, { merge: true });
       } else if (Number(user.credits || 0) > 0) {
         source = "credit";
         tx.set(userRef, { credits: FieldValue.increment(-1), updatedAt: now }, { merge: true });
@@ -66,7 +63,7 @@ export async function POST(req: Request) {
         updatedAt: now,
         calculationVersion: snapshot.calculationVersion || null,
       });
-      return { unlocked: true, source, consumed: source === "free" || source === "credit" };
+      return { unlocked: true, source, consumed: source === "credit" };
     });
 
     return NextResponse.json(result);

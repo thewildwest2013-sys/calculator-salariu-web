@@ -318,7 +318,14 @@ body {
 .segmented button { border: 0; border-radius: 8px; padding: 6px 8px; color: var(--text-muted); background: transparent; cursor: pointer; font-size: 10px; font-weight: 900; }
 .segmented button.active { color: var(--text-main); background: color-mix(in srgb, var(--brand-cyan) 12%, transparent); }
 .icon-button, .mobile-menu { display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid var(--line-ui); border-radius: 11px; color: var(--text-main); background: var(--surface); cursor: pointer; }
-.header-login { padding: 9px 13px; border-radius: 11px; color: white; background: linear-gradient(135deg, #2563eb, #06b6d4); font-size: 12px; font-weight: 850; }
+.header-login, .header-account { padding: 9px 13px; border-radius: 11px; color: white; background: linear-gradient(135deg, #2563eb, #06b6d4); font-size: 12px; font-weight: 850; }
+.header-account-group { display: flex; align-items: center; gap: 6px; }
+.header-account { display: inline-flex; align-items: center; gap: 7px; }
+.header-account-dot { width: 7px; height: 7px; border-radius: 999px; background: #34d399; box-shadow: 0 0 0 4px rgba(52,211,153,.12); }
+.header-logout { min-height: 36px; padding: 0 10px; border: 1px solid var(--line-ui); border-radius: 11px; color: var(--text-muted); background: var(--surface); cursor: pointer; font-size: 11px; font-weight: 850; }
+.header-logout:hover { color: var(--text-main); }
+.header-logout:disabled { cursor: wait; opacity: .65; }
+.header-auth-placeholder { display: grid; min-width: 78px; min-height: 36px; place-items: center; border: 1px solid var(--line-ui); border-radius: 11px; color: var(--text-muted); background: var(--surface); }
 .mobile-menu { display: none; }
 
 .site-footer { margin-top: 50px; border-top: 1px solid var(--line-ui); background: color-mix(in srgb, var(--surface-solid) 82%, transparent); }
@@ -361,7 +368,7 @@ html[data-theme="light"] .app-shell [class*="bg-[#041224"] { background: rgba(25
   .site-nav-open { display: flex; }
   .site-nav a { padding: 13px; }
   .mobile-menu { display: grid; }
-  .header-login { display: none; }
+  .header-login, .header-account-group, .header-auth-placeholder { display: none; }
   .site-header-inner { gap: 10px; }
   .site-controls { margin-left: auto; }
   .site-footer-grid { grid-template-columns: 1fr 1fr; }

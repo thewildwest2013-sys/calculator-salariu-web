@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { logoutUser } from "@/lib/auth";
+import { clearStoredSecurityState } from "@/lib/security-client";
+import { useCurrentUser } from "@/lib/use-current-user";
 import { useUI } from "@/lib/ui-context";
 
 const AUTH_ROUTES = ["/login", "/register", "/forgot-password"];
@@ -18,6 +21,8 @@ const copy = {
     guides: "Ghiduri",
     security: "Securitate",
     login: "Intră în cont",
+    account: "Contul meu",
+    logout: "Ieși",
     menu: "Meniu",
     legal: "Legal și încredere",
     privacy: "Confidențialitate",
@@ -38,6 +43,8 @@ const copy = {
     guides: "Guides",
     security: "Security",
     login: "Sign in",
+    account: "My account",
+    logout: "Sign out",
     menu: "Menu",
     legal: "Legal and trust",
     privacy: "Privacy",
@@ -52,8 +59,11 @@ const copy = {
 
 export default function AppChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { language, theme, setLanguage, toggleTheme } = useUI();
+  const { user, loading: userLoading } = useCurrentUser();
   const [open, setOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const t = copy[language];
   const isAuth = AUTH_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
 
@@ -67,6 +77,19 @@ export default function AppChrome({ children }: { children: React.ReactNode }) {
     ["/pricing", t.pricing],
     ["/assistant", t.assistant],
   ] as const;
+
+  async function handleLogout() {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      clearStoredSecurityState();
+      await logoutUser();
+      router.replace("/login");
+      router.refresh();
+    } finally {
+      setLoggingOut(false);
+    }
+  }
 
   return (
     <div className="site-frame">
@@ -89,7 +112,19 @@ export default function AppChrome({ children }: { children: React.ReactNode }) {
               <button className={language === "en" ? "active" : ""} onClick={() => setLanguage("en")}>EN</button>
             </div>
             <button className="icon-button" onClick={toggleTheme} aria-label={theme === "dark" ? "Light theme" : "Dark theme"}>{theme === "dark" ? "☀" : "☾"}</button>
-            <Link href="/login" className="header-login">{t.login}</Link>
+            {userLoading ? (
+              <span className="header-auth-placeholder" aria-hidden="true">•••</span>
+            ) : user ? (
+              <div className="header-account-group">
+                <Link href="/dashboard" className="header-account" title={user.email || t.account}>
+                  <span className="header-account-dot" />
+                  <span>{t.account}</span>
+                </Link>
+                <button className="header-logout" type="button" onClick={handleLogout} disabled={loggingOut}>{loggingOut ? "…" : t.logout}</button>
+              </div>
+            ) : (
+              <Link href="/login" className="header-login">{t.login}</Link>
+            )}
             <button className="mobile-menu" onClick={() => setOpen((value) => !value)} aria-expanded={open}>☰</button>
           </div>
         </div>

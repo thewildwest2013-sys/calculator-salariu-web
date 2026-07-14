@@ -30,7 +30,7 @@ export async function ensureUserAccountDocument(user: User) {
       accountType: "personal",
       plan: "free",
       credits: 0,
-      freeCalculationUsed: false,
+      freeCalculationUsed: true,
       createdAt: serverTimestamp(),
     });
   }

@@ -36,7 +36,7 @@ export default function RegisterPage() {
     finally { setLoading(false); }
   }
 
-  return <AuthSimpleShell title={ro ? "Creează cont" : "Create account"} subtitle={ro ? "Primul calcul lunar complet este gratuit. Nu este necesar cardul pentru înregistrare." : "Your first complete monthly calculation is free. No card is required to register."}>
+  return <AuthSimpleShell title={ro ? "Creează cont" : "Create account"} subtitle={ro ? "Îți poți crea contul și configura calendarul fără card. Rezultatul complet se deblochează cu un credit sau abonament." : "Create your account and configure the calendar without a card. Unlock the full result with a credit or subscription."}>
     {error && <div className={styles.error}>{error}</div>}{success && <div className={styles.success}>{success}</div>}
     <form className={styles.form} onSubmit={submit}>
       <div className={styles.field}><label>Email</label><input type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required autoComplete="email" /></div>
